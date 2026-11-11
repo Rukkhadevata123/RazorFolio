@@ -6,7 +6,18 @@
 
 例如 `content/Linux/hello.md` 输出为 `public/Linux/hello.html`，不同目录可有同名文章。普通 Markdown 链接暂不改写：链接文章时写发布后的 `.html` 路径；子目录文章引用资源时需按页面位置使用 `../images/example.svg` 等相对路径。
 
-`preview` 可通过本地 HTTP 服务查看已有产物。`new` 和 `build` 的自定义输出目录尚未实现。
+`preview` 可通过本地 HTTP 服务查看已有产物，`new` 可初始化独立站点。`build` 的自定义输出目录尚未实现。
+
+## 创建站点
+
+```bash
+dotnet run --project src/RazorFolio.Cli -- new ~/my-new-blog
+dotnet run --project src/RazorFolio.Cli -- dev --site ~/my-new-blog
+```
+
+`new` 接受不存在或已有但为空的目录，生成 `razorfolio.json`、`content/hello.md`、空的 `static/` 和忽略产物的 `.gitignore`。它不创建 Git 仓库，不执行构建，也不复制生成器源码。非空目录会报错，不提供强制覆盖选项。
+
+参数解析位于 `Commands/NewCommand.cs`，站点文件创建位于 `Content/SiteInitializer.cs`。写入文件使用 `CreateNew`，已有同名文件不会被覆盖；若写入过程中失败，可能留下部分文件，需检查后再重试。
 
 ## 项目结构
 

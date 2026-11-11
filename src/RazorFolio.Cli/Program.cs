@@ -14,6 +14,7 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
         RazorFolio (rf)
 
         Usage:
+          rf new <directory>
           rf build --site <directory>
           rf dev --site <directory> [--port 8080]
           rf preview --site <directory> [--directory public] [--port 8080]
@@ -25,7 +26,7 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
 
         Dev rebuilds on source changes and reloads connected browsers.
 
-        Planned command: new.
+        New creates a minimal site in a new or empty directory.
         """);
 
     return 0;
@@ -33,6 +34,14 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
 
 try
 {
+    if (args[0] == "new")
+    {
+        var newSite = NewCommand.Parse(args);
+        await new SiteInitializer().CreateAsync(newSite.SiteDirectory);
+        Console.WriteLine($"Created site in {newSite.SiteDirectory}");
+        return 0;
+    }
+
     if (args[0] == "preview")
     {
         var preview = PreviewCommand.Parse(args);
