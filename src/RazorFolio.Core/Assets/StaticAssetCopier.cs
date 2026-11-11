@@ -2,7 +2,7 @@ namespace RazorFolio.Core.Assets;
 
 public sealed class StaticAssetCopier
 {
-    public async Task CopyAsync(
+    public async Task<IReadOnlyList<string>> CopyAsync(
         string sourceDirectory,
         string outputDirectory,
         IReadOnlyCollection<string> pagePaths,
@@ -10,14 +10,16 @@ public sealed class StaticAssetCopier
     {
         if (!Directory.Exists(sourceDirectory))
         {
-            return;
+            return [];
         }
 
         var files = Directory.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories);
-        var copies = files.Select(source => (
-            Source: source,
-            Target: Path.Combine(outputDirectory, Path.GetRelativePath(sourceDirectory, source))))
-            .ToArray();
+        (string Source, string Target)[] copies =
+        [
+            .. files.Select(source => (
+                source,
+                Path.Combine(outputDirectory, Path.GetRelativePath(sourceDirectory, source))))
+        ];
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
         // Reject file and directory conflicts before copying any assets.
@@ -41,5 +43,7 @@ public sealed class StaticAssetCopier
             await using var target = File.Create(targetPath);
             await source.CopyToAsync(target, cancellationToken);
         }
+
+        return [.. copies.Select(copy => copy.Target)];
     }
 }

@@ -1,6 +1,7 @@
 using RazorFolio.Core.Assets;
 using RazorFolio.Core.Configuration;
 using RazorFolio.Core.Content;
+using RazorFolio.Core.Output;
 using RazorFolio.Core.Rendering;
 
 namespace RazorFolio.Core;
@@ -15,6 +16,7 @@ public sealed class SiteBuilder(
     {
         var siteRoot = Path.GetFullPath(siteDirectory);
         var configuration = await SiteConfigurationLoader.LoadAsync(siteRoot, cancellationToken);
+        var manifest = await OutputManifest.LoadAsync(siteRoot, cancellationToken);
         var contentDirectory = Path.Combine(siteRoot, "content");
         var outputDirectory = Path.Combine(siteRoot, "public");
 
@@ -27,8 +29,10 @@ public sealed class SiteBuilder(
         Array.Sort(sourceFiles, StringComparer.Ordinal);
         Directory.CreateDirectory(outputDirectory);
 
-        var pagePaths = sourceFiles.Select(source =>
-            GetOutputPath(source, contentDirectory, outputDirectory)).ToArray();
+        string[] pagePaths =
+        [
+            .. sourceFiles.Select(source => GetOutputPath(source, contentDirectory, outputDirectory))
+        ];
         var homePath = Path.Combine(outputDirectory, "index.html");
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
@@ -38,7 +42,7 @@ public sealed class SiteBuilder(
             throw new InvalidDataException("The root index.html path is reserved for the generated home page.");
         }
 
-        await assetCopier.CopyAsync(
+        var assetPaths = await assetCopier.CopyAsync(
             Path.Combine(siteRoot, "static"), outputDirectory, [.. pagePaths, homePath], cancellationToken);
         var articles = new List<ArticleLink>();
 
@@ -58,6 +62,7 @@ public sealed class SiteBuilder(
 
         var homeHtml = await pageRenderer.RenderAsync(new HomePage(articles, configuration), cancellationToken);
         await File.WriteAllTextAsync(homePath, homeHtml, cancellationToken);
+        await manifest.CompleteAsync([.. pagePaths, homePath, .. assetPaths], cancellationToken);
 
         return sourceFiles.Length + 1;
     }
