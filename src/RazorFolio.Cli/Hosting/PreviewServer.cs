@@ -10,7 +10,8 @@ namespace RazorFolio.Cli.Hosting;
 
 internal static class PreviewServer
 {
-    public static async Task RunAsync(string directory, int port, IHostedService? watcher = null)
+    public static async Task RunAsync(
+        string directory, int port, IHostedService? watcher = null, LiveReload? liveReload = null)
     {
         if (!Directory.Exists(directory))
         {
@@ -33,11 +34,27 @@ internal static class PreviewServer
         var contentTypes = new FileExtensionContentTypeProvider();
         contentTypes.Mappings[".txt"] = "text/plain; charset=utf-8";
 
+        if (liveReload is not null)
+        {
+            app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = files });
+            liveReload.Configure(app, files);
+        }
+
         app.UseFileServer(new FileServerOptions
         {
             FileProvider = files,
             EnableDirectoryBrowsing = false,
-            StaticFileOptions = { ContentTypeProvider = contentTypes }
+            StaticFileOptions =
+            {
+                ContentTypeProvider = contentTypes,
+                OnPrepareResponse = context =>
+                {
+                    if (liveReload is not null)
+                    {
+                        context.Context.Response.Headers.CacheControl = "no-store";
+                    }
+                }
+            }
         });
 
         Console.WriteLine($"Previewing {directory} at http://127.0.0.1:{port}. Press Ctrl+C to stop.");

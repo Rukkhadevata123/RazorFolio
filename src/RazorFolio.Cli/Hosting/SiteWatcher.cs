@@ -4,7 +4,7 @@ using RazorFolio.Core;
 
 namespace RazorFolio.Cli.Hosting;
 
-internal sealed class SiteWatcher(string siteDirectory, SiteBuilder builder) : BackgroundService
+internal sealed class SiteWatcher(string siteDirectory, SiteBuilder builder, LiveReload liveReload) : BackgroundService
 {
     private readonly Channel<bool> changes = Channel.CreateBounded<bool>(new BoundedChannelOptions(1)
     {
@@ -36,7 +36,7 @@ internal sealed class SiteWatcher(string siteDirectory, SiteBuilder builder) : B
 
         // Catch changes made between the initial build and watcher startup.
         changes.Writer.TryWrite(true);
-        Console.WriteLine("Watching content/, static/ and razorfolio.json. Refresh the browser after a rebuild.");
+        Console.WriteLine("Watching content/, static/ and razorfolio.json. Browser reload is enabled.");
 
         try
         {
@@ -49,7 +49,8 @@ internal sealed class SiteWatcher(string siteDirectory, SiteBuilder builder) : B
                 try
                 {
                     var count = await builder.BuildAsync(siteDirectory, stoppingToken);
-                    Console.WriteLine($"Rebuilt {count} page(s). Refresh the browser to see changes.");
+                    liveReload.Publish();
+                    Console.WriteLine($"Rebuilt {count} page(s). Notified browsers.");
                 }
                 catch (Exception exception) when (
                     exception is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException)

@@ -87,7 +87,9 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 
 默认访问 `http://127.0.0.1:8080/`，可在站点参数后加 `--port 8081`。启动时先构建，随后监听 `content/`、`static/` 和 `razorfolio.json`，变化后串行全站重建。文件事件会合并，写入 `public/` 不触发再次构建。监听器启动后会再同步构建一次，覆盖启动间隙可能发生的修改。
 
-当前仍需手动刷新浏览器；改 `.cshtml` 或 C# 需要重新编译启动。构建错误会报告，但监听继续，修正文件后能再次生成。构建直接写入 `public/`，中途失败时可能留下部分更新；删除或重命名源文件也暂不清理旧产物。开发输出隔离、清理和浏览器自动刷新后续再做。
+构建成功后浏览器自动整页刷新；改 `.cshtml` 或 C# 仍需要重新编译启动。构建错误会报告，但监听继续，修正文件后能再次生成。构建直接写入 `public/`，中途失败时可能留下部分更新；删除或重命名源文件也暂不清理旧产物。开发输出隔离和清理后续再做。
+
+`Hosting/LiveReload.cs` 仅在开发服务的 HTML 响应中插入刷新脚本，通过 `/_rf/events` 的 SSE 连接通知浏览器。每次成功构建更新版本号，失败时不通知刷新；连接恢复后也会比较版本号。开发响应禁用缓存，磁盘上的 HTML 不包含刷新脚本，`build` 和 `preview` 不启用该端点。当前使用整页刷新，不保留页面内交互状态。
 
 `Hosting/SiteWatcher.cs` 通过 `FileSystemWatcher` 收集事件，用有界队列串行处理；作为后台服务随预览服务器一起停止。Ctrl+C 同时停止服务和监听。
 
@@ -112,6 +114,6 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 - `.razorfolio/`：开发产物和缓存。
 - `public/`：正式网站输出，相对路径按站点根目录解析。
 
-`dev` 监听文件并重新生成页面，默认访问地址为 `http://127.0.0.1:8080`；浏览器自动刷新尚未实现。`build` 生成网站后退出。`preview` 只提供正式产物，不重新生成内容。
+`dev` 监听文件、重新生成页面并自动刷新浏览器，默认访问地址为 `http://127.0.0.1:8080`。`build` 生成网站后退出。`preview` 只提供正式产物，不重新生成内容。
 
 `dotnet build` 和 `dotnet publish` 处理生成器程序；`rf build` 处理博客站点。预编译 Razor 模板变化需要重新编译并生成页面；后续再接入 `dotnet watch`。

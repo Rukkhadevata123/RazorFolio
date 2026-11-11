@@ -23,7 +23,7 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
 
         Preview serves existing files on 127.0.0.1 without rebuilding them.
 
-        Dev rebuilds on source changes; refresh the browser manually.
+        Dev rebuilds on source changes and reloads connected browsers.
 
         Planned command: new.
         """);
@@ -60,8 +60,9 @@ try
     Console.WriteLine($"Built {pageCount} page(s) in {Path.Combine(command.SiteDirectory, "public")}");
     if (command.Name == "dev")
     {
-        using var watcher = new SiteWatcher(command.SiteDirectory, builder);
-        await PreviewServer.RunAsync(Path.Combine(command.SiteDirectory, "public"), command.Port, watcher);
+        var liveReload = new LiveReload();
+        using var watcher = new SiteWatcher(command.SiteDirectory, builder, liveReload);
+        await PreviewServer.RunAsync(Path.Combine(command.SiteDirectory, "public"), command.Port, watcher, liveReload);
     }
 
     return 0;
