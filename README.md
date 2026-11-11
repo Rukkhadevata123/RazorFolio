@@ -68,6 +68,20 @@ front matter 必须位于文件开头。当前只读取 `title`，其他字段�
 
 Markdown 扩展集中配置在 `Content/MarkdownPipelineFactory.cs`。`ArticleParser` 与 `MarkdownRenderer` 接收同一条管线，分别解析语法树和渲染 HTML；这样表格、任务列表、脚注的解析器与渲染器能一起生效。后续扩展按需添加，不一次启用所有扩展。任务列表是文章中的静态勾选状态，不保存浏览器交互。
 
+支持 `::: tip`、`::: warning` 和 `::: details` 容器，类型后可写纯文本标题；省略时分别显示“提示”“注意”“详情”。正文继续按 Markdown 渲染，标题按普通文本编码，暂不解析标题内的 Markdown。嵌套时外层使用更多冒号，例如外层 `:::: details`、内层 `::: tip`，结束围栏与各自开头对应。
+
+```markdown
+::: tip 小提示
+正文可以包含 **强调**、列表和代码块。
+:::
+
+::: details 展开配置
+这里的内容默认折叠。
+:::
+```
+
+Markdig 负责容器语法，`Rendering/BlogContainerRenderer.cs` 将提示框输出为 `aside`、折叠块输出为原生 `details/summary`，不需要 JavaScript。其他容器名保留 Markdig 的默认通用容器输出。这只是常用语法适配，不代表完整兼容 Hope 的所有容器功能。
+
 阅读代码可以依次看 `Program.cs`、`Commands/SiteCommand.cs`、`SiteBuilder.cs`、`Content/ArticleParser.cs` 和 `Rendering/MarkdownRenderer.cs`。CLI 处理参数与退出码，Core 处理文件生成；`ArticleParser` 管理解析管线、提取元数据，并从语法树中移除 front matter，`MarkdownRenderer` 将剩余语法树渲染为正文 HTML，避免重复解析 Markdown。
 
 页面渲染通过 Core 中的 `ArticlePage` 和 `IPageRenderer` 连接默认主题。`SiteBuilder` 只提交标题和正文，不接触 ASP.NET Core；主题中的 `RazorPageRenderer` 准备 MVC 视图上下文，再执行预编译模板。CLI 使用 ASP.NET Core 的服务容器组装渲染器，但不会启动 HTTP 监听。

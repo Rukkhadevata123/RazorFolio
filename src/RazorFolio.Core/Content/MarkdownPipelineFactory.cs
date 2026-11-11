@@ -11,6 +11,7 @@ public static class MarkdownPipelineFactory
             .UsePipeTables()
             .UseTaskLists()
             .UseFootnotes()
+            .UseCustomContainers()
             .Build();
     }
 }

@@ -58,6 +58,19 @@
             margin-top: 2rem;
             font-size: 0.9em;
         }
+
+        .custom-container {
+            margin-block: 1rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid #888;
+            border-radius: 0.5rem;
+        }
+
+        .custom-container.tip { border-inline-start: 4px solid #368b69; }
+        .custom-container.warning { border-inline-start: 4px solid #bd8500; }
+        .custom-container-title { margin-top: 0; font-weight: bold; }
+        .custom-container > :last-child { margin-bottom: 0; }
+        details.custom-container > summary { cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
