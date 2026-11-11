@@ -3,12 +3,14 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace RazorFolio.Cli.Hosting;
 
 internal static class PreviewServer
 {
-    public static async Task RunAsync(string directory, int port)
+    public static async Task RunAsync(string directory, int port, IHostedService? watcher = null)
     {
         if (!Directory.Exists(directory))
         {
@@ -21,6 +23,10 @@ internal static class PreviewServer
             ContentRootPath = AppContext.BaseDirectory
         });
         builder.WebHost.ConfigureKestrel(options => options.Listen(IPAddress.Loopback, port));
+        if (watcher is not null)
+        {
+            builder.Services.AddSingleton<IHostedService>(watcher);
+        }
 
         using var files = new PhysicalFileProvider(directory);
         await using var app = builder.Build();

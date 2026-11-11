@@ -6,7 +6,7 @@
 
 例如 `content/Linux/hello.md` 输出为 `public/Linux/hello.html`，不同目录可有同名文章。普通 Markdown 链接暂不改写：链接文章时写发布后的 `.html` 路径；子目录文章引用资源时需按页面位置使用 `../images/example.svg` 等相对路径。
 
-`preview` 可通过本地 HTTP 服务查看已有产物。`new`、`dev` 和 `build` 的自定义输出目录尚未实现。
+`preview` 可通过本地 HTTP 服务查看已有产物。`new` 和 `build` 的自定义输出目录尚未实现。
 
 ## 项目结构
 
@@ -55,7 +55,7 @@ title: 我的第一篇 RazorFolio 文章
 
 front matter 必须位于文件开头。当前只读取 `title`，其他字段暂时忽略；没有 `title`、值为 null 或空白时，回退到文件名。YamlDotNet 负责解析 YAML，格式错误及重复键会导致构建失败。文件名和输出 URL 不随标题变化。
 
-阅读代码可以依次看 `Program.cs`、`Commands/BuildCommand.cs`、`SiteBuilder.cs`、`Content/ArticleParser.cs` 和 `Rendering/MarkdownRenderer.cs`。CLI 处理参数与退出码，Core 处理文件生成；`ArticleParser` 管理解析管线、提取元数据，并从语法树中移除 front matter，`MarkdownRenderer` 将剩余语法树渲染为正文 HTML，避免重复解析 Markdown。
+阅读代码可以依次看 `Program.cs`、`Commands/SiteCommand.cs`、`SiteBuilder.cs`、`Content/ArticleParser.cs` 和 `Rendering/MarkdownRenderer.cs`。CLI 处理参数与退出码，Core 处理文件生成；`ArticleParser` 管理解析管线、提取元数据，并从语法树中移除 front matter，`MarkdownRenderer` 将剩余语法树渲染为正文 HTML，避免重复解析 Markdown。
 
 页面渲染通过 Core 中的 `ArticlePage` 和 `IPageRenderer` 连接默认主题。`SiteBuilder` 只提交标题和正文，不接触 ASP.NET Core；主题中的 `RazorPageRenderer` 准备 MVC 视图上下文，再执行预编译模板。CLI 使用 ASP.NET Core 的服务容器组装渲染器，但不会启动 HTTP 监听。
 
@@ -79,12 +79,17 @@ dotnet run --project src/RazorFolio.Cli -- preview --site ~/razorfolio-blog
 
 `Commands/PreviewCommand.cs` 负责参数检查，`Hosting/PreviewServer.cs` 负责静态文件服务，Core 不依赖预览服务。
 
-后续命令实现后，日常调试使用：
+## 开发模式
 
 ```bash
 dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
-dotnet run --project src/RazorFolio.Cli -- build --site ~/razorfolio-blog --output public
 ```
+
+默认访问 `http://127.0.0.1:8080/`，可在站点参数后加 `--port 8081`。启动时先构建，随后监听 `content/`、`static/` 和 `razorfolio.json`，变化后串行全站重建。文件事件会合并，写入 `public/` 不触发再次构建。监听器启动后会再同步构建一次，覆盖启动间隙可能发生的修改。
+
+当前仍需手动刷新浏览器；改 `.cshtml` 或 C# 需要重新编译启动。构建错误会报告，但监听继续，修正文件后能再次生成。构建直接写入 `public/`，中途失败时可能留下部分更新；删除或重命名源文件也暂不清理旧产物。开发输出隔离、清理和浏览器自动刷新后续再做。
+
+`Hosting/SiteWatcher.cs` 通过 `FileSystemWatcher` 收集事件，用有界队列串行处理；作为后台服务随预览服务器一起停止。Ctrl+C 同时停止服务和监听。
 
 `~/razorfolio-blog` 用于示例文章和可清理的实验，不存放需要长期保存的唯一副本。普通用户也使用独立站点目录，不需要把文章放进生成器源码仓库。
 
@@ -107,6 +112,6 @@ dotnet run --project src/RazorFolio.Cli -- build --site ~/razorfolio-blog --outp
 - `.razorfolio/`：开发产物和缓存。
 - `public/`：正式网站输出，相对路径按站点根目录解析。
 
-`dev` 计划监听文件、生成页面并自动刷新，默认访问地址为 `http://127.0.0.1:8080`。`build` 生成网站后退出。`preview` 只提供正式产物，不重新生成内容。
+`dev` 监听文件并重新生成页面，默认访问地址为 `http://127.0.0.1:8080`；浏览器自动刷新尚未实现。`build` 生成网站后退出。`preview` 只提供正式产物，不重新生成内容。
 
 `dotnet build` 和 `dotnet publish` 处理生成器程序；`rf build` 处理博客站点。预编译 Razor 模板变化需要重新编译并生成页面；后续再接入 `dotnet watch`。

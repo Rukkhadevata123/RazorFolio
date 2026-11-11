@@ -15,6 +15,7 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
 
         Usage:
           rf build --site <directory>
+          rf dev --site <directory> [--port 8080]
           rf preview --site <directory> [--directory public] [--port 8080]
 
         Convert content/**/*.md files to public/**/*.html, preserving subdirectories.
@@ -22,7 +23,9 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
 
         Preview serves existing files on 127.0.0.1 without rebuilding them.
 
-        Planned commands: new, dev.
+        Dev rebuilds on source changes; refresh the browser manually.
+
+        Planned command: new.
         """);
 
     return 0;
@@ -37,7 +40,7 @@ try
         return 0;
     }
 
-    var command = BuildCommand.Parse(args);
+    var command = SiteCommand.Parse(args);
     var hostBuilder = WebApplication.CreateBuilder(new WebApplicationOptions
     {
         Args = [],
@@ -55,6 +58,12 @@ try
     var pageCount = await builder.BuildAsync(command.SiteDirectory);
 
     Console.WriteLine($"Built {pageCount} page(s) in {Path.Combine(command.SiteDirectory, "public")}");
+    if (command.Name == "dev")
+    {
+        using var watcher = new SiteWatcher(command.SiteDirectory, builder);
+        await PreviewServer.RunAsync(Path.Combine(command.SiteDirectory, "public"), command.Port, watcher);
+    }
+
     return 0;
 }
 catch (ArgumentException exception)
