@@ -6,12 +6,8 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace RazorFolio.Core.Content;
 
-public sealed class ArticleParser
+public sealed class ArticleParser(MarkdownPipeline pipeline)
 {
-    private readonly MarkdownPipeline pipeline = new MarkdownPipelineBuilder()
-        .UseYamlFrontMatter()
-        .Build();
-
     private readonly IDeserializer deserializer = new DeserializerBuilder()
         .WithNamingConvention(CamelCaseNamingConvention.Instance)
         .IgnoreUnmatchedProperties()

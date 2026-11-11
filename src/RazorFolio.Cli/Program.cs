@@ -63,7 +63,12 @@ try
     await using var host = hostBuilder.Build();
     await using var scope = host.Services.CreateAsyncScope();
     var pageRenderer = scope.ServiceProvider.GetRequiredService<IPageRenderer>();
-    var builder = new SiteBuilder(new ArticleParser(), new MarkdownRenderer(), pageRenderer, new StaticAssetCopier());
+    var markdownPipeline = MarkdownPipelineFactory.Create();
+    var builder = new SiteBuilder(
+        new ArticleParser(markdownPipeline),
+        new MarkdownRenderer(markdownPipeline),
+        pageRenderer,
+        new StaticAssetCopier());
     var pageCount = await builder.BuildAsync(command.SiteDirectory);
 
     Console.WriteLine($"Built {pageCount} page(s) in {Path.Combine(command.SiteDirectory, "public")}");
