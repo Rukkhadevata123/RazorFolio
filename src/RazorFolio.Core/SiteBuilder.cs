@@ -2,7 +2,7 @@ using RazorFolio.Core.Rendering;
 
 namespace RazorFolio.Core;
 
-public sealed class SiteBuilder(MarkdownRenderer markdownRenderer)
+public sealed class SiteBuilder(MarkdownRenderer markdownRenderer, IPageRenderer pageRenderer)
 {
     public async Task<int> BuildAsync(string siteDirectory, CancellationToken cancellationToken = default)
     {
@@ -22,7 +22,9 @@ public sealed class SiteBuilder(MarkdownRenderer markdownRenderer)
         foreach (var sourceFile in sourceFiles)
         {
             var markdown = await File.ReadAllTextAsync(sourceFile, cancellationToken);
-            var html = markdownRenderer.Render(markdown);
+            var bodyHtml = markdownRenderer.Render(markdown);
+            var page = new ArticlePage(Path.GetFileNameWithoutExtension(sourceFile), bodyHtml);
+            var html = await pageRenderer.RenderAsync(page, cancellationToken);
             var outputName = Path.ChangeExtension(Path.GetFileName(sourceFile), ".html");
             var outputPath = Path.Combine(outputDirectory, outputName);
 

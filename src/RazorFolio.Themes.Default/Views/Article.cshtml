@@ -1,0 +1,17 @@
+@model RazorFolio.Core.Rendering.ArticlePage
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@Model.Title — RazorFolio</title>
+</head>
+<body>
+    <main>
+        <article>
+            @* BodyHtml comes from the author's Markdown; ordinary text stays HTML-encoded. *@
+            @Html.Raw(Model.BodyHtml)
+        </article>
+    </main>
+</body>
+</html>
