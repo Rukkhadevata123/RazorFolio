@@ -21,12 +21,12 @@ public sealed class SiteBuilder(
             throw new DirectoryNotFoundException($"Content directory not found: {contentDirectory}");
         }
 
-        var sourceFiles = Directory.GetFiles(contentDirectory, "*.md", SearchOption.TopDirectoryOnly);
+        var sourceFiles = Directory.GetFiles(contentDirectory, "*.md", SearchOption.AllDirectories);
         Array.Sort(sourceFiles, StringComparer.Ordinal);
         Directory.CreateDirectory(outputDirectory);
 
         var pagePaths = sourceFiles.Select(source =>
-            Path.Combine(outputDirectory, Path.ChangeExtension(Path.GetFileName(source), ".html"))).ToArray();
+            GetOutputPath(source, contentDirectory, outputDirectory)).ToArray();
         await assetCopier.CopyAsync(Path.Combine(siteRoot, "static"), outputDirectory, pagePaths, cancellationToken);
 
         foreach (var sourceFile in sourceFiles)
@@ -36,12 +36,18 @@ public sealed class SiteBuilder(
             var bodyHtml = markdownRenderer.Render(article.Body);
             var page = new ArticlePage(article.Title, bodyHtml);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
-            var outputName = Path.ChangeExtension(Path.GetFileName(sourceFile), ".html");
-            var outputPath = Path.Combine(outputDirectory, outputName);
+            var outputPath = GetOutputPath(sourceFile, contentDirectory, outputDirectory);
 
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
             await File.WriteAllTextAsync(outputPath, html, cancellationToken);
         }
 
         return sourceFiles.Length;
+    }
+
+    private static string GetOutputPath(string sourceFile, string contentDirectory, string outputDirectory)
+    {
+        var relativePath = Path.GetRelativePath(contentDirectory, sourceFile);
+        return Path.Combine(outputDirectory, Path.ChangeExtension(relativePath, ".html"));
     }
 }

@@ -17,7 +17,7 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
           rf build --site <directory>
           rf preview --site <directory> [--directory public] [--port 8080]
 
-        Convert top-level content/*.md files to public/*.html.
+        Convert content/**/*.md files to public/**/*.html, preserving subdirectories.
         Render complete HTML pages using the precompiled default Razor theme.
 
         Preview serves existing files on 127.0.0.1 without rebuilding them.

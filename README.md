@@ -2,7 +2,9 @@
 
 基于 C# / .NET 10、Markdig 和预编译 Razor 模板的静态站点生成器。命令名为 `rf`。
 
-当前已实现最小的 `build`：读取站点 `content/` 顶层的 `.md` 文件，解析可选的 YAML front matter，用 Markdig 转换正文，再通过默认 Razor 主题生成完整 HTML，写入 `public/` 下的同名 `.html` 文件。`static/` 中的文件递归复制到 `public/`，保留相对路径。暂不处理文章子目录，也不会清理旧输出。Markdown 暂时使用基础 CommonMark 语法，扩展后续按需启用。
+当前已实现最小的 `build`：递归读取站点 `content/` 下的 `.md` 文件，解析可选的 YAML front matter，用 Markdig 转换正文，再通过默认 Razor 主题生成完整 HTML，写入 `public/` 并保留相对目录。`static/` 中的文件也递归复制到 `public/`。暂不清理旧输出。Markdown 暂时使用基础 CommonMark 语法，扩展后续按需启用。
+
+例如 `content/Linux/hello.md` 输出为 `public/Linux/hello.html`，不同目录可有同名文章。普通 Markdown 链接暂不改写：链接文章时写发布后的 `.html` 路径；子目录文章引用资源时需按页面位置使用 `../images/example.svg` 等相对路径。
 
 `preview` 可通过本地 HTTP 服务查看已有产物。`new`、`dev` 和 `build` 的自定义输出目录尚未实现。
 
