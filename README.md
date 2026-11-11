@@ -2,7 +2,7 @@
 
 基于 C# / .NET 10、Markdig 和预编译 Razor 模板的静态站点生成器。命令名为 `rf`。
 
-当前已实现最小的 `build`：读取站点 `content/` 顶层的 `.md` 文件，解析可选的 YAML front matter，用 Markdig 转换正文，再通过默认 Razor 主题生成完整 HTML，写入 `public/` 下的同名 `.html` 文件。暂不处理子目录和静态资源，也不会清理旧输出。Markdown 暂时使用基础 CommonMark 语法，扩展后续按需启用。
+当前已实现最小的 `build`：读取站点 `content/` 顶层的 `.md` 文件，解析可选的 YAML front matter，用 Markdig 转换正文，再通过默认 Razor 主题生成完整 HTML，写入 `public/` 下的同名 `.html` 文件。`static/` 中的文件递归复制到 `public/`，保留相对路径。暂不处理文章子目录，也不会清理旧输出。Markdown 暂时使用基础 CommonMark 语法，扩展后续按需启用。
 
 `preview` 可通过本地 HTTP 服务查看已有产物。`new`、`dev` 和 `build` 的自定义输出目录尚未实现。
 
@@ -52,6 +52,12 @@ front matter 必须位于文件开头。当前只读取 `title`，其他字段�
 模板用 `@Model.Title` 输出普通文本，由 Razor 编码；`@Html.Raw(Model.BodyHtml)` 原样插入作者 Markdown 生成的 HTML。当前按可信本地文章处理，不执行 HTML 清洗。
 
 ## 预览已有产物
+
+图片和附件放在 `static/`，例如 `static/images/example.svg` 会复制到 `public/images/example.svg`。顶层文章可写 `![示例](images/example.svg)`；复制不会改写文件内容，也不会压缩或编译 CSS、JS。
+
+`static/` 可以不存在。已有资源在再次构建时覆盖更新；静态资源与本次生成的页面路径冲突时会报错。删除源资源后，旧输出暂时保留，产物清理后续单独实现。复制逻辑位于 `Assets/StaticAssetCopier.cs`。
+
+文本附件约定使用 UTF-8。预览服务为 `.txt` 返回 `text/plain; charset=utf-8`，避免浏览器猜错编码；复制过程不转码。部署后的响应头由实际静态托管服务决定。
 
 ```bash
 dotnet run --project src/RazorFolio.Cli -- preview --site ~/razorfolio-blog

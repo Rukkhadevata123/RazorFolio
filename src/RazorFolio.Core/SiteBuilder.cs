@@ -1,3 +1,4 @@
+using RazorFolio.Core.Assets;
 using RazorFolio.Core.Content;
 using RazorFolio.Core.Rendering;
 
@@ -6,7 +7,8 @@ namespace RazorFolio.Core;
 public sealed class SiteBuilder(
     ArticleParser articleParser,
     MarkdownRenderer markdownRenderer,
-    IPageRenderer pageRenderer)
+    IPageRenderer pageRenderer,
+    StaticAssetCopier assetCopier)
 {
     public async Task<int> BuildAsync(string siteDirectory, CancellationToken cancellationToken = default)
     {
@@ -22,6 +24,10 @@ public sealed class SiteBuilder(
         var sourceFiles = Directory.GetFiles(contentDirectory, "*.md", SearchOption.TopDirectoryOnly);
         Array.Sort(sourceFiles, StringComparer.Ordinal);
         Directory.CreateDirectory(outputDirectory);
+
+        var pagePaths = sourceFiles.Select(source =>
+            Path.Combine(outputDirectory, Path.ChangeExtension(Path.GetFileName(source), ".html"))).ToArray();
+        await assetCopier.CopyAsync(Path.Combine(siteRoot, "static"), outputDirectory, pagePaths, cancellationToken);
 
         foreach (var sourceFile in sourceFiles)
         {

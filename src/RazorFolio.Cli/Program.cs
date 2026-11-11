@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using RazorFolio.Cli.Commands;
 using RazorFolio.Cli.Hosting;
 using RazorFolio.Core;
+using RazorFolio.Core.Assets;
 using RazorFolio.Core.Content;
 using RazorFolio.Core.Rendering;
 using RazorFolio.Themes.Default;
@@ -50,7 +51,7 @@ try
     await using var host = hostBuilder.Build();
     await using var scope = host.Services.CreateAsyncScope();
     var pageRenderer = scope.ServiceProvider.GetRequiredService<IPageRenderer>();
-    var builder = new SiteBuilder(new ArticleParser(), new MarkdownRenderer(), pageRenderer);
+    var builder = new SiteBuilder(new ArticleParser(), new MarkdownRenderer(), pageRenderer, new StaticAssetCopier());
     var pageCount = await builder.BuildAsync(command.SiteDirectory);
 
     Console.WriteLine($"Built {pageCount} page(s) in {Path.Combine(command.SiteDirectory, "public")}");
