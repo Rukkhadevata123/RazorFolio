@@ -1,0 +1,12 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/RazorFolio.Cli/RazorFolio.Cli.csproj" />
+    <Project Path="src/RazorFolio.Core/RazorFolio.Core.csproj" />
+    <Project Path="src/RazorFolio.Themes.Default/RazorFolio.Themes.Default.csproj" />
+  </Folder>
+</Solution>

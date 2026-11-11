@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>rf</AssemblyName>
+    <RootNamespace>RazorFolio.Cli</RootNamespace>
+    <UseAppHost>true</UseAppHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../RazorFolio.Core/RazorFolio.Core.csproj" />
+    <ProjectReference Include="../RazorFolio.Themes.Default/RazorFolio.Themes.Default.csproj" />
+  </ItemGroup>
+</Project>
