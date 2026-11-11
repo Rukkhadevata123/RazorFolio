@@ -2,7 +2,9 @@
 
 基于 C# / .NET 10、Markdig 和预编译 Razor 模板的静态站点生成器。命令名为 `rf`。
 
-当前只有项目骨架和 CLI 帮助信息，尚未实现文章解析、主题、开发服务或站点构建。Markdig 和 YAML 解析依赖将在对应功能实现时加入。
+当前已实现最小的 `build`：读取站点 `content/` 顶层的 `.md` 文件，用 Markdig 转换为 HTML 正文片段，写入 `public/` 下的同名 `.html` 文件。暂不处理子目录、front matter、静态资源和 Razor 布局，也不会清理旧输出。Markdown 暂时使用基础 CommonMark 语法，扩展后续按需启用。
+
+`new`、`dev`、`preview` 和自定义输出目录尚未实现。
 
 ## 项目结构
 
@@ -25,7 +27,17 @@ dotnet run --project src/RazorFolio.Cli -- --help
 
 CLI 的 `AssemblyName` 为 `rf`，Linux 默认 Debug 构建的可执行入口为 `src/RazorFolio.Cli/bin/Debug/net10.0/rf`，Windows 对应 `rf.exe`。这是依赖框架的构建，运行时需保留同目录的依赖文件。
 
-站点命令实现后，日常调试使用独立的实验站点：
+目前可以对独立的实验站点运行：
+
+```bash
+dotnet run --project src/RazorFolio.Cli -- build --site ~/razorfolio-blog
+```
+
+示例文章是 `~/razorfolio-blog/content/hello.md`，输出为 `~/razorfolio-blog/public/hello.html`。当前输出只有正文片段，后续接入 Razor 后再生成包含字符集声明、页头和样式的完整 HTML 文档。
+
+阅读代码可以依次看 `Program.cs`、`Commands/BuildCommand.cs`、`SiteBuilder.cs` 和 `Rendering/MarkdownRenderer.cs`。CLI 处理参数与退出码，Core 处理文件生成，渲染类集中管理 Markdown 管线。下一步在正文转换之后接入 Razor 页面渲染。
+
+后续命令实现后，日常调试使用：
 
 ```bash
 dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
@@ -33,7 +45,7 @@ dotnet run --project src/RazorFolio.Cli -- build --site ~/razorfolio-blog --outp
 dotnet run --project src/RazorFolio.Cli -- preview --site ~/razorfolio-blog --directory public
 ```
 
-`~/razorfolio-blog` 初始为空，用于示例文章和可清理的实验，不存放需要长期保存的唯一副本。普通用户也使用独立站点目录，不需要把文章放进生成器源码仓库。
+`~/razorfolio-blog` 用于示例文章和可清理的实验，不存放需要长期保存的唯一副本。普通用户也使用独立站点目录，不需要把文章放进生成器源码仓库。
 
 ## 站点约定
 
