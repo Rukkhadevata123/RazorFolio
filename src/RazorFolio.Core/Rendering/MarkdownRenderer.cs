@@ -1,13 +1,12 @@
 using Markdig;
+using Markdig.Syntax;
 
 namespace RazorFolio.Core.Rendering;
 
 public sealed class MarkdownRenderer
 {
-    private readonly MarkdownPipeline pipeline = new MarkdownPipelineBuilder().Build();
-
-    public string Render(string markdown)
+    public string Render(MarkdownDocument document)
     {
-        return Markdown.ToHtml(markdown, pipeline);
+        return Markdown.ToHtml(document);
     }
 }

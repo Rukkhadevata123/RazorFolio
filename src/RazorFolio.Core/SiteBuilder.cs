@@ -1,8 +1,12 @@
+using RazorFolio.Core.Content;
 using RazorFolio.Core.Rendering;
 
 namespace RazorFolio.Core;
 
-public sealed class SiteBuilder(MarkdownRenderer markdownRenderer, IPageRenderer pageRenderer)
+public sealed class SiteBuilder(
+    ArticleParser articleParser,
+    MarkdownRenderer markdownRenderer,
+    IPageRenderer pageRenderer)
 {
     public async Task<int> BuildAsync(string siteDirectory, CancellationToken cancellationToken = default)
     {
@@ -22,8 +26,9 @@ public sealed class SiteBuilder(MarkdownRenderer markdownRenderer, IPageRenderer
         foreach (var sourceFile in sourceFiles)
         {
             var markdown = await File.ReadAllTextAsync(sourceFile, cancellationToken);
-            var bodyHtml = markdownRenderer.Render(markdown);
-            var page = new ArticlePage(Path.GetFileNameWithoutExtension(sourceFile), bodyHtml);
+            var article = articleParser.Parse(markdown, sourceFile);
+            var bodyHtml = markdownRenderer.Render(article.Body);
+            var page = new ArticlePage(article.Title, bodyHtml);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
             var outputName = Path.ChangeExtension(Path.GetFileName(sourceFile), ".html");
             var outputPath = Path.Combine(outputDirectory, outputName);

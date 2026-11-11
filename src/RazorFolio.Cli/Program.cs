@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using RazorFolio.Cli.Commands;
 using RazorFolio.Core;
+using RazorFolio.Core.Content;
 using RazorFolio.Core.Rendering;
 using RazorFolio.Themes.Default;
 
@@ -38,7 +39,7 @@ try
     await using var host = hostBuilder.Build();
     await using var scope = host.Services.CreateAsyncScope();
     var pageRenderer = scope.ServiceProvider.GetRequiredService<IPageRenderer>();
-    var builder = new SiteBuilder(new MarkdownRenderer(), pageRenderer);
+    var builder = new SiteBuilder(new ArticleParser(), new MarkdownRenderer(), pageRenderer);
     var pageCount = await builder.BuildAsync(command.SiteDirectory);
 
     Console.WriteLine($"Built {pageCount} page(s) in {Path.Combine(command.SiteDirectory, "public")}");
@@ -49,7 +50,8 @@ catch (ArgumentException exception)
     Console.Error.WriteLine(exception.Message);
     return 2;
 }
-catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+catch (Exception exception) when (
+    exception is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException)
 {
     Console.Error.WriteLine($"Build failed: {exception.Message}");
     return 1;
