@@ -25,7 +25,11 @@ public sealed class SiteBuilder(
             throw new DirectoryNotFoundException($"Content directory not found: {contentDirectory}");
         }
 
-        var sourceFiles = Directory.GetFiles(contentDirectory, "*.md", SearchOption.AllDirectories);
+        string[] sourceFiles =
+        [
+            .. Directory.EnumerateFiles(contentDirectory, "*", SearchOption.AllDirectories)
+                .Where(path => Path.GetExtension(path).Equals(".md", StringComparison.OrdinalIgnoreCase))
+        ];
         Array.Sort(sourceFiles, StringComparer.Ordinal);
         Directory.CreateDirectory(outputDirectory);
 

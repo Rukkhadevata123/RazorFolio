@@ -4,7 +4,7 @@
 
 当前已实现最小的 `build`：递归读取站点 `content/` 下的 `.md` 文件，解析可选的 YAML front matter，用 Markdig 转换正文，再通过默认 Razor 主题生成完整 HTML，写入 `public/` 并保留相对目录。`static/` 中的文件也递归复制到 `public/`。构建成功后按生成清单清理过期输出。Markdown 支持 CommonMark、管道表格、任务列表和脚注。
 
-例如 `content/Linux/hello.md` 输出为 `public/Linux/hello.html`，不同目录可有同名文章。普通 Markdown 链接暂不改写：链接文章时写发布后的 `.html` 路径；子目录文章引用资源时需按页面位置使用 `../images/example.svg` 等相对路径。
+例如 `content/Linux/hello.md` 输出为 `public/Linux/hello.html`，不同目录可有同名文章。文章扩展名 `.md` 不区分大小写。子目录文章引用资源时需按页面位置使用 `../images/example.svg` 等相对路径。
 
 `preview` 可通过本地 HTTP 服务查看已有产物，`new` 可初始化独立站点。`build` 的自定义输出目录尚未实现。
 
@@ -35,7 +35,11 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/my-new-blog
 
 `Views/Home.cshtml` 生成根目录的 `index.html`，列出所有文章标题和链接，暂按源文件路径排序。没有文章时显示空状态；构建报告的页面数包含首页。根目录的 `index.html` 保留给自动首页，`content/index.md` 或与首页路径冲突的静态资源会报错。
 
-首页链接按相对路径生成，各路径段分别进行 URL 编码，支持中文、空格和 `#` 等文件名字符。文章中的手写链接仍不自动改写。
+首页链接按相对路径生成，各路径段分别进行 URL 编码，支持中文、空格和 `#` 等文件名字符。
+
+文章之间可以写 `[示例](Linux/hello.md)`，Markdig 在 HTML 输出阶段将本地 `.md` 链接改成 `.html`，包括引用式链接。路径和文件名保持不变，查询参数与锚点也保留，例如 `hello.md?view=full#section` 变为 `hello.html?view=full#section`。不会重新计算旧锚点，也不会检查目标文章是否存在。
+
+带协议的外部链接、`//example.com/hello.md`、纯锚点及 `.png`、`.txt` 等资源链接不改写。当前把本地 `.md` 目标都视为文章；如果需要提供 Markdown 源文件下载，需要另外设计下载路径或规则。原始 HTML 中的链接和代码块文本不参与这项 Markdown 链接转换。
 
 ## 开发
 
