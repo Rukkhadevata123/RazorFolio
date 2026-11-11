@@ -18,6 +18,10 @@
 
 默认主题使用 Razor SDK 预编译 `Views/Article.cshtml`。CLI 通过项目引用携带默认主题，第一版不加载外部主题插件。
 
+`Views/_ViewStart.cshtml` 为页面选择共享的 `Views/Shared/_Layout.cshtml`。布局负责 HTML 外壳、字符集、viewport 和基础排版；文章页与首页只提供正文和 `ViewData["Title"]`，布局通过 `RenderBody()` 插入正文。修改主题后需要重新编译并构建站点。
+
+基础 CSS 暂时内联在共享布局中，包含正文宽度、行距、图片缩放和代码块横向滚动，并通过 `color-scheme` 跟随系统深浅色偏好。后续需要独立样式资源时，再接入主题资源输出。
+
 `Views/Home.cshtml` 生成根目录的 `index.html`，列出所有文章标题和链接，暂按源文件路径排序。没有文章时显示空状态；构建报告的页面数包含首页。根目录的 `index.html` 保留给自动首页，`content/index.md` 或与首页路径冲突的静态资源会报错。
 
 首页链接按相对路径生成，各路径段分别进行 URL 编码，支持中文、空格和 `#` 等文件名字符。文章中的手写链接仍不自动改写。
@@ -39,7 +43,7 @@ CLI 的 `AssemblyName` 为 `rf`，Linux 默认 Debug 构建的可执行入口为
 dotnet run --project src/RazorFolio.Cli -- build --site ~/razorfolio-blog
 ```
 
-示例文章是 `~/razorfolio-blog/content/hello.md`，输出为 `~/razorfolio-blog/public/hello.html`。页面包含 UTF-8 声明、viewport 和正文，暂未添加 CSS。浏览器标签页标题读取 front matter 的 `title`，正文的一级标题仍来自 Markdown，不会自动插入或替换。
+示例文章是 `~/razorfolio-blog/content/hello.md`，输出为 `~/razorfolio-blog/public/hello.html`。页面包含 UTF-8 声明、viewport、基础 CSS 和正文。浏览器标签页标题读取 front matter 的 `title`，正文的一级标题仍来自 Markdown，不会自动插入或替换。
 
 ```markdown
 ---

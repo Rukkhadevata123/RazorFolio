@@ -1,27 +1,19 @@
 @model RazorFolio.Core.Rendering.HomePage
-<!doctype html>
-<html lang="zh-CN">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>RazorFolio</title>
-</head>
-<body>
-    <main>
-        <h1>文章</h1>
-        @if (Model.Articles.Count == 0)
+@{
+    ViewData["Title"] = "RazorFolio";
+}
+
+<h1>文章</h1>
+@if (Model.Articles.Count == 0)
+{
+    <p>还没有文章。</p>
+}
+else
+{
+    <ul>
+        @foreach (var article in Model.Articles)
         {
-            <p>还没有文章。</p>
+            <li><a href="@article.Url">@article.Title</a></li>
         }
-        else
-        {
-            <ul>
-                @foreach (var article in Model.Articles)
-                {
-                    <li><a href="@article.Url">@article.Title</a></li>
-                }
-            </ul>
-        }
-    </main>
-</body>
-</html>
+    </ul>
+}
