@@ -90,6 +90,17 @@ dotnet run --project src/RazorFolio.Cli -- build --site ~/razorfolio-blog --outp
 
 ## 站点约定
 
+站点根目录可放置 `razorfolio.json`：
+
+```json
+{
+  "title": "我的博客",
+  "language": "zh-CN"
+}
+```
+
+`title` 用于首页标题和文章标签页标题的后缀；`language` 写入 HTML 的 `lang` 属性，不自动翻译主题文案。配置文件不存在或字段省略时，分别使用 `RazorFolio` 和 `zh-CN`。显式的 null、空白字段、未知字段及无效 JSON 会报错，错误包含配置文件路径。配置由 `Configuration/SiteConfigurationLoader.cs` 每次构建读取一次，再通过页面模型传给主题。
+
 - `content/`：Markdown 文章。
 - `static/`：原样复制的图片、附件等资源。
 - `razorfolio.json`：站点配置。

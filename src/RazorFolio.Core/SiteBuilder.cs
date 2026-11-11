@@ -1,4 +1,5 @@
 using RazorFolio.Core.Assets;
+using RazorFolio.Core.Configuration;
 using RazorFolio.Core.Content;
 using RazorFolio.Core.Rendering;
 
@@ -13,6 +14,7 @@ public sealed class SiteBuilder(
     public async Task<int> BuildAsync(string siteDirectory, CancellationToken cancellationToken = default)
     {
         var siteRoot = Path.GetFullPath(siteDirectory);
+        var configuration = await SiteConfigurationLoader.LoadAsync(siteRoot, cancellationToken);
         var contentDirectory = Path.Combine(siteRoot, "content");
         var outputDirectory = Path.Combine(siteRoot, "public");
 
@@ -45,7 +47,7 @@ public sealed class SiteBuilder(
             var markdown = await File.ReadAllTextAsync(sourceFile, cancellationToken);
             var article = articleParser.Parse(markdown, sourceFile);
             var bodyHtml = markdownRenderer.Render(article.Body);
-            var page = new ArticlePage(article.Title, bodyHtml);
+            var page = new ArticlePage(article.Title, bodyHtml, configuration);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
             var outputPath = GetOutputPath(sourceFile, contentDirectory, outputDirectory);
 
@@ -54,7 +56,7 @@ public sealed class SiteBuilder(
             articles.Add(new ArticleLink(article.Title, GetPageUrl(outputPath, outputDirectory)));
         }
 
-        var homeHtml = await pageRenderer.RenderAsync(new HomePage(articles), cancellationToken);
+        var homeHtml = await pageRenderer.RenderAsync(new HomePage(articles, configuration), cancellationToken);
         await File.WriteAllTextAsync(homePath, homeHtml, cancellationToken);
 
         return sourceFiles.Length + 1;

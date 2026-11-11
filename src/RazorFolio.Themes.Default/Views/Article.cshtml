@@ -1,6 +1,7 @@
 @model RazorFolio.Core.Rendering.ArticlePage
 @{
-    ViewData["Title"] = $"{Model.Title} — RazorFolio";
+    ViewData["Title"] = $"{Model.Title} — {Model.Site.Title}";
+    ViewData["Language"] = Model.Site.Language;
 }
 
 <article>
