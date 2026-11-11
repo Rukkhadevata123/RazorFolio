@@ -18,6 +18,10 @@
 
 默认主题使用 Razor SDK 预编译 `Views/Article.cshtml`。CLI 通过项目引用携带默认主题，第一版不加载外部主题插件。
 
+`Views/Home.cshtml` 生成根目录的 `index.html`，列出所有文章标题和链接，暂按源文件路径排序。没有文章时显示空状态；构建报告的页面数包含首页。根目录的 `index.html` 保留给自动首页，`content/index.md` 或与首页路径冲突的静态资源会报错。
+
+首页链接按相对路径生成，各路径段分别进行 URL 编码，支持中文、空格和 `#` 等文件名字符。文章中的手写链接仍不自动改写。
+
 ## 开发
 
 在仓库根目录编译程序、查看帮助：
@@ -65,7 +69,7 @@ front matter 必须位于文件开头。当前只读取 `title`，其他字段�
 dotnet run --project src/RazorFolio.Cli -- preview --site ~/razorfolio-blog
 ```
 
-打开 `http://127.0.0.1:8080/hello.html`，按 Ctrl+C 停止服务。`preview` 默认提供站点的 `public/` 目录，支持 `--directory` 和 `--port`；相对目录按站点根目录解析，例如 `--directory public --port 8081`。
+打开 `http://127.0.0.1:8080/` 查看文章列表，或访问 `/hello.html` 查看示例文章，按 Ctrl+C 停止服务。`preview` 默认提供站点的 `public/` 目录，支持 `--directory` 和 `--port`；相对目录按站点根目录解析，例如 `--directory public --port 8081`。
 
 预览不调用生成器、不监听 Markdown，也不注入刷新脚本。修改文章后需要重新执行 `build` 并刷新浏览器。服务只监听 IPv4 回环地址，不开放目录浏览；没有 `index.html` 等默认页时，根地址返回 404，直接访问文章路径即可。不存在的文件也返回 404，不回退到其他页面。
 

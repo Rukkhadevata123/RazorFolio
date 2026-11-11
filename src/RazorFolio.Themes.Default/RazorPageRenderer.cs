@@ -16,14 +16,27 @@ public sealed class RazorPageRenderer(
     ITempDataProvider tempDataProvider,
     IServiceProvider services) : IPageRenderer
 {
-    public async Task<string> RenderAsync(ArticlePage page, CancellationToken cancellationToken = default)
+    public Task<string> RenderAsync(ArticlePage page, CancellationToken cancellationToken = default)
+    {
+        return RenderViewAsync("/Views/Article.cshtml", page, cancellationToken);
+    }
+
+    public Task<string> RenderAsync(HomePage page, CancellationToken cancellationToken = default)
+    {
+        return RenderViewAsync("/Views/Home.cshtml", page, cancellationToken);
+    }
+
+    private async Task<string> RenderViewAsync<TModel>(
+        string viewPath,
+        TModel page,
+        CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var result = viewEngine.GetView(null, "/Views/Article.cshtml", isMainPage: true);
+        var result = viewEngine.GetView(null, viewPath, isMainPage: true);
 
         if (!result.Success)
         {
-            throw new InvalidOperationException("The precompiled default article view could not be found.");
+            throw new InvalidOperationException($"Precompiled theme view not found: {viewPath}");
         }
 
         // MVC views need a request context even when rendering without an HTTP server.
@@ -33,7 +46,7 @@ public sealed class RazorPageRenderer(
             RequestAborted = cancellationToken
         };
         var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
-        var viewData = new ViewDataDictionary<ArticlePage>(new EmptyModelMetadataProvider(), new ModelStateDictionary())
+        var viewData = new ViewDataDictionary<TModel>(new EmptyModelMetadataProvider(), new ModelStateDictionary())
         {
             Model = page
         };

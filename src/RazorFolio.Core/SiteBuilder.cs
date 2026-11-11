@@ -27,7 +27,18 @@ public sealed class SiteBuilder(
 
         var pagePaths = sourceFiles.Select(source =>
             GetOutputPath(source, contentDirectory, outputDirectory)).ToArray();
-        await assetCopier.CopyAsync(Path.Combine(siteRoot, "static"), outputDirectory, pagePaths, cancellationToken);
+        var homePath = Path.Combine(outputDirectory, "index.html");
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+        if (pagePaths.Any(path => string.Equals(path, homePath, comparison)
+            || path.StartsWith(homePath + Path.DirectorySeparatorChar, comparison)))
+        {
+            throw new InvalidDataException("The root index.html path is reserved for the generated home page.");
+        }
+
+        await assetCopier.CopyAsync(
+            Path.Combine(siteRoot, "static"), outputDirectory, [.. pagePaths, homePath], cancellationToken);
+        var articles = new List<ArticleLink>();
 
         foreach (var sourceFile in sourceFiles)
         {
@@ -40,14 +51,24 @@ public sealed class SiteBuilder(
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
             await File.WriteAllTextAsync(outputPath, html, cancellationToken);
+            articles.Add(new ArticleLink(article.Title, GetPageUrl(outputPath, outputDirectory)));
         }
 
-        return sourceFiles.Length;
+        var homeHtml = await pageRenderer.RenderAsync(new HomePage(articles), cancellationToken);
+        await File.WriteAllTextAsync(homePath, homeHtml, cancellationToken);
+
+        return sourceFiles.Length + 1;
     }
 
     private static string GetOutputPath(string sourceFile, string contentDirectory, string outputDirectory)
     {
         var relativePath = Path.GetRelativePath(contentDirectory, sourceFile);
         return Path.Combine(outputDirectory, Path.ChangeExtension(relativePath, ".html"));
+    }
+
+    private static string GetPageUrl(string outputPath, string outputDirectory)
+    {
+        var segments = Path.GetRelativePath(outputDirectory, outputPath).Split(Path.DirectorySeparatorChar);
+        return "./" + string.Join("/", segments.Select(Uri.EscapeDataString));
     }
 }
