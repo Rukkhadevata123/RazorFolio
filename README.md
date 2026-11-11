@@ -4,7 +4,7 @@
 
 当前已实现最小的 `build`：读取站点 `content/` 顶层的 `.md` 文件，解析可选的 YAML front matter，用 Markdig 转换正文，再通过默认 Razor 主题生成完整 HTML，写入 `public/` 下的同名 `.html` 文件。暂不处理子目录和静态资源，也不会清理旧输出。Markdown 暂时使用基础 CommonMark 语法，扩展后续按需启用。
 
-`new`、`dev`、`preview` 和自定义输出目录尚未实现。
+`preview` 可通过本地 HTTP 服务查看已有产物。`new`、`dev` 和 `build` 的自定义输出目录尚未实现。
 
 ## 项目结构
 
@@ -51,12 +51,23 @@ front matter 必须位于文件开头。当前只读取 `title`，其他字段�
 
 模板用 `@Model.Title` 输出普通文本，由 Razor 编码；`@Html.Raw(Model.BodyHtml)` 原样插入作者 Markdown 生成的 HTML。当前按可信本地文章处理，不执行 HTML 清洗。
 
+## 预览已有产物
+
+```bash
+dotnet run --project src/RazorFolio.Cli -- preview --site ~/razorfolio-blog
+```
+
+打开 `http://127.0.0.1:8080/hello.html`，按 Ctrl+C 停止服务。`preview` 默认提供站点的 `public/` 目录，支持 `--directory` 和 `--port`；相对目录按站点根目录解析，例如 `--directory public --port 8081`。
+
+预览不调用生成器、不监听 Markdown，也不注入刷新脚本。修改文章后需要重新执行 `build` 并刷新浏览器。服务只监听 IPv4 回环地址，不开放目录浏览；没有 `index.html` 等默认页时，根地址返回 404，直接访问文章路径即可。不存在的文件也返回 404，不回退到其他页面。
+
+`Commands/PreviewCommand.cs` 负责参数检查，`Hosting/PreviewServer.cs` 负责静态文件服务，Core 不依赖预览服务。
+
 后续命令实现后，日常调试使用：
 
 ```bash
 dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 dotnet run --project src/RazorFolio.Cli -- build --site ~/razorfolio-blog --output public
-dotnet run --project src/RazorFolio.Cli -- preview --site ~/razorfolio-blog --directory public
 ```
 
 `~/razorfolio-blog` 用于示例文章和可清理的实验，不存放需要长期保存的唯一副本。普通用户也使用独立站点目录，不需要把文章放进生成器源码仓库。

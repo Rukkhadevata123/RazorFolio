@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using RazorFolio.Cli.Commands;
+using RazorFolio.Cli.Hosting;
 using RazorFolio.Core;
 using RazorFolio.Core.Content;
 using RazorFolio.Core.Rendering;
@@ -13,11 +14,14 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
 
         Usage:
           rf build --site <directory>
+          rf preview --site <directory> [--directory public] [--port 8080]
 
         Convert top-level content/*.md files to public/*.html.
         Render complete HTML pages using the precompiled default Razor theme.
 
-        Planned commands: new, dev, preview.
+        Preview serves existing files on 127.0.0.1 without rebuilding them.
+
+        Planned commands: new, dev.
         """);
 
     return 0;
@@ -25,6 +29,13 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
 
 try
 {
+    if (args[0] == "preview")
+    {
+        var preview = PreviewCommand.Parse(args);
+        await PreviewServer.RunAsync(preview.Directory, preview.Port);
+        return 0;
+    }
+
     var command = BuildCommand.Parse(args);
     var hostBuilder = WebApplication.CreateBuilder(new WebApplicationOptions
     {
@@ -53,6 +64,6 @@ catch (ArgumentException exception)
 catch (Exception exception) when (
     exception is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException)
 {
-    Console.Error.WriteLine($"Build failed: {exception.Message}");
+    Console.Error.WriteLine($"{args[0]} failed: {exception.Message}");
     return 1;
 }
