@@ -1,4 +1,5 @@
 using Markdig;
+using Markdig.Extensions.TableOfContents;
 
 namespace RazorFolio.Core.Content;
 
@@ -12,6 +13,8 @@ public static class MarkdownPipelineFactory
             .UseTaskLists()
             .UseFootnotes()
             .UseCustomContainers()
+            .UseAutoIdentifiers()
+            .UseTableOfContents(new TableOfContentsOptions { MinLevel = 2, MaxLevel = 6 })
             .Build();
     }
 }

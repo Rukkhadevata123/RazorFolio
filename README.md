@@ -82,6 +82,22 @@ Markdown 扩展集中配置在 `Content/MarkdownPipelineFactory.cs`。`ArticlePa
 
 Markdig 负责容器语法，`Rendering/BlogContainerRenderer.cs` 将提示框输出为 `aside`、折叠块输出为原生 `details/summary`，不需要 JavaScript。其他容器名保留 Markdig 的默认通用容器输出。这只是常用语法适配，不代表完整兼容 Hope 的所有容器功能。
 
+标题通过 Markdig 自动生成锚点 ID。需要正文目录时，将 `[TOC]` 单独写成一个段落，并在前后留空行；目录列出二至六级标题，排除文章一级标题，层级由标题级别决定。代码块里的 `[TOC]` 保持原样。重复标题由 Markdig 分配不同的 ID；修改标题可能改变锚点，当前不承诺兼容旧 VuePress 文章的锚点规则。
+
+```markdown
+# 文章标题
+
+[TOC]
+
+## 安装
+
+### Linux
+
+## 使用
+```
+
+目录是静态 HTML 链接，没有滚动高亮和侧栏逻辑。没有 `[TOC]` 时不输出目录，但标题仍有锚点。
+
 阅读代码可以依次看 `Program.cs`、`Commands/SiteCommand.cs`、`SiteBuilder.cs`、`Content/ArticleParser.cs` 和 `Rendering/MarkdownRenderer.cs`。CLI 处理参数与退出码，Core 处理文件生成；`ArticleParser` 管理解析管线、提取元数据，并从语法树中移除 front matter，`MarkdownRenderer` 将剩余语法树渲染为正文 HTML，避免重复解析 Markdown。
 
 页面渲染通过 Core 中的 `ArticlePage` 和 `IPageRenderer` 连接默认主题。`SiteBuilder` 只提交标题和正文，不接触 ASP.NET Core；主题中的 `RazorPageRenderer` 准备 MVC 视图上下文，再执行预编译模板。CLI 使用 ASP.NET Core 的服务容器组装渲染器，但不会启动 HTTP 监听。
