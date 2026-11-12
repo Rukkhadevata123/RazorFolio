@@ -8,6 +8,8 @@ public interface IPageRenderer
 
     Task<string> RenderAsync(TagArchivePage page, CancellationToken cancellationToken = default);
 
+    Task<string> RenderAsync(TagPage page, CancellationToken cancellationToken = default);
+
     Task<string> RenderAsync(CategoryArchivePage page, CancellationToken cancellationToken = default);
 
     Task<string> RenderAsync(YearArchivePage page, CancellationToken cancellationToken = default);

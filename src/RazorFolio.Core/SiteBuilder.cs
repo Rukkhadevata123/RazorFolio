@@ -57,6 +57,10 @@ public sealed class SiteBuilder(
         OutputPathValidator.Validate(pagePaths);
         var tagsPath = Path.Combine(outputDirectory, "tags.html");
         var hasTags = sources.Any(source => source.Article.Info.IsArticle && source.Article.Info.Tags.Count > 0);
+        var tagPaths = sources.Where(source => source.Article.Info.IsArticle)
+            .SelectMany(source => source.Article.Info.Tags)
+            .Distinct(StringComparer.Ordinal)
+            .ToDictionary(tag => tag, tag => TagPagePath.GetOutputPath(outputDirectory, tag), StringComparer.Ordinal);
         var categoriesPath = Path.Combine(outputDirectory, "categories.html");
         var hasCategories = sources.Any(source => source.Article.Info.IsArticle && source.Article.Info.Categories.Count > 0);
         var archivesPath = Path.Combine(outputDirectory, "archives.html");
@@ -65,6 +69,7 @@ public sealed class SiteBuilder(
         if (hasTags)
         {
             reservedPaths.Add(tagsPath);
+            reservedPaths.AddRange(tagPaths.Values);
         }
         if (hasCategories)
         {
@@ -82,6 +87,7 @@ public sealed class SiteBuilder(
         string[] metadataPaths = generateMetadata ? [sitemapPath, feedPath] : [];
         var stylesheetPath = Path.GetFullPath(stylesheet.RelativePath, outputDirectory);
         string[] protectedPaths = [.. reservedPaths, .. metadataPaths, stylesheetPath];
+        OutputPathValidator.Validate(protectedPaths);
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
         foreach (var protectedPath in protectedPaths)
@@ -121,10 +127,9 @@ public sealed class SiteBuilder(
         foreach (var (article, outputPath, _) in outputs)
         {
             var homeUrl = PageUrl.GetRelative(outputPath, homePath);
-            var tagsUrl = PageUrl.GetRelative(outputPath, tagsPath);
             TagLink[] tags = article.Info.IsArticle ?
             [
-                .. article.Info.Tags.Select(tag => new TagLink(tag, tagsUrl + "#" + TagGroup.GetId(tag)))
+                .. article.Info.Tags.Select(tag => new TagLink(tag, PageUrl.GetRelative(outputPath, tagPaths[tag])))
             ] : [];
             var categoriesUrl = PageUrl.GetRelative(outputPath, categoriesPath);
             CategoryLink[] categories = article.Info.IsArticle ?
@@ -172,10 +177,31 @@ public sealed class SiteBuilder(
 
         if (hasTags)
         {
+            var tagGroups = GroupByTag(orderedArticles, tagsPath, tagPaths);
             var archive = new TagArchivePage(
-                GroupByTag(orderedArticles), CreateContext(tagsPath), PageUrl.GetRelative(tagsPath, homePath));
+                tagGroups, CreateContext(tagsPath), PageUrl.GetRelative(tagsPath, homePath));
             var tagsHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
             await File.WriteAllTextAsync(tagsPath, tagsHtml, cancellationToken);
+
+            var articlePaths = orderedArticlePages.ToDictionary(
+                output => output.Url, output => output.OutputPath, StringComparer.Ordinal);
+            foreach (var group in tagGroups)
+            {
+                var outputPath = tagPaths[group.Name];
+                ArticleLink[] tagArticles =
+                [
+                    .. group.Articles.Select(article => article with
+                    {
+                        Url = PageUrl.GetRelative(outputPath, articlePaths[article.Url])
+                    })
+                ];
+                var tagPage = new TagPage(
+                    group.Name, tagArticles, CreateContext(outputPath),
+                    PageUrl.GetRelative(outputPath, homePath), PageUrl.GetRelative(outputPath, tagsPath));
+                var html = await pageRenderer.RenderAsync(tagPage, cancellationToken);
+                Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+                await File.WriteAllTextAsync(outputPath, html, cancellationToken);
+            }
         }
 
         if (hasCategories)
@@ -248,12 +274,14 @@ public sealed class SiteBuilder(
         await source.CopyToAsync(target, cancellationToken);
     }
 
-    private static TagGroup[] GroupByTag(IReadOnlyList<ArticleLink> articles) =>
+    private static TagGroup[] GroupByTag(
+        IReadOnlyList<ArticleLink> articles, string tagsPath, Dictionary<string, string> tagPaths) =>
     [
         .. articles.SelectMany(article => article.Info.Tags.Select(tag => (Tag: tag, Article: article)))
             .GroupBy(entry => entry.Tag, StringComparer.Ordinal)
             .OrderBy(group => group.Key, StringComparer.Ordinal)
-            .Select(group => new TagGroup(group.Key, [.. group.Select(entry => entry.Article)]))
+            .Select(group => new TagGroup(
+                group.Key, [.. group.Select(entry => entry.Article)], PageUrl.GetRelative(tagsPath, tagPaths[group.Key])))
     ];
 
     private static CategoryGroup[] GroupByCategory(IReadOnlyList<ArticleLink> articles) =>

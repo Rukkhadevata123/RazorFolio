@@ -2,7 +2,7 @@ using System.Text;
 
 namespace RazorFolio.Core.Rendering;
 
-public sealed record TagGroup(string Name, IReadOnlyList<ArticleLink> Articles)
+public sealed record TagGroup(string Name, IReadOnlyList<ArticleLink> Articles, string Url)
 {
     public string Id => GetId(Name);
 

@@ -11,7 +11,7 @@
 @foreach (var group in Model.Groups)
 {
     <section aria-labelledby="@group.Id">
-        <h2 id="@group.Id">@group.Name</h2>
+        <h2 id="@group.Id"><a href="@group.Url">@group.Name</a></h2>
         @await Html.PartialAsync("/Views/Shared/_ArticleList.cshtml", group.Articles)
     </section>
 }

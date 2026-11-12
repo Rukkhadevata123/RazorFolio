@@ -31,6 +31,11 @@ public sealed class RazorPageRenderer(
         return RenderViewAsync("/Views/Tags.cshtml", page, cancellationToken);
     }
 
+    public Task<string> RenderAsync(TagPage page, CancellationToken cancellationToken = default)
+    {
+        return RenderViewAsync("/Views/Tag.cshtml", page, cancellationToken);
+    }
+
     public Task<string> RenderAsync(CategoryArchivePage page, CancellationToken cancellationToken = default)
     {
         return RenderViewAsync("/Views/Categories.cshtml", page, cancellationToken);

@@ -1,0 +1,12 @@
+@model RazorFolio.Core.Rendering.TagPage
+@{
+    ViewData["Title"] = $"标签：{Model.Name} — {Model.Context.Site.Title}";
+}
+
+<nav aria-label="站点导航">
+    <a href="@Model.HomeUrl">← 返回首页</a>
+    · <a href="@Model.TagsUrl">全部标签</a>
+</nav>
+
+<h1>标签：@Model.Name</h1>
+@await Html.PartialAsync("/Views/Shared/_ArticleList.cshtml", Model.Articles)
