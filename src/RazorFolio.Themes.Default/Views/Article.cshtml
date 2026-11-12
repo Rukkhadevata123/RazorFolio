@@ -21,6 +21,16 @@
         <p class="article-date"><time datetime="@dateText">@dateText</time></p>
     }
 
+    @if (Model.Categories.Count > 0)
+    {
+        <ul class="article-categories" aria-label="文章分类">
+            @foreach (var category in Model.Categories)
+            {
+                <li>分类：<a href="@category.Url">@category.Name</a></li>
+            }
+        </ul>
+    }
+
     @if (Model.Tags.Count > 0)
     {
         <ul class="article-tags" aria-label="文章标签">

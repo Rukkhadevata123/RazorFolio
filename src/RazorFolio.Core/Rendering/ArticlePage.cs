@@ -8,4 +8,5 @@ public sealed record ArticlePage(
     PageContext Context,
     string HomeUrl,
     IReadOnlyList<TagLink> Tags,
+    IReadOnlyList<CategoryLink> Categories,
     ArticleNavigation Navigation) : IPageModel;

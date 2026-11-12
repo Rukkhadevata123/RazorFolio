@@ -6,4 +6,5 @@ public sealed record ArticleInfo(
     bool Draft,
     string? Description,
     IReadOnlyList<string> Tags,
+    IReadOnlyList<string> Categories,
     bool IsArticle);

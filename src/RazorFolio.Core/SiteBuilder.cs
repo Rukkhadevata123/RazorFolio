@@ -57,7 +57,18 @@ public sealed class SiteBuilder(
         OutputPathValidator.Validate(pagePaths);
         var tagsPath = Path.Combine(outputDirectory, "tags.html");
         var hasTags = sources.Any(source => source.Article.Info.IsArticle && source.Article.Info.Tags.Count > 0);
-        var reservedPaths = hasTags ? [.. homePaths, tagsPath] : homePaths;
+        var categoriesPath = Path.Combine(outputDirectory, "categories.html");
+        var hasCategories = sources.Any(source => source.Article.Info.IsArticle && source.Article.Info.Categories.Count > 0);
+        List<string> reservedPaths = [.. homePaths];
+        if (hasTags)
+        {
+            reservedPaths.Add(tagsPath);
+        }
+        if (hasCategories)
+        {
+            reservedPaths.Add(categoriesPath);
+        }
+
         var generateMetadata = configuration.Url is not null && !target.IncludeDrafts;
         var sitemapPath = Path.Combine(outputDirectory, "sitemap.xml");
         var feedPath = Path.Combine(outputDirectory, "feed.xml");
@@ -109,10 +120,16 @@ public sealed class SiteBuilder(
             [
                 .. article.Info.Tags.Select(tag => new TagLink(tag, tagsUrl + "#" + TagGroup.GetId(tag)))
             ] : [];
+            var categoriesUrl = PageUrl.GetRelative(outputPath, categoriesPath);
+            CategoryLink[] categories = article.Info.IsArticle ?
+            [
+                .. article.Info.Categories.Select(category =>
+                    new CategoryLink(category, categoriesUrl + "#" + CategoryGroup.GetId(category)))
+            ] : [];
             var navigation = navigations.GetValueOrDefault(outputPath) ?? new ArticleNavigation(null, null);
             var bodyHtml = markdownRenderer.Render(article.Body);
             var page = new ArticlePage(
-                article.Info, bodyHtml, CreateContext(outputPath, article.Info.Draft), homeUrl, tags, navigation);
+                article.Info, bodyHtml, CreateContext(outputPath, article.Info.Draft), homeUrl, tags, categories, navigation);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
@@ -138,7 +155,8 @@ public sealed class SiteBuilder(
                 index + 1 < homePaths.Length ? PageUrl.GetRelative(outputPath, homePaths[index + 1]) : null);
             var home = new HomePage(
                 pageArticles, CreateContext(outputPath),
-                hasTags ? PageUrl.GetRelative(outputPath, tagsPath) : null, pagination);
+                hasTags ? PageUrl.GetRelative(outputPath, tagsPath) : null,
+                hasCategories ? PageUrl.GetRelative(outputPath, categoriesPath) : null, pagination);
             var homeHtml = await pageRenderer.RenderAsync(home, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
@@ -151,6 +169,14 @@ public sealed class SiteBuilder(
                 GroupByTag(orderedArticles), CreateContext(tagsPath), PageUrl.GetRelative(tagsPath, homePath));
             var tagsHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
             await File.WriteAllTextAsync(tagsPath, tagsHtml, cancellationToken);
+        }
+
+        if (hasCategories)
+        {
+            var archive = new CategoryArchivePage(
+                GroupByCategory(orderedArticles), CreateContext(categoriesPath), PageUrl.GetRelative(categoriesPath, homePath));
+            var categoriesHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
+            await File.WriteAllTextAsync(categoriesPath, categoriesHtml, cancellationToken);
         }
 
         if (generateMetadata)
@@ -167,7 +193,7 @@ public sealed class SiteBuilder(
         await manifest.CompleteAsync(
             [.. pagePaths, .. reservedPaths, .. metadataPaths, stylesheetPath, .. assetPaths], cancellationToken);
 
-        return sources.Count + reservedPaths.Length;
+        return sources.Count + reservedPaths.Count;
 
         string? FindCopiedAsset(string relativePath) => assetPaths.FirstOrDefault(path =>
             string.Equals(path, Path.Combine(outputDirectory, relativePath), comparison));
@@ -213,6 +239,14 @@ public sealed class SiteBuilder(
             .GroupBy(entry => entry.Tag, StringComparer.Ordinal)
             .OrderBy(group => group.Key, StringComparer.Ordinal)
             .Select(group => new TagGroup(group.Key, [.. group.Select(entry => entry.Article)]))
+    ];
+
+    private static CategoryGroup[] GroupByCategory(IReadOnlyList<ArticleLink> articles) =>
+    [
+        .. articles.SelectMany(article => article.Info.Categories.Select(category => (Category: category, Article: article)))
+            .GroupBy(entry => entry.Category, StringComparer.Ordinal)
+            .OrderBy(group => group.Key, StringComparer.Ordinal)
+            .Select(group => new CategoryGroup(group.Key, [.. group.Select(entry => entry.Article)]))
     ];
 
     private async Task<List<(string Path, ParsedArticle Article)>> LoadArticlesAsync(

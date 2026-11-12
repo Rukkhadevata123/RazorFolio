@@ -11,6 +11,10 @@
 {
     <p class="site-description">@description</p>
 }
+@if (Model.CategoriesUrl is { } categoriesUrl)
+{
+    <p><a href="@categoriesUrl">按分类浏览</a></p>
+}
 @if (Model.TagsUrl is { } tagsUrl)
 {
     <p><a href="@tagsUrl">按标签浏览</a></p>

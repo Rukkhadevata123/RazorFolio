@@ -1,0 +1,17 @@
+@model RazorFolio.Core.Rendering.CategoryArchivePage
+@{
+    ViewData["Title"] = $"分类归档 — {Model.Context.Site.Title}";
+}
+
+<nav aria-label="站点导航">
+    <a href="@Model.HomeUrl">← 返回首页</a>
+</nav>
+
+<h1>分类归档</h1>
+@foreach (var group in Model.Groups)
+{
+    <section aria-labelledby="@group.Id">
+        <h2 id="@group.Id">@group.Name</h2>
+        @await Html.PartialAsync("/Views/Shared/_ArticleList.cshtml", group.Articles)
+    </section>
+}

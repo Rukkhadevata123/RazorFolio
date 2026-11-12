@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Globalization;
 using Markdig;
 using Markdig.Extensions.Yaml;
@@ -60,16 +61,21 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
         }
 
         var description = string.IsNullOrWhiteSpace(metadata.Description) ? null : metadata.Description.Trim();
-        string[] tags =
+        var info = new ArticleInfo(
+            title, date, metadata.Draft, description,
+            NormalizeNames(metadata.Tags), NormalizeNames(metadata.Category), metadata.Article);
+        return new ParsedArticle(info, document);
+    }
+
+    private static ReadOnlyCollection<string> NormalizeNames(List<string?>? names)
+    {
+        string[] normalized =
         [
-            .. (metadata.Tags ?? [])
-                .Where(tag => !string.IsNullOrWhiteSpace(tag))
-                .Select(tag => tag!.Trim())
+            .. (names ?? [])
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name!.Trim())
                 .Distinct(StringComparer.Ordinal)
         ];
-
-        var info = new ArticleInfo(
-            title, date, metadata.Draft, description, Array.AsReadOnly(tags), metadata.Article);
-        return new ParsedArticle(info, document);
+        return Array.AsReadOnly(normalized);
     }
 }
