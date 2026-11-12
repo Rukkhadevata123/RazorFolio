@@ -70,7 +70,7 @@ title: 我的第一篇 RazorFolio 文章
 # 正文标题
 ```
 
-front matter 必须位于文件开头。当前读取 `title`、`description`、`date` 和 `draft`，其他字段暂时忽略；没有 `title`、值为 null 或空白时，回退到文件名。YamlDotNet 负责解析 YAML，格式错误及重复键会导致构建失败。文件名和输出 URL 不随标题变化。
+front matter 必须位于文件开头。当前读取 `title`、`description`、`date`、`draft` 和 `tags`，其他字段暂时忽略；没有 `title`、值为 null 或空白时，回退到文件名。YamlDotNet 负责解析 YAML，格式错误及重复键会导致构建失败。文件名和输出 URL 不随标题变化。
 
 可选的 `description` 用作首页文章简介，并写入文章页的 `<meta name="description">`，不额外插入文章正文。省略、null 或纯空白时不输出简介和对应的 meta 标签，也不自动截取正文。首尾空白会去掉，内容按纯文本处理，由 Razor 编码，不解析 Markdown 或 HTML。例如：
 
@@ -87,6 +87,18 @@ description: >-
 可选的 `date: 2026-11-12` 表示发布日期，使用 `DateOnly` 存储，不包含时间和时区。省略或设为 null 时不显示日期；显式填写时必须是有效的 `yyyy-MM-dd`，空字符串、非法日期和完整时间戳会报错并指出文章路径。日期在首页及文章页通过 `<time datetime="...">` 输出；未来日期目前照常发布，不表示定时发布。
 
 `draft: true` 将文章标为草稿，省略或设为 `false` 则正常发布。正式 `build` 不生成草稿及其首页链接；`dev` 包含草稿，并在首页和文章页标注。草稿仍需使用有效的 YAML 和日期。
+
+`tags` 接受 YAML 列表，例如 `tags: [Linux, Podman]`，也可以逐行书写：
+
+```yaml
+tags:
+  - Linux
+  - Podman
+```
+
+标签会去掉首尾空白，忽略 null 和空白项，重复名称只保留第一次出现的位置。去重区分大小写，因此 `Linux` 和 `linux` 是两个标签。省略 `tags`、设为 null 或 `[]` 表示没有标签；`tags: Linux` 这样的单个字符串会报错，不自动按逗号拆分。
+
+文章页在正文前将标签显示为纯文本列表，由 Razor 编码；没有标签时不输出列表。当前不显示在首页，也不生成标签链接或归档页。解析器将整理后的标签作为只读集合存入 `ArticleInfo.Tags`，页面模型直接携带该信息。
 
 Markdown 扩展集中配置在 `Content/MarkdownPipelineFactory.cs`。`ArticleParser` 与 `MarkdownRenderer` 接收同一条管线，分别解析语法树和渲染 HTML；这样表格、任务列表、脚注的解析器与渲染器能一起生效。后续扩展按需添加，不一次启用所有扩展。任务列表是文章中的静态勾选状态，不保存浏览器交互。
 
@@ -122,7 +134,7 @@ Markdig 负责容器语法，`Rendering/BlogContainerRenderer.cs` 将提示框�
 
 阅读代码可以依次看 `Program.cs`、`Commands/SiteCommand.cs`、`SiteBuilder.cs`、`Content/ArticleParser.cs` 和 `Rendering/MarkdownRenderer.cs`。CLI 处理参数与退出码，Core 处理文件生成；`ArticleParser` 管理解析管线、提取元数据，并从语法树中移除 front matter，`MarkdownRenderer` 将剩余语法树渲染为正文 HTML，避免重复解析 Markdown。
 
-文章信息分为两层：`ArticleMetadata` 接收 YAML 原始值，`ArticleParser` 校验日期、补上默认标题并处理空简介后，生成 `ArticleInfo`。这个 record 集中保存标题、日期、草稿状态和简介；`ParsedArticle`、`ArticlePage` 和 `ArticleLink` 通过 `Info` 属性携带同一个实例，不再逐项复制这些字段。Markdown 语法树、正文 HTML 和链接地址仍由各自的模型持有。
+文章信息分为两层：`ArticleMetadata` 接收 YAML 原始值，`ArticleParser` 校验日期、补上默认标题、处理空简介并整理标签后，生成 `ArticleInfo`。这个 record 集中保存标题、日期、草稿状态、简介和标签；`ParsedArticle`、`ArticlePage` 和 `ArticleLink` 通过 `Info` 属性携带同一个实例，不再逐项复制这些字段。Markdown 语法树、正文 HTML 和链接地址仍由各自的模型持有。
 
 页面渲染通过 Core 中的 `ArticlePage` 和 `IPageRenderer` 连接默认主题。`SiteBuilder` 提交文章信息、正文 HTML、站点配置和首页链接，不接触 ASP.NET Core；主题中的 `RazorPageRenderer` 准备 MVC 视图上下文，再执行预编译模板。例如文章模板通过 `Model.Info.Title` 读取标题。CLI 使用 ASP.NET Core 的服务容器组装渲染器，但不会启动 HTTP 监听。
 

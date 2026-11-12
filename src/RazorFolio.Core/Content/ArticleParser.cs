@@ -59,8 +59,15 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
         }
 
         var description = string.IsNullOrWhiteSpace(metadata.Description) ? null : metadata.Description.Trim();
+        string[] tags =
+        [
+            .. (metadata.Tags ?? [])
+                .Where(tag => !string.IsNullOrWhiteSpace(tag))
+                .Select(tag => tag!.Trim())
+                .Distinct(StringComparer.Ordinal)
+        ];
 
-        var info = new ArticleInfo(title, date, metadata.Draft, description);
+        var info = new ArticleInfo(title, date, metadata.Draft, description, Array.AsReadOnly(tags));
         return new ParsedArticle(info, document);
     }
 }

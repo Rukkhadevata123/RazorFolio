@@ -22,6 +22,16 @@
         <p class="article-date"><time datetime="@dateText">@dateText</time></p>
     }
 
+    @if (Model.Info.Tags.Count > 0)
+    {
+        <ul class="article-tags" aria-label="文章标签">
+            @foreach (var tag in Model.Info.Tags)
+            {
+                <li>@tag</li>
+            }
+        </ul>
+    }
+
     @* BodyHtml comes from the author's Markdown; ordinary text stays HTML-encoded. *@
     @Html.Raw(Model.BodyHtml)
 </article>
