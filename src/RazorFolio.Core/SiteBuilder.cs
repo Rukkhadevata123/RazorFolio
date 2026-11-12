@@ -1,3 +1,4 @@
+using System.Globalization;
 using RazorFolio.Core.Assets;
 using RazorFolio.Core.Configuration;
 using RazorFolio.Core.Content;
@@ -36,6 +37,13 @@ public sealed class SiteBuilder(
         var sources = await LoadArticlesAsync(sourceFiles, target.IncludeDrafts, cancellationToken);
 
         var homePath = Path.Combine(outputDirectory, "index.html");
+        var homePageCount = sources.Count == 0 ? 1 : 1 + (sources.Count - 1) / configuration.PageSize;
+        string[] homePaths =
+        [
+            .. Enumerable.Range(1, homePageCount).Select(number => number == 1
+                ? homePath
+                : Path.Combine(outputDirectory, "page", number.ToString(CultureInfo.InvariantCulture) + ".html"))
+        ];
         ArticleOutput[] outputs =
         [
             .. sources.Select(source =>
@@ -48,7 +56,7 @@ public sealed class SiteBuilder(
         OutputPathValidator.Validate(pagePaths);
         var tagsPath = Path.Combine(outputDirectory, "tags.html");
         var hasTags = sources.Any(source => source.Article.Info.Tags.Count > 0);
-        string[] reservedPaths = hasTags ? [homePath, tagsPath] : [homePath];
+        var reservedPaths = hasTags ? [.. homePaths, tagsPath] : homePaths;
         var generateMetadata = configuration.Url is not null && !target.IncludeDrafts;
         var sitemapPath = Path.Combine(outputDirectory, "sitemap.xml");
         var feedPath = Path.Combine(outputDirectory, "feed.xml");
@@ -110,10 +118,27 @@ public sealed class SiteBuilder(
         [
             .. orderedPages.Select(output => new ArticleLink(output.Article.Info, output.Url))
         ];
-        var home = new HomePage(
-            orderedArticles, CreateContext(homePath), hasTags ? PageUrl.GetRelative(homePath, tagsPath) : null);
-        var homeHtml = await pageRenderer.RenderAsync(home, cancellationToken);
-        await File.WriteAllTextAsync(homePath, homeHtml, cancellationToken);
+        for (var index = 0; index < homePaths.Length; index++)
+        {
+            var outputPath = homePaths[index];
+            ArticleLink[] pageArticles =
+            [
+                .. orderedPages.Skip(index * configuration.PageSize).Take(configuration.PageSize)
+                    .Select(output => new ArticleLink(output.Article.Info, PageUrl.GetRelative(outputPath, output.OutputPath)))
+            ];
+            var pagination = new Pagination(
+                index + 1,
+                homePaths.Length,
+                index > 0 ? PageUrl.GetRelative(outputPath, homePaths[index - 1]) : null,
+                index + 1 < homePaths.Length ? PageUrl.GetRelative(outputPath, homePaths[index + 1]) : null);
+            var home = new HomePage(
+                pageArticles, CreateContext(outputPath),
+                hasTags ? PageUrl.GetRelative(outputPath, tagsPath) : null, pagination);
+            var homeHtml = await pageRenderer.RenderAsync(home, cancellationToken);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+            await File.WriteAllTextAsync(outputPath, homeHtml, cancellationToken);
+        }
 
         if (hasTags)
         {

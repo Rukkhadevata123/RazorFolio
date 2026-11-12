@@ -1,6 +1,8 @@
 @model RazorFolio.Core.Rendering.HomePage
 @{
-    ViewData["Title"] = Model.Context.Site.Title;
+    ViewData["Title"] = Model.Pagination.CurrentPage == 1
+        ? Model.Context.Site.Title
+        : $"{Model.Context.Site.Title} — 第 {Model.Pagination.CurrentPage} 页";
     ViewData["Description"] = Model.Context.Site.Description;
 }
 
@@ -20,4 +22,19 @@
 else
 {
     @await Html.PartialAsync("/Views/Shared/_ArticleList.cshtml", Model.Articles)
+}
+
+@if (Model.Pagination.TotalPages > 1)
+{
+    <nav class="pagination" aria-label="文章列表分页">
+        @if (Model.Pagination.PreviousUrl is { } previousUrl)
+        {
+            <a href="@previousUrl" rel="prev">上一页</a>
+        }
+        <span aria-current="page">第 @Model.Pagination.CurrentPage 页，共 @Model.Pagination.TotalPages 页</span>
+        @if (Model.Pagination.NextUrl is { } nextUrl)
+        {
+            <a href="@nextUrl" rel="next">下一页</a>
+        }
+    </nav>
 }

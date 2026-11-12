@@ -38,6 +38,11 @@ public static class SiteConfigurationLoader
             throw new InvalidDataException($"Site configuration '{path}' must have non-empty title and language values.");
         }
 
+        if (configuration.PageSize <= 0)
+        {
+            throw new InvalidDataException($"Site configuration '{path}' must have a positive pageSize.");
+        }
+
         return configuration with
         {
             Title = configuration.Title.Trim(),

@@ -6,6 +6,7 @@ public sealed record SiteConfiguration
 {
     public string Title { get; init; } = "RazorFolio";
     public string Language { get; init; } = "zh-CN";
+    public int PageSize { get; init; } = 20;
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Description { get; init; }

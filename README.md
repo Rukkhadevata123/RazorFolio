@@ -57,7 +57,11 @@ body {
 
 `dev` 会监听图标文件的创建、修改和删除；删除后移除图标声明，并按清单清理旧文件。这里只识别本次复制的顶层 `favicon.svg`，输出目录里的遗留文件不会被自动引用。其他文件名、ICO 和 PNG 仍作为普通静态资源复制，暂不自动生成图标声明。识别结果通过 `PageContext.FaviconUrl` 传给共享布局，三种具体页面模型无需各自声明图标字段。
 
-`Views/Home.cshtml` 生成根目录的 `index.html`，列出所有文章标题和链接，按发布日期从新到旧排序，无日期文章在后；同一天或都无日期时按输出 URL 排序。没有文章时显示空状态；构建报告的页面数包含首页和生成的标签归档页。根目录的 `index.html` 保留给自动首页，`content/index.md` 或与首页路径冲突的静态资源会报错。
+`Views/Home.cshtml` 按发布日期从新到旧列出文章，无日期文章在后；同一天或都无日期时按输出 URL 排序。列表默认每页 20 篇，第一页为根目录的 `index.html`，之后依次为 `page/2.html`、`page/3.html`。没有文章时仍生成首页并显示空状态；只有一页时隐藏分页导航，其他情况显示当前页数及存在的上一页、下一页链接。
+
+分页链接、文章链接及主题资源地址都根据当前列表页的位置计算。每个列表页有自己的 canonical，配置 `url` 后会一并纳入 sitemap；构建报告的页面数也包含所有列表页。首页、标签归档及本次生成的分页路径保留给工具，与文章或静态资源冲突时会报错。减少文章或增大每页数量后，成功构建会按清单清理多余的旧分页文件，空目录仍保留。
+
+分页只影响首页列表：标签归档仍列出对应标签的全部文章，RSS 仍取全站排序中的前 20 篇，文章间导航仍跨分页相邻。正式构建先过滤草稿再计算页数，开发模式包含草稿。第一页和后续页共用 `HomePage` 与 Razor 模板，`Pagination` 模型携带页码、总页数及两个可为空的导航地址。
 
 首页链接按相对路径生成，各路径段分别进行 URL 编码，支持中文、空格和 `#` 等文件名字符。
 
@@ -266,12 +270,15 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 {
   "title": "我的博客",
   "language": "zh-CN",
+  "pageSize": 20,
   "description": "记录开发环境、工具使用和日常折腾。",
   "url": "https://example.com/blog/"
 }
 ```
 
 `title` 用于首页标题和文章标签页标题的后缀；`language` 写入 HTML 的 `lang` 属性，不自动翻译主题文案。配置文件不存在或这两个字段省略时，分别使用 `RazorFolio` 和 `zh-CN`；显式设为 null 或空白会报错。未知字段及无效 JSON 也会报错，错误包含配置文件路径。配置由 `Configuration/SiteConfigurationLoader.cs` 每次构建读取一次，再通过页面模型传给主题。
+
+`pageSize` 控制首页列表每页的文章数，默认 20，必须是正整数。0、负数、null、小数或字符串会报错；`dev` 中修改后会重新分页。实验站点设为 3，便于观察多页效果。
 
 站点配置中的可选 `description` 是整个博客的简介，显示在首页标题下，同时写入首页的 `<meta name="description">` 和 RSS 频道说明。首尾空白会去掉；省略、null 或纯空白表示未填写，此时首页不显示简介和对应的 meta 标签，RSS 频道说明回退到站点名称。内容按纯文本处理，不解析 Markdown 或 HTML。文章的 YAML `description` 仍只描述该文章，不会被站点简介替代，标签归档也不自动套用站点简介。修改 `razorfolio.json` 后，`dev` 会重新读取并重建。
 
@@ -281,7 +288,7 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 
 `dev` 中的已发布文章仍引用配置的正式地址，草稿页不输出 canonical；`preview` 继续原样提供已有 HTML。canonical、sitemap 和 RSS 的绝对地址都由 `Output/PageUrl.cs` 生成。
 
-配置 `url` 后，正式 `build` 还会生成 `public/sitemap.xml`，包含首页、已发布文章和存在时的标签归档页。地址与各页面的 canonical 一致，支持部署子路径；不包含草稿、CSS、附件、静态目录中的手写 HTML 或标签锚点，也不计入构建报告的 HTML 页面数。`dev` 不自动生成 sitemap，检查正式产物时使用 `build` 和 `preview`。
+配置 `url` 后，正式 `build` 还会生成 `public/sitemap.xml`，包含首页及其分页、已发布文章和存在时的标签归档页。地址与各页面的 canonical 一致，支持部署子路径；不包含草稿、CSS、附件、静态目录中的手写 HTML 或标签锚点，也不计入构建报告的 HTML 页面数。`dev` 不自动生成 sitemap，检查正式产物时使用 `build` 和 `preview`。
 
 `Output/SitemapWriter.cs` 使用 .NET 的 XML API 输出 UTF-8 文件，处理命名空间和 XML 转义。第一版只写必需的 `loc`，不填写 `lastmod`、`changefreq` 或 `priority`；发布日期不能代替页面最后修改时间。格式与单文件限制参照 [Sitemaps 协议](https://www.sitemaps.org/protocol.html)：最多 50,000 条地址，每条短于 2,048 字符，文件不超过 50 MB，超限时报错，暂不拆分文件。
 
