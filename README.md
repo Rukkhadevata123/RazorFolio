@@ -6,6 +6,8 @@
 
 例如 `content/Linux/hello.md` 输出为 `public/Linux/hello.html`，不同目录可有同名文章。文章扩展名 `.md` 不区分大小写。子目录文章引用资源时需按页面位置使用 `../images/example.svg` 等相对路径。
 
+写入页面和资源前，会检查本次参与构建的文章输出路径。例如 `hello.md` 和 `hello.MD` 都会生成 `hello.html`，因此报错；`post.md` 与 `post.html/child.md` 会让 `post.html` 同时成为文件和目录，也会报错。错误包含冲突的输出路径，不会用后写的文章覆盖前一篇。路径比较遵循 Windows 不区分大小写、其他系统区分大小写的现有规则；正式构建先过滤草稿，开发模式则把草稿一起检查。校验逻辑位于 `Output/OutputPathValidator.cs`。
+
 `preview` 可通过本地 HTTP 服务查看已有产物，`new` 可初始化独立站点。`build` 的自定义输出目录尚未实现。
 
 ## 创建站点

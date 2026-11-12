@@ -34,7 +34,6 @@ public sealed class SiteBuilder(
         ];
         Array.Sort(sourceFiles, StringComparer.Ordinal);
         var sources = await LoadArticlesAsync(sourceFiles, target.IncludeDrafts, cancellationToken);
-        Directory.CreateDirectory(outputDirectory);
 
         var homePath = Path.Combine(outputDirectory, "index.html");
         ArticleOutput[] outputs =
@@ -46,6 +45,7 @@ public sealed class SiteBuilder(
             })
         ];
         string[] pagePaths = [.. outputs.Select(output => output.OutputPath)];
+        OutputPathValidator.Validate(pagePaths);
         var tagsPath = Path.Combine(outputDirectory, "tags.html");
         var hasTags = sources.Any(source => source.Article.Info.Tags.Count > 0);
         string[] reservedPaths = hasTags ? [homePath, tagsPath] : [homePath];
@@ -68,6 +68,7 @@ public sealed class SiteBuilder(
             }
         }
 
+        Directory.CreateDirectory(outputDirectory);
         var assetPaths = await assetCopier.CopyAsync(
             Path.Combine(siteRoot, "static"), outputDirectory, [.. pagePaths, .. protectedPaths], cancellationToken);
         await CopyStylesheetAsync(stylesheetPath, cancellationToken);
