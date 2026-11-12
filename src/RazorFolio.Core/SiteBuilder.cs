@@ -57,13 +57,14 @@ public sealed class SiteBuilder(
             var outputPath = GetOutputPath(sourceFile, contentDirectory, outputDirectory);
             var homeUrl = PageUrl.GetRelative(outputPath, homePath);
             var bodyHtml = markdownRenderer.Render(article.Body);
-            var page = new ArticlePage(article.Title, bodyHtml, configuration, article.Date, article.Draft, homeUrl);
+            var page = new ArticlePage(
+                article.Title, bodyHtml, configuration, article.Date, article.Draft, homeUrl, article.Description);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
             await File.WriteAllTextAsync(outputPath, html, cancellationToken);
             var articleUrl = PageUrl.GetRelative(homePath, outputPath);
-            articles.Add(new ArticleLink(article.Title, articleUrl, article.Date, article.Draft));
+            articles.Add(new ArticleLink(article.Title, articleUrl, article.Date, article.Draft, article.Description));
         }
 
         ArticleLink[] orderedArticles =

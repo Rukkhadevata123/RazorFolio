@@ -26,6 +26,10 @@ else
                     var dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                     <time class="article-date" datetime="@dateText">@dateText</time>
                 }
+                @if (article.Description is { } description)
+                {
+                    <p class="article-description">@description</p>
+                }
             </li>
         }
     </ul>

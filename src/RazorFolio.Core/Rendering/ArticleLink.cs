@@ -1,3 +1,3 @@
 namespace RazorFolio.Core.Rendering;
 
-public sealed record ArticleLink(string Title, string Url, DateOnly? Date, bool Draft);
+public sealed record ArticleLink(string Title, string Url, DateOnly? Date, bool Draft, string? Description);

@@ -8,4 +8,5 @@ public sealed record ArticlePage(
     SiteConfiguration Site,
     DateOnly? Date,
     bool Draft,
-    string HomeUrl);
+    string HomeUrl,
+    string? Description);

@@ -70,7 +70,19 @@ title: 我的第一篇 RazorFolio 文章
 # 正文标题
 ```
 
-front matter 必须位于文件开头。当前读取 `title`、`date` 和 `draft`，其他字段暂时忽略；没有 `title`、值为 null 或空白时，回退到文件名。YamlDotNet 负责解析 YAML，格式错误及重复键会导致构建失败。文件名和输出 URL 不随标题变化。
+front matter 必须位于文件开头。当前读取 `title`、`description`、`date` 和 `draft`，其他字段暂时忽略；没有 `title`、值为 null 或空白时，回退到文件名。YamlDotNet 负责解析 YAML，格式错误及重复键会导致构建失败。文件名和输出 URL 不随标题变化。
+
+可选的 `description` 用作首页文章简介，并写入文章页的 `<meta name="description">`，不额外插入文章正文。省略、null 或纯空白时不输出简介和对应的 meta 标签，也不自动截取正文。首尾空白会去掉，内容按纯文本处理，由 Razor 编码，不解析 Markdown 或 HTML。例如：
+
+```yaml
+---
+title: 用 Podman 搭建开发环境
+description: >-
+  记录容器创建、目录挂载和日常使用的命令。
+---
+```
+
+`>-` 是 YAML 的折叠块语法，可以分行书写简介；YamlDotNet 负责读取，`ArticleParser` 统一处理空值，再通过页面模型传给主题。
 
 可选的 `date: 2026-11-12` 表示发布日期，使用 `DateOnly` 存储，不包含时间和时区。省略或设为 null 时不显示日期；显式填写时必须是有效的 `yyyy-MM-dd`，空字符串、非法日期和完整时间戳会报错并指出文章路径。日期在首页及文章页通过 `<time datetime="...">` 输出；未来日期目前照常发布，不表示定时发布。
 

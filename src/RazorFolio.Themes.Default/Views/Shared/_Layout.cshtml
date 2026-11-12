@@ -4,6 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@ViewData["Title"]</title>
+    @if (ViewData["Description"] is string description)
+    {
+        <meta name="description" content="@description">
+    }
     <style>
         :root {
             color-scheme: light dark;
@@ -26,6 +30,7 @@
         a { text-underline-offset: 0.2em; }
         .article-date { font-size: 0.9em; }
         li > .article-date { margin-inline-start: 0.75rem; }
+        .article-description { margin: 0.25rem 0 1rem; }
         img { max-width: 100%; height: auto; }
         code { font-family: ui-monospace, monospace; }
 
