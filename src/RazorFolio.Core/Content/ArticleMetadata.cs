@@ -6,5 +6,6 @@ public sealed class ArticleMetadata
     public string? Description { get; set; }
     public string? Date { get; set; }
     public bool Draft { get; set; }
+    public bool Article { get; set; } = true;
     public List<string?>? Tags { get; set; }
 }

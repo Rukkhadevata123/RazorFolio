@@ -5,4 +5,5 @@ public sealed record ArticleInfo(
     DateOnly? Date,
     bool Draft,
     string? Description,
-    IReadOnlyList<string> Tags);
+    IReadOnlyList<string> Tags,
+    bool IsArticle);

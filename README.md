@@ -96,7 +96,25 @@ tags: [Linux, Podman]
 - `description` 是文章的纯文本简介，与站点简介分开；不自动截取正文。
 - `date` 可省略，填写时必须是 `yyyy-MM-dd`。它不含时间、时区，未来日期也照常发布。
 - `draft: true` 仅在 `dev` 中生成。
+- `article` 默认为 `true`；设为 `false` 时生成普通页面，适合关于页、收藏夹等。
 - `tags` 使用列表，去掉空项和重复项，区分大小写。
+
+普通页面的输出路径和 Markdown 能力与文章相同，但不进入首页分页、标签归档、RSS 或上一篇/下一篇，也不显示日期和标签。配置 `url` 后仍输出 canonical 并收录到正式 sitemap。`draft: true` 对普通页面同样生效；普通页面不是私密页面。
+
+例如创建 `content/about.md`：
+
+```markdown
+---
+title: 关于
+article: false
+---
+
+# 关于
+
+这里介绍作者和网站。
+```
+
+通过 `about.html` 或其他页面中的 `[关于](about.md)` 访问。当前尚无可配置的站点导航。
 
 支持表格、任务列表、脚注，以及 `::: tip`、`::: warning`、`::: details` 容器。`[TOC]` 单独成段时列出二至六级标题；嵌套容器的外层使用更多冒号。
 

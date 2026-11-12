@@ -68,7 +68,8 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
                 .Distinct(StringComparer.Ordinal)
         ];
 
-        var info = new ArticleInfo(title, date, metadata.Draft, description, Array.AsReadOnly(tags));
+        var info = new ArticleInfo(
+            title, date, metadata.Draft, description, Array.AsReadOnly(tags), metadata.Article);
         return new ParsedArticle(info, document);
     }
 }

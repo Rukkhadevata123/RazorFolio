@@ -37,7 +37,8 @@ public sealed class SiteBuilder(
         var sources = await LoadArticlesAsync(sourceFiles, target.IncludeDrafts, cancellationToken);
 
         var homePath = Path.Combine(outputDirectory, "index.html");
-        var homePageCount = sources.Count == 0 ? 1 : 1 + (sources.Count - 1) / configuration.PageSize;
+        var articleCount = sources.Count(source => source.Article.Info.IsArticle);
+        var homePageCount = articleCount == 0 ? 1 : 1 + (articleCount - 1) / configuration.PageSize;
         string[] homePaths =
         [
             .. Enumerable.Range(1, homePageCount).Select(number => number == 1
@@ -55,7 +56,7 @@ public sealed class SiteBuilder(
         string[] pagePaths = [.. outputs.Select(output => output.OutputPath)];
         OutputPathValidator.Validate(pagePaths);
         var tagsPath = Path.Combine(outputDirectory, "tags.html");
-        var hasTags = sources.Any(source => source.Article.Info.Tags.Count > 0);
+        var hasTags = sources.Any(source => source.Article.Info.IsArticle && source.Article.Info.Tags.Count > 0);
         var reservedPaths = hasTags ? [.. homePaths, tagsPath] : homePaths;
         var generateMetadata = configuration.Url is not null && !target.IncludeDrafts;
         var sitemapPath = Path.Combine(outputDirectory, "sitemap.xml");
@@ -87,24 +88,28 @@ public sealed class SiteBuilder(
             ? [stylesheetPath]
             : [stylesheetPath, customStylesheetPath];
 
-        ArticleOutput[] orderedPages =
+        ArticleOutput[] orderedArticlePages =
         [
-            .. outputs.OrderByDescending(output => output.Article.Info.Date)
+            .. outputs.Where(output => output.Article.Info.IsArticle)
+                .OrderByDescending(output => output.Article.Info.Date)
                 .ThenBy(output => output.Url, StringComparer.Ordinal)
         ];
+        var navigations = orderedArticlePages.Select((output, index) => KeyValuePair.Create(
+            output.OutputPath,
+            new ArticleNavigation(
+                GetAdjacentArticle(orderedArticlePages, index - 1, output.OutputPath),
+                GetAdjacentArticle(orderedArticlePages, index + 1, output.OutputPath))))
+            .ToDictionary();
 
-        for (var index = 0; index < orderedPages.Length; index++)
+        foreach (var (article, outputPath, _) in outputs)
         {
-            var (article, outputPath, _) = orderedPages[index];
             var homeUrl = PageUrl.GetRelative(outputPath, homePath);
             var tagsUrl = PageUrl.GetRelative(outputPath, tagsPath);
-            TagLink[] tags =
+            TagLink[] tags = article.Info.IsArticle ?
             [
                 .. article.Info.Tags.Select(tag => new TagLink(tag, tagsUrl + "#" + TagGroup.GetId(tag)))
-            ];
-            var navigation = new ArticleNavigation(
-                GetAdjacentArticle(orderedPages, index - 1, outputPath),
-                GetAdjacentArticle(orderedPages, index + 1, outputPath));
+            ] : [];
+            var navigation = navigations.GetValueOrDefault(outputPath) ?? new ArticleNavigation(null, null);
             var bodyHtml = markdownRenderer.Render(article.Body);
             var page = new ArticlePage(
                 article.Info, bodyHtml, CreateContext(outputPath, article.Info.Draft), homeUrl, tags, navigation);
@@ -116,14 +121,14 @@ public sealed class SiteBuilder(
 
         ArticleLink[] orderedArticles =
         [
-            .. orderedPages.Select(output => new ArticleLink(output.Article.Info, output.Url))
+            .. orderedArticlePages.Select(output => new ArticleLink(output.Article.Info, output.Url))
         ];
         for (var index = 0; index < homePaths.Length; index++)
         {
             var outputPath = homePaths[index];
             ArticleLink[] pageArticles =
             [
-                .. orderedPages.Skip(index * configuration.PageSize).Take(configuration.PageSize)
+                .. orderedArticlePages.Skip(index * configuration.PageSize).Take(configuration.PageSize)
                     .Select(output => new ArticleLink(output.Article.Info, PageUrl.GetRelative(outputPath, output.OutputPath)))
             ];
             var pagination = new Pagination(
