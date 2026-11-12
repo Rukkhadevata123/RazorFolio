@@ -1,0 +1,24 @@
+@model System.Collections.Generic.IReadOnlyList<RazorFolio.Core.Rendering.ArticleLink>
+@using System.Globalization
+
+<ul>
+    @foreach (var article in Model)
+    {
+        <li>
+            <a href="@article.Url">@article.Info.Title</a>
+            @if (article.Info.Draft)
+            {
+                <span>（草稿）</span>
+            }
+            @if (article.Info.Date is { } date)
+            {
+                var dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                <time class="article-date" datetime="@dateText">@dateText</time>
+            }
+            @if (article.Info.Description is { } description)
+            {
+                <p class="article-description">@description</p>
+            }
+        </li>
+    }
+</ul>

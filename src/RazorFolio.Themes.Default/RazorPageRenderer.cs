@@ -26,6 +26,11 @@ public sealed class RazorPageRenderer(
         return RenderViewAsync("/Views/Home.cshtml", page, cancellationToken);
     }
 
+    public Task<string> RenderAsync(TagArchivePage page, CancellationToken cancellationToken = default)
+    {
+        return RenderViewAsync("/Views/Tags.cshtml", page, cancellationToken);
+    }
+
     private async Task<string> RenderViewAsync<TModel>(
         string viewPath,
         TModel page,

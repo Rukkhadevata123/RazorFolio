@@ -40,24 +40,35 @@ public sealed class SiteBuilder(
             .. sources.Select(source => GetOutputPath(source.Path, contentDirectory, outputDirectory))
         ];
         var homePath = Path.Combine(outputDirectory, "index.html");
+        var tagsPath = Path.Combine(outputDirectory, "tags.html");
+        var hasTags = sources.Any(source => source.Article.Info.Tags.Count > 0);
+        string[] reservedPaths = hasTags ? [homePath, tagsPath] : [homePath];
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
-        if (pagePaths.Any(path => string.Equals(path, homePath, comparison)
-            || path.StartsWith(homePath + Path.DirectorySeparatorChar, comparison)))
+        foreach (var reservedPath in reservedPaths)
         {
-            throw new InvalidDataException("The root index.html path is reserved for the generated home page.");
+            if (pagePaths.Any(path => string.Equals(path, reservedPath, comparison)
+                || path.StartsWith(reservedPath + Path.DirectorySeparatorChar, comparison)))
+            {
+                throw new InvalidDataException($"Path reserved for a generated page: {reservedPath}");
+            }
         }
 
         var assetPaths = await assetCopier.CopyAsync(
-            Path.Combine(siteRoot, "static"), outputDirectory, [.. pagePaths, homePath], cancellationToken);
+            Path.Combine(siteRoot, "static"), outputDirectory, [.. pagePaths, .. reservedPaths], cancellationToken);
         var articles = new List<ArticleLink>();
 
         foreach (var (sourceFile, article) in sources)
         {
             var outputPath = GetOutputPath(sourceFile, contentDirectory, outputDirectory);
             var homeUrl = PageUrl.GetRelative(outputPath, homePath);
+            var tagsUrl = PageUrl.GetRelative(outputPath, tagsPath);
+            TagLink[] tags =
+            [
+                .. article.Info.Tags.Select(tag => new TagLink(tag, tagsUrl + "#" + TagGroup.GetId(tag)))
+            ];
             var bodyHtml = markdownRenderer.Render(article.Body);
-            var page = new ArticlePage(article.Info, bodyHtml, configuration, homeUrl);
+            var page = new ArticlePage(article.Info, bodyHtml, configuration, homeUrl, tags);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
@@ -71,12 +82,30 @@ public sealed class SiteBuilder(
             .. articles.OrderByDescending(article => article.Info.Date)
                 .ThenBy(article => article.Url, StringComparer.Ordinal)
         ];
-        var homeHtml = await pageRenderer.RenderAsync(new HomePage(orderedArticles, configuration), cancellationToken);
+        var home = new HomePage(orderedArticles, configuration, hasTags ? PageUrl.GetRelative(homePath, tagsPath) : null);
+        var homeHtml = await pageRenderer.RenderAsync(home, cancellationToken);
         await File.WriteAllTextAsync(homePath, homeHtml, cancellationToken);
-        await manifest.CompleteAsync([.. pagePaths, homePath, .. assetPaths], cancellationToken);
 
-        return sources.Count + 1;
+        if (hasTags)
+        {
+            var archive = new TagArchivePage(
+                GroupByTag(orderedArticles), configuration, PageUrl.GetRelative(tagsPath, homePath));
+            var tagsHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
+            await File.WriteAllTextAsync(tagsPath, tagsHtml, cancellationToken);
+        }
+
+        await manifest.CompleteAsync([.. pagePaths, .. reservedPaths, .. assetPaths], cancellationToken);
+
+        return sources.Count + reservedPaths.Length;
     }
+
+    private static TagGroup[] GroupByTag(IReadOnlyList<ArticleLink> articles) =>
+    [
+        .. articles.SelectMany(article => article.Info.Tags.Select(tag => (Tag: tag, Article: article)))
+            .GroupBy(entry => entry.Tag, StringComparer.Ordinal)
+            .OrderBy(group => group.Key, StringComparer.Ordinal)
+            .Select(group => new TagGroup(group.Key, [.. group.Select(entry => entry.Article)]))
+    ];
 
     private async Task<List<(string Path, ParsedArticle Article)>> LoadArticlesAsync(
         IEnumerable<string> sourceFiles, bool includeDrafts, CancellationToken cancellationToken)

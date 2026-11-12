@@ -1,36 +1,19 @@
 @model RazorFolio.Core.Rendering.HomePage
-@using System.Globalization
 @{
     ViewData["Title"] = Model.Site.Title;
     ViewData["Language"] = Model.Site.Language;
 }
 
 <h1>@Model.Site.Title</h1>
+@if (Model.TagsUrl is { } tagsUrl)
+{
+    <p><a href="@tagsUrl">按标签浏览</a></p>
+}
 @if (Model.Articles.Count == 0)
 {
     <p>还没有文章。</p>
 }
 else
 {
-    <ul>
-        @foreach (var article in Model.Articles)
-        {
-            <li>
-                <a href="@article.Url">@article.Info.Title</a>
-                @if (article.Info.Draft)
-                {
-                    <span>（草稿）</span>
-                }
-                @if (article.Info.Date is { } date)
-                {
-                    var dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                    <time class="article-date" datetime="@dateText">@dateText</time>
-                }
-                @if (article.Info.Description is { } description)
-                {
-                    <p class="article-description">@description</p>
-                }
-            </li>
-        }
-    </ul>
+    @await Html.PartialAsync("/Views/Shared/_ArticleList.cshtml", Model.Articles)
 }

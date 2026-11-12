@@ -7,4 +7,5 @@ public sealed record ArticlePage(
     ArticleInfo Info,
     string BodyHtml,
     SiteConfiguration Site,
-    string HomeUrl);
+    string HomeUrl,
+    IReadOnlyList<TagLink> Tags);
