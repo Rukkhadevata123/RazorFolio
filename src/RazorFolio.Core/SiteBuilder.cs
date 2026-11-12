@@ -175,10 +175,15 @@ public sealed class SiteBuilder(
         PageContext CreateContext(string pagePath, bool draft = false)
         {
             string[] stylesheetUrls = [.. stylesheetPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
+            NavigationLink[] navigation =
+            [
+                .. configuration.Navigation.Select(item => new NavigationLink(
+                    item.Text, PageUrl.ResolveNavigation(item.Link, pagePath, homePath)))
+            ];
             var canonicalUrl = draft ? null : PageUrl.GetAbsolute(pagePath, outputDirectory, configuration.Url);
             var feed = feedUrl is null ? null : new FeedLink(PageUrl.GetRelative(pagePath, feedPath), feedUrl);
             var faviconUrl = faviconPath is null ? null : PageUrl.GetRelative(pagePath, faviconPath);
-            return new PageContext(configuration, stylesheetUrls, canonicalUrl, feed, faviconUrl);
+            return new PageContext(configuration, stylesheetUrls, navigation, canonicalUrl, feed, faviconUrl);
         }
     }
 

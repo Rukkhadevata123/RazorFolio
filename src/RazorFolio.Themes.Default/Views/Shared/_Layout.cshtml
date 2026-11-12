@@ -31,6 +31,17 @@
     }
 </head>
 <body>
+    @if (context.Navigation.Count > 0)
+    {
+        <nav class="site-navigation" aria-label="主导航">
+            <ul>
+                @foreach (var link in context.Navigation)
+                {
+                    <li><a href="@link.Url">@link.Text</a></li>
+                }
+            </ul>
+        </nav>
+    }
     <main>
         @RenderBody()
     </main>

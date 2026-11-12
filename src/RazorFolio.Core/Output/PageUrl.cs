@@ -2,6 +2,18 @@ namespace RazorFolio.Core.Output;
 
 public static class PageUrl
 {
+    public static string ResolveNavigation(string link, string fromPagePath, string homePath)
+    {
+        if (Uri.TryCreate(link, UriKind.Absolute, out var external) && external.Scheme is "http" or "https")
+        {
+            return link;
+        }
+
+        // Normalized internal links are rooted at the site, regardless of its deployment path.
+        var homeUrl = GetRelative(fromPagePath, homePath);
+        return homeUrl[..^Path.GetFileName(homePath).Length] + link;
+    }
+
     public static string? GetAbsolute(string pagePath, string outputDirectory, string? siteUrl)
     {
         if (siteUrl is null)

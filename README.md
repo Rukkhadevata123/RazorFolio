@@ -53,6 +53,11 @@ dotnet run --project src/RazorFolio.Cli -- preview --site ~/my-new-blog
   "title": "我的博客",
   "language": "zh-CN",
   "pageSize": 20,
+  "navigation": [
+    { "text": "首页", "link": "index.html" },
+    { "text": "关于", "link": "about.html" },
+    { "text": "GitHub", "link": "https://github.com/" }
+  ],
   "description": "记录开发环境、工具使用和日常折腾。",
   "url": "https://example.com/blog/"
 }
@@ -63,10 +68,15 @@ dotnet run --project src/RazorFolio.Cli -- preview --site ~/my-new-blog
 | `title` | `RazorFolio` | 站点名称 |
 | `language` | `zh-CN` | HTML 的 `lang`，不翻译主题文案 |
 | `pageSize` | `20` | 首页每页文章数，必须是正整数 |
+| `navigation` | `[]` | 按顺序显示的全站导航，每项包含非空的 `text` 和 `link` |
 | `description` | 无 | 首页简介、首页 meta description 和 RSS 频道说明 |
 | `url` | 无 | 正式部署地址，支持 `/blog/` 等子路径 |
 
 未知配置字段会报错。`title`、`language` 不能为空；`description` 留空时首页省略简介，RSS 频道说明回退到站点名称。`url` 可省略或设为 null，填写时须为完整 HTTP(S) 地址，不带认证信息、查询参数或片段，末尾 `/` 会自动补齐。
+
+导航中的站内 `link` 按站点根目录解析，使用输出地址（如 `about.html`、`Linux/hello.html`），不自动转换 `.md`。`/` 指向首页，`/about.html` 与 `about.html` 相同；开头的 `/` 在导航配置中表示站点根目录，不是域名根目录。支持查询参数和锚点，中文及空格会编码；生成相对链接以兼容子目录页面和部署子路径。
+
+外部导航支持完整 HTTP(S) 地址，默认在当前标签页打开。不支持 `//` 地址、其他协议、反斜杠或 `.`/`..` 路径段。省略 `navigation` 或设置 `[]` 时不显示主导航；`null`、空项和未知字段会报错。当前不校验导航目标是否存在，链接到草稿也不会使草稿在正式构建中发布。
 
 ## 写文章
 
@@ -114,7 +124,7 @@ article: false
 这里介绍作者和网站。
 ```
 
-通过 `about.html` 或其他页面中的 `[关于](about.md)` 访问。当前尚无可配置的站点导航。
+通过 `about.html`、其他页面中的 `[关于](about.md)` 或配置站点导航访问。
 
 支持表格、任务列表、脚注，以及 `::: tip`、`::: warning`、`::: details` 容器。`[TOC]` 单独成段时列出二至六级标题；嵌套容器的外层使用更多冒号。
 

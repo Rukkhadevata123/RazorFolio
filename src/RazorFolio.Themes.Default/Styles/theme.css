@@ -17,6 +17,17 @@ h1, h2, h3 {
 }
 
 a { text-underline-offset: 0.2em; }
+
+.site-navigation > ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    padding: 0;
+    margin: 0 0 1.5rem;
+    list-style: none;
+}
+
+.site-navigation a { display: inline-block; padding-block: 0.25rem; }
 .article-date { font-size: 0.9em; }
 li > .article-date { margin-inline-start: 0.75rem; }
 .article-description { margin: 0.25rem 0 1rem; }
