@@ -1,9 +1,14 @@
 @model RazorFolio.Core.Rendering.HomePage
 @{
     ViewData["Title"] = Model.Context.Site.Title;
+    ViewData["Description"] = Model.Context.Site.Description;
 }
 
 <h1>@Model.Context.Site.Title</h1>
+@if (Model.Context.Site.Description is { } description)
+{
+    <p class="site-description">@description</p>
+}
 @if (Model.TagsUrl is { } tagsUrl)
 {
     <p><a href="@tagsUrl">按标签浏览</a></p>

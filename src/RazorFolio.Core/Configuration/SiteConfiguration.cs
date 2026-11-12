@@ -8,5 +8,8 @@ public sealed record SiteConfiguration
     public string Language { get; init; } = "zh-CN";
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Description { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Url { get; init; }
 }

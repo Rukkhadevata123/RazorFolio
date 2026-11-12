@@ -20,7 +20,7 @@ public static class RssWriter
         var channel = new XElement("channel",
             new XElement("title", site.Title),
             new XElement("link", siteUrl),
-            new XElement("description", site.Title),
+            new XElement("description", site.Description ?? site.Title),
             new XElement("language", site.Language),
             orderedArticles.Take(MaxItems).Select(article => CreateItem(article, siteUrl)));
         var document = new XDocument(new XElement("rss", new XAttribute("version", "2.0"), channel));

@@ -248,11 +248,14 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 {
   "title": "我的博客",
   "language": "zh-CN",
+  "description": "记录开发环境、工具使用和日常折腾。",
   "url": "https://example.com/blog/"
 }
 ```
 
 `title` 用于首页标题和文章标签页标题的后缀；`language` 写入 HTML 的 `lang` 属性，不自动翻译主题文案。配置文件不存在或这两个字段省略时，分别使用 `RazorFolio` 和 `zh-CN`；显式设为 null 或空白会报错。未知字段及无效 JSON 也会报错，错误包含配置文件路径。配置由 `Configuration/SiteConfigurationLoader.cs` 每次构建读取一次，再通过页面模型传给主题。
+
+站点配置中的可选 `description` 是整个博客的简介，显示在首页标题下，同时写入首页的 `<meta name="description">` 和 RSS 频道说明。首尾空白会去掉；省略、null 或纯空白表示未填写，此时首页不显示简介和对应的 meta 标签，RSS 频道说明回退到站点名称。内容按纯文本处理，不解析 Markdown 或 HTML。文章的 YAML `description` 仍只描述该文章，不会被站点简介替代，标签归档也不自动套用站点简介。修改 `razorfolio.json` 后，`dev` 会重新读取并重建。
 
 可选的 `url` 表示站点正式部署地址，支持根域名和 `/blog/` 等子路径。省略或设为 null 时不输出 canonical，`rf new` 也不会替作者填写域名。填写时必须是完整的 HTTP(S) URL，不能带用户名密码、查询参数或片段；空字符串和相对路径会报错。首尾空白会去掉，末尾缺少 `/` 时自动补上，将配置路径作为站点目录。
 
@@ -268,7 +271,7 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 
 配置 `url` 后，正式 `build` 同时生成 `public/feed.xml`，可将正式站点下的 `feed.xml` 地址添加到 RSS 阅读器。第一版采用 [RSS 2.0](https://www.rssboard.org/rss-specification)，最多包含首页排序中的前 20 篇已发布文章：有日期的从新到旧，无日期的在后，同日期按 URL 排序。首页、标签归档和静态文件不作为订阅条目，没有文章时保留空频道。
 
-频道标题和简介暂时都使用站点名称。每篇文章提供标题、正式链接和以链接为值的 `guid`；改标题或简介不改变标识，改输出路径或域名会改变标识。可选的 `description` 作为纯文本摘要，先做 HTML 编码再由 XML API 转义，避免阅读器把简介中的尖括号解释为 HTML。没有简介时省略该元素，不自动截取正文，也不输出全文。
+频道标题使用站点名称，频道说明优先使用站点配置中的 `description`，未填写时回退到站点名称。每篇文章提供标题、正式链接和以链接为值的 `guid`；改标题或简介不改变标识，改输出路径或域名会改变标识。文章的可选 `description` 作为纯文本摘要，先做 HTML 编码再由 XML API 转义，避免阅读器把简介中的尖括号解释为 HTML。没有文章简介时省略该元素，不自动截取正文，也不输出全文。
 
 当前 `date` 只有日期，没有时间和时区，因此 RSS 暂不写 `pubDate`，也不以每次构建时间填写 `lastBuildDate`。`dev` 不自动生成订阅文件；用 `build` 和 `preview` 检查 `feed.xml`。删除 `url` 后会清理此前生成的订阅文件，自动生成时同名静态资源或目录冲突会报错；未启用时可通过 `static/feed.xml` 提供自己的文件。
 
