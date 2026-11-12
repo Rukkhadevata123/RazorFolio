@@ -64,7 +64,20 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
         var info = new ArticleInfo(
             title, date, metadata.Draft, description,
             NormalizeNames(metadata.Tags), NormalizeNames(metadata.Category), metadata.Article);
-        return new ParsedArticle(info, document, ContentUrl.Normalize(metadata.Url, sourcePath));
+        return new ParsedArticle(
+            info, document, ContentUrl.Normalize(metadata.Url, sourcePath), NormalizeAliases(metadata.Aliases, sourcePath));
+    }
+
+    private static ReadOnlyCollection<string> NormalizeAliases(List<string?>? aliases, string sourcePath)
+    {
+        string[] normalized =
+        [
+            .. (aliases ?? []).Select(alias =>
+                    ContentUrl.Normalize(alias, sourcePath, "aliases")
+                    ?? throw new InvalidDataException($"Null alias in '{sourcePath}'. Use a site-relative .html path."))
+                .Distinct(StringComparer.Ordinal)
+        ];
+        return Array.AsReadOnly(normalized);
     }
 
     private static ReadOnlyCollection<string> NormalizeNames(List<string?>? names)

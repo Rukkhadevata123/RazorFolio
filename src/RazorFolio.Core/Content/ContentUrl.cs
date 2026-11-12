@@ -2,7 +2,7 @@ namespace RazorFolio.Core.Content;
 
 internal static class ContentUrl
 {
-    public static string? Normalize(string? value, string sourcePath)
+    public static string? Normalize(string? value, string sourcePath, string fieldName = "url")
     {
         if (value is null) return null;
 
@@ -13,7 +13,7 @@ internal static class ContentUrl
             || segments.Any(IsInvalidSegment))
         {
             throw new InvalidDataException(
-                $"Invalid url in '{sourcePath}'. Use a site-relative .html path without query, fragment, percent encoding or dot segments.");
+                $"Invalid {fieldName} in '{sourcePath}'. Use a site-relative .html path without query, fragment, percent encoding or dot segments.");
         }
 
         return string.Join('/', segments);

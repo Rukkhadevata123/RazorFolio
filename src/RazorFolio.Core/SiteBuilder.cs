@@ -62,7 +62,11 @@ public sealed class SiteBuilder(
         var linkResolver = new ContentLinkResolver(allOutputs.ToDictionary(
             output => output.OriginalPath, output => output.OutputPath, pathComparer));
         string[] pagePaths = [.. outputs.Select(output => output.OutputPath)];
-        OutputPathValidator.Validate(pagePaths);
+        var aliases = outputs.SelectMany(output => output.Article.Aliases.Select(alias => new AliasOutput(
+            Path.Combine(outputDirectory, alias.Replace('/', Path.DirectorySeparatorChar)), output.OutputPath))).ToArray();
+        string[] aliasPaths = [.. aliases.Select(alias => alias.OutputPath)];
+        string[] contentPaths = [.. pagePaths, .. aliasPaths];
+        OutputPathValidator.Validate(contentPaths);
         var tagsPath = Path.Combine(outputDirectory, "tags.html");
         var hasTags = sources.Any(source => source.Article.Info.IsArticle && source.Article.Info.Tags.Count > 0);
         var tagPaths = sources.Where(source => source.Article.Info.IsArticle)
@@ -100,7 +104,7 @@ public sealed class SiteBuilder(
 
         foreach (var protectedPath in protectedPaths)
         {
-            if (pagePaths.Any(path => string.Equals(path, protectedPath, comparison)
+            if (contentPaths.Any(path => string.Equals(path, protectedPath, comparison)
                 || path.StartsWith(protectedPath + Path.DirectorySeparatorChar, comparison)
                 || protectedPath.StartsWith(path + Path.DirectorySeparatorChar, comparison)))
             {
@@ -110,7 +114,7 @@ public sealed class SiteBuilder(
 
         Directory.CreateDirectory(outputDirectory);
         var assetPaths = await assetCopier.CopyAsync(
-            Path.Combine(siteRoot, "static"), outputDirectory, [.. pagePaths, .. protectedPaths], cancellationToken);
+            Path.Combine(siteRoot, "static"), outputDirectory, [.. contentPaths, .. protectedPaths], cancellationToken);
         await CopyStylesheetAsync(stylesheetPath, cancellationToken);
 
         var customStylesheetPath = FindCopiedAsset("custom.css");
@@ -242,10 +246,20 @@ public sealed class SiteBuilder(
             await RssWriter.WriteAsync(feedPath, configuration, orderedArticles, cancellationToken);
         }
 
-        await manifest.CompleteAsync(
-            [.. pagePaths, .. reservedPaths, .. metadataPaths, stylesheetPath, .. assetPaths], cancellationToken);
+        foreach (var alias in aliases)
+        {
+            var targetUrl = PageUrl.GetRelative(alias.OutputPath, alias.TargetPath);
+            var canonicalUrl = generateMetadata
+                ? PageUrl.GetAbsolute(alias.TargetPath, outputDirectory, configuration.Url)
+                : null;
+            await RedirectWriter.WriteAsync(
+                alias.OutputPath, targetUrl, canonicalUrl, configuration.Language, cancellationToken);
+        }
 
-        return sources.Count + reservedPaths.Count;
+        await manifest.CompleteAsync(
+            [.. contentPaths, .. reservedPaths, .. metadataPaths, stylesheetPath, .. assetPaths], cancellationToken);
+
+        return sources.Count + reservedPaths.Count + aliases.Length;
 
         string? FindCopiedAsset(string relativePath) => assetPaths.FirstOrDefault(path =>
             string.Equals(path, Path.Combine(outputDirectory, relativePath), comparison));
@@ -325,4 +339,6 @@ public sealed class SiteBuilder(
     }
 
     private sealed record ArticleOutput(ParsedArticle Article, string OutputPath, string Url, string OriginalPath);
+
+    private sealed record AliasOutput(string OutputPath, string TargetPath);
 }
