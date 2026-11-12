@@ -1,3 +1,4 @@
+using System.Globalization;
 using Markdig;
 using Markdig.Extensions.Yaml;
 using YamlDotNet.Core;
@@ -45,6 +46,18 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
             ? Path.GetFileNameWithoutExtension(sourcePath)
             : metadata.Title.Trim();
 
-        return new ParsedArticle(title, document);
+        DateOnly? date = null;
+        if (metadata.Date is not null)
+        {
+            if (!DateOnly.TryParseExact(metadata.Date.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var parsedDate))
+            {
+                throw new InvalidDataException($"Invalid date in '{sourcePath}'. Use a valid yyyy-MM-dd date.");
+            }
+
+            date = parsedDate;
+        }
+
+        return new ParsedArticle(title, document, date);
     }
 }

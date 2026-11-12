@@ -33,7 +33,7 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/my-new-blog
 
 基础 CSS 暂时内联在共享布局中，包含正文宽度、行距、图片缩放和代码块横向滚动，并通过 `color-scheme` 跟随系统深浅色偏好。后续需要独立样式资源时，再接入主题资源输出。
 
-`Views/Home.cshtml` 生成根目录的 `index.html`，列出所有文章标题和链接，暂按源文件路径排序。没有文章时显示空状态；构建报告的页面数包含首页。根目录的 `index.html` 保留给自动首页，`content/index.md` 或与首页路径冲突的静态资源会报错。
+`Views/Home.cshtml` 生成根目录的 `index.html`，列出所有文章标题和链接，按发布日期从新到旧排序，无日期文章在后；同一天或都无日期时按输出 URL 排序。没有文章时显示空状态；构建报告的页面数包含首页。根目录的 `index.html` 保留给自动首页，`content/index.md` 或与首页路径冲突的静态资源会报错。
 
 首页链接按相对路径生成，各路径段分别进行 URL 编码，支持中文、空格和 `#` 等文件名字符。
 
@@ -68,7 +68,9 @@ title: 我的第一篇 RazorFolio 文章
 # 正文标题
 ```
 
-front matter 必须位于文件开头。当前只读取 `title`，其他字段暂时忽略；没有 `title`、值为 null 或空白时，回退到文件名。YamlDotNet 负责解析 YAML，格式错误及重复键会导致构建失败。文件名和输出 URL 不随标题变化。
+front matter 必须位于文件开头。当前读取 `title` 和 `date`，其他字段暂时忽略；没有 `title`、值为 null 或空白时，回退到文件名。YamlDotNet 负责解析 YAML，格式错误及重复键会导致构建失败。文件名和输出 URL 不随标题变化。
+
+可选的 `date: 2026-11-12` 表示发布日期，使用 `DateOnly` 存储，不包含时间和时区。省略或设为 null 时不显示日期；显式填写时必须是有效的 `yyyy-MM-dd`，空字符串、非法日期和完整时间戳会报错并指出文章路径。日期在首页及文章页通过 `<time datetime="...">` 输出；未来日期目前照常发布，不表示定时发布。
 
 Markdown 扩展集中配置在 `Content/MarkdownPipelineFactory.cs`。`ArticleParser` 与 `MarkdownRenderer` 接收同一条管线，分别解析语法树和渲染 HTML；这样表格、任务列表、脚注的解析器与渲染器能一起生效。后续扩展按需添加，不一次启用所有扩展。任务列表是文章中的静态勾选状态，不保存浏览器交互。
 

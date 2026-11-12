@@ -1,10 +1,17 @@
 @model RazorFolio.Core.Rendering.ArticlePage
+@using System.Globalization
 @{
     ViewData["Title"] = $"{Model.Title} — {Model.Site.Title}";
     ViewData["Language"] = Model.Site.Language;
 }
 
 <article>
+    @if (Model.Date is { } date)
+    {
+        var dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        <p class="article-date"><time datetime="@dateText">@dateText</time></p>
+    }
+
     @* BodyHtml comes from the author's Markdown; ordinary text stays HTML-encoded. *@
     @Html.Raw(Model.BodyHtml)
 </article>

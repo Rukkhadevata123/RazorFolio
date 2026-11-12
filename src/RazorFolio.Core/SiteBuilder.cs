@@ -55,16 +55,21 @@ public sealed class SiteBuilder(
             var markdown = await File.ReadAllTextAsync(sourceFile, cancellationToken);
             var article = articleParser.Parse(markdown, sourceFile);
             var bodyHtml = markdownRenderer.Render(article.Body);
-            var page = new ArticlePage(article.Title, bodyHtml, configuration);
+            var page = new ArticlePage(article.Title, bodyHtml, configuration, article.Date);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
             var outputPath = GetOutputPath(sourceFile, contentDirectory, outputDirectory);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
             await File.WriteAllTextAsync(outputPath, html, cancellationToken);
-            articles.Add(new ArticleLink(article.Title, GetPageUrl(outputPath, outputDirectory)));
+            articles.Add(new ArticleLink(article.Title, GetPageUrl(outputPath, outputDirectory), article.Date));
         }
 
-        var homeHtml = await pageRenderer.RenderAsync(new HomePage(articles, configuration), cancellationToken);
+        ArticleLink[] orderedArticles =
+        [
+            .. articles.OrderByDescending(article => article.Date)
+                .ThenBy(article => article.Url, StringComparer.Ordinal)
+        ];
+        var homeHtml = await pageRenderer.RenderAsync(new HomePage(orderedArticles, configuration), cancellationToken);
         await File.WriteAllTextAsync(homePath, homeHtml, cancellationToken);
         await manifest.CompleteAsync([.. pagePaths, homePath, .. assetPaths], cancellationToken);
 
