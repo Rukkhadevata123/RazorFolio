@@ -1,0 +1,21 @@
+@model RazorFolio.Core.Rendering.YearArchivePage
+@using System.Globalization
+@{
+    ViewData["Title"] = $"文章归档 — {Model.Context.Site.Title}";
+}
+
+<nav aria-label="站点导航">
+    <a href="@Model.HomeUrl">← 返回首页</a>
+</nav>
+
+<h1>文章归档</h1>
+@foreach (var group in Model.Groups)
+{
+    var title = group.Year is { } year
+        ? year.ToString("D4", CultureInfo.InvariantCulture) + " 年"
+        : "未注明日期";
+    <section aria-labelledby="@group.Id">
+        <h2 id="@group.Id">@title</h2>
+        @await Html.PartialAsync("/Views/Shared/_ArticleList.cshtml", group.Articles)
+    </section>
+}

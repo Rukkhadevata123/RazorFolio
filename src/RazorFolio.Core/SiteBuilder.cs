@@ -59,6 +59,8 @@ public sealed class SiteBuilder(
         var hasTags = sources.Any(source => source.Article.Info.IsArticle && source.Article.Info.Tags.Count > 0);
         var categoriesPath = Path.Combine(outputDirectory, "categories.html");
         var hasCategories = sources.Any(source => source.Article.Info.IsArticle && source.Article.Info.Categories.Count > 0);
+        var archivesPath = Path.Combine(outputDirectory, "archives.html");
+        var hasArticles = articleCount > 0;
         List<string> reservedPaths = [.. homePaths];
         if (hasTags)
         {
@@ -67,6 +69,10 @@ public sealed class SiteBuilder(
         if (hasCategories)
         {
             reservedPaths.Add(categoriesPath);
+        }
+        if (hasArticles)
+        {
+            reservedPaths.Add(archivesPath);
         }
 
         var generateMetadata = configuration.Url is not null && !target.IncludeDrafts;
@@ -156,7 +162,8 @@ public sealed class SiteBuilder(
             var home = new HomePage(
                 pageArticles, CreateContext(outputPath),
                 hasTags ? PageUrl.GetRelative(outputPath, tagsPath) : null,
-                hasCategories ? PageUrl.GetRelative(outputPath, categoriesPath) : null, pagination);
+                hasCategories ? PageUrl.GetRelative(outputPath, categoriesPath) : null,
+                hasArticles ? PageUrl.GetRelative(outputPath, archivesPath) : null, pagination);
             var homeHtml = await pageRenderer.RenderAsync(home, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
@@ -177,6 +184,14 @@ public sealed class SiteBuilder(
                 GroupByCategory(orderedArticles), CreateContext(categoriesPath), PageUrl.GetRelative(categoriesPath, homePath));
             var categoriesHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
             await File.WriteAllTextAsync(categoriesPath, categoriesHtml, cancellationToken);
+        }
+
+        if (hasArticles)
+        {
+            var archive = new YearArchivePage(
+                GroupByYear(orderedArticles), CreateContext(archivesPath), PageUrl.GetRelative(archivesPath, homePath));
+            var archivesHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
+            await File.WriteAllTextAsync(archivesPath, archivesHtml, cancellationToken);
         }
 
         if (generateMetadata)
@@ -247,6 +262,13 @@ public sealed class SiteBuilder(
             .GroupBy(entry => entry.Category, StringComparer.Ordinal)
             .OrderBy(group => group.Key, StringComparer.Ordinal)
             .Select(group => new CategoryGroup(group.Key, [.. group.Select(entry => entry.Article)]))
+    ];
+
+    private static YearGroup[] GroupByYear(IReadOnlyList<ArticleLink> articles) =>
+    [
+        .. articles.GroupBy(article => article.Info.Date?.Year)
+            .OrderByDescending(group => group.Key)
+            .Select(group => new YearGroup(group.Key, [.. group]))
     ];
 
     private async Task<List<(string Path, ParsedArticle Article)>> LoadArticlesAsync(
