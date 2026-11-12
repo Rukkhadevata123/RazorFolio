@@ -8,7 +8,13 @@
     {
         <meta name="description" content="@description">
     }
-    <link rel="stylesheet" href="@ViewData["StylesheetUrl"]">
+    @if (ViewData["StylesheetUrls"] is IReadOnlyList<string> stylesheetUrls)
+    {
+        @foreach (var stylesheetUrl in stylesheetUrls)
+        {
+            <link rel="stylesheet" href="@stylesheetUrl">
+        }
+    }
 </head>
 <body>
     <main>

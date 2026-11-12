@@ -6,4 +6,4 @@ public sealed record TagArchivePage(
     IReadOnlyList<TagGroup> Groups,
     SiteConfiguration Site,
     string HomeUrl,
-    string StylesheetUrl);
+    IReadOnlyList<string> StylesheetUrls);

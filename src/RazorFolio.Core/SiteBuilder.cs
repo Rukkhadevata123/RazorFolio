@@ -61,6 +61,11 @@ public sealed class SiteBuilder(
         var assetPaths = await assetCopier.CopyAsync(
             Path.Combine(siteRoot, "static"), outputDirectory, [.. pagePaths, .. protectedPaths], cancellationToken);
         await CopyStylesheetAsync(stylesheetPath, cancellationToken);
+        var customStylesheetPath = assetPaths.FirstOrDefault(path =>
+            string.Equals(path, Path.Combine(outputDirectory, "custom.css"), comparison));
+        string[] stylesheetPaths = customStylesheetPath is null
+            ? [stylesheetPath]
+            : [stylesheetPath, customStylesheetPath];
         var articles = new List<ArticleLink>();
 
         foreach (var (sourceFile, article) in sources)
@@ -74,7 +79,7 @@ public sealed class SiteBuilder(
             ];
             var bodyHtml = markdownRenderer.Render(article.Body);
             var page = new ArticlePage(
-                article.Info, bodyHtml, configuration, homeUrl, tags, PageUrl.GetRelative(outputPath, stylesheetPath));
+                article.Info, bodyHtml, configuration, homeUrl, tags, GetStylesheetUrls(outputPath, stylesheetPaths));
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
@@ -90,7 +95,7 @@ public sealed class SiteBuilder(
         ];
         var home = new HomePage(
             orderedArticles, configuration, hasTags ? PageUrl.GetRelative(homePath, tagsPath) : null,
-            PageUrl.GetRelative(homePath, stylesheetPath));
+            GetStylesheetUrls(homePath, stylesheetPaths));
         var homeHtml = await pageRenderer.RenderAsync(home, cancellationToken);
         await File.WriteAllTextAsync(homePath, homeHtml, cancellationToken);
 
@@ -98,7 +103,7 @@ public sealed class SiteBuilder(
         {
             var archive = new TagArchivePage(
                 GroupByTag(orderedArticles), configuration, PageUrl.GetRelative(tagsPath, homePath),
-                PageUrl.GetRelative(tagsPath, stylesheetPath));
+                GetStylesheetUrls(tagsPath, stylesheetPaths));
             var tagsHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
             await File.WriteAllTextAsync(tagsPath, tagsHtml, cancellationToken);
         }
@@ -107,6 +112,9 @@ public sealed class SiteBuilder(
 
         return sources.Count + reservedPaths.Length;
     }
+
+    private static string[] GetStylesheetUrls(string pagePath, IReadOnlyList<string> stylesheetPaths) =>
+        [.. stylesheetPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
 
     private async Task CopyStylesheetAsync(string outputPath, CancellationToken cancellationToken)
     {

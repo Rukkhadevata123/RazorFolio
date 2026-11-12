@@ -6,4 +6,4 @@ public sealed record HomePage(
     IReadOnlyList<ArticleLink> Articles,
     SiteConfiguration Site,
     string? TagsUrl,
-    string StylesheetUrl);
+    IReadOnlyList<string> StylesheetUrls);

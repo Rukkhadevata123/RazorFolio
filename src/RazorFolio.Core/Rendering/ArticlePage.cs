@@ -9,4 +9,4 @@ public sealed record ArticlePage(
     SiteConfiguration Site,
     string HomeUrl,
     IReadOnlyList<TagLink> Tags,
-    string StylesheetUrl);
+    IReadOnlyList<string> StylesheetUrls);
