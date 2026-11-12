@@ -61,6 +61,10 @@ body {
 
 文章页提供“返回首页”链接：顶层文章使用 `./index.html`，`Linux/hello.html` 使用 `../index.html`，更深目录依次增加 `../`。首页到文章、文章到首页的链接统一由 `Output/PageUrl.cs` 根据输出文件位置计算，再通过页面模型传给主题。因此这两类导航在站点部署到 `/仓库名/` 等子路径时也能使用，不需要写死域名根路径。Markdown 正文中手写的 `/images/example.svg` 等根路径链接仍由作者自行处理。
 
+文章正文后提供“上一篇 / 下一篇”，按首页的全站文章顺序确定：日期从新到旧，无日期的在后，同日期按输出 URL 排序。上一篇是列表中前一项，下一篇是后一项，不按目录或标签单独分组。首篇只显示下一篇，末篇只显示上一篇，只有一篇文章时不显示导航。
+
+构建器先计算文章的输出路径并排序，再渲染正文，因此首页、标签归档、RSS 和相邻文章使用同一份顺序。`ArticleNavigation` 保存两个可为空的链接，Razor 模板负责显示。链接按当前文章的位置生成相对 URL，支持跨目录及特殊字符文件名；正式构建的序列排除草稿，开发模式的序列包含草稿。删除文章或修改日期后，下次构建会重新计算相邻关系。
+
 文章之间可以写 `[示例](Linux/hello.md)`，Markdig 在 HTML 输出阶段将本地 `.md` 链接改成 `.html`，包括引用式链接。路径和文件名保持不变，查询参数与锚点也保留，例如 `hello.md?view=full#section` 变为 `hello.html?view=full#section`。不会重新计算旧锚点，也不会检查目标文章是否存在。
 
 带协议的外部链接、`//example.com/hello.md`、纯锚点及 `.png`、`.txt` 等资源链接不改写。当前把本地 `.md` 目标都视为文章；如果需要提供 Markdown 源文件下载，需要另外设计下载路径或规则。原始 HTML 中的链接和代码块文本不参与这项 Markdown 链接转换。
@@ -97,6 +101,18 @@ rf dev --site ~/my-new-blog
 `rf --version` 显示当前程序的版本，例如 `RazorFolio 0.1.0-dev.1`，不需要指定站点。版本来自 SDK 写入程序集的 `AssemblyInformationalVersion`，保留开发版本后缀；构建时若包含 Git 提交信息，还会带上 `+提交哈希`。读取的是运行程序内的版本，与当前工作目录无关。
 
 ### 从源码运行
+
+需要查看 ReSharper 的代码检查结果时，可以单独安装命令行工具并生成报告：
+
+```bash
+dotnet tool install JetBrains.ReSharper.GlobalTools --tool-path ./artifacts/resharper
+./artifacts/resharper/jb inspectcode RazorFolio.slnx \
+  --build --severity=INFO --format=Text --format=Sarif \
+  --output=artifacts/resharper-report \
+  --caches-home=artifacts/resharper-cache --no-updates
+```
+
+文本报告为 `artifacts/resharper-report/report.txt`，机器可读报告为同目录的 `report.sarif`。`--severity=INFO` 包含 Hint 级提示；检查会构建项目，但不自动修改源码。建议逐条判断：例如 YAML 模型属性通过反序列化赋值，“setter 未使用”不意味着可以删除。工具版本和检查配置不同，报告也可能不同。
 
 在仓库根目录编译程序、查看帮助：
 

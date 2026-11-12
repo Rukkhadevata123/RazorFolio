@@ -5,6 +5,12 @@ namespace RazorFolio.Core.Content;
 
 public sealed class SiteInitializer
 {
+    private static readonly JsonSerializerOptions Options = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
     public async Task CreateAsync(string siteDirectory, CancellationToken cancellationToken = default)
     {
         var siteRoot = Path.GetFullPath(siteDirectory);
@@ -17,11 +23,7 @@ public sealed class SiteInitializer
         Directory.CreateDirectory(Path.Combine(siteRoot, "content"));
         Directory.CreateDirectory(Path.Combine(siteRoot, "static"));
 
-        var configuration = JsonSerializer.Serialize(new SiteConfiguration(), new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true
-        });
+        var configuration = JsonSerializer.Serialize(new SiteConfiguration(), Options);
         await WriteNewFileAsync(Path.Combine(siteRoot, "razorfolio.json"), configuration + "\n", cancellationToken);
         await WriteNewFileAsync(Path.Combine(siteRoot, ".gitignore"), "/public/\n/.razorfolio/\n", cancellationToken);
         await WriteNewFileAsync(Path.Combine(siteRoot, "content", "hello.md"), """

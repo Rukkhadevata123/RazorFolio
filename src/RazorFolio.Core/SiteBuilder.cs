@@ -36,11 +36,16 @@ public sealed class SiteBuilder(
         var sources = await LoadArticlesAsync(sourceFiles, target.IncludeDrafts, cancellationToken);
         Directory.CreateDirectory(outputDirectory);
 
-        string[] pagePaths =
-        [
-            .. sources.Select(source => GetOutputPath(source.Path, contentDirectory, outputDirectory))
-        ];
         var homePath = Path.Combine(outputDirectory, "index.html");
+        ArticleOutput[] outputs =
+        [
+            .. sources.Select(source =>
+            {
+                var outputPath = GetOutputPath(source.Path, contentDirectory, outputDirectory);
+                return new ArticleOutput(source.Article, outputPath, PageUrl.GetRelative(homePath, outputPath));
+            })
+        ];
+        string[] pagePaths = [.. outputs.Select(output => output.OutputPath)];
         var tagsPath = Path.Combine(outputDirectory, "tags.html");
         var hasTags = sources.Any(source => source.Article.Info.Tags.Count > 0);
         string[] reservedPaths = hasTags ? [homePath, tagsPath] : [homePath];
@@ -67,50 +72,42 @@ public sealed class SiteBuilder(
             Path.Combine(siteRoot, "static"), outputDirectory, [.. pagePaths, .. protectedPaths], cancellationToken);
         await CopyStylesheetAsync(stylesheetPath, cancellationToken);
 
-        string? FindCopiedAsset(string relativePath) => assetPaths.FirstOrDefault(path =>
-            string.Equals(path, Path.Combine(outputDirectory, relativePath), comparison));
-
         var customStylesheetPath = FindCopiedAsset("custom.css");
         var faviconPath = FindCopiedAsset("favicon.svg");
         string[] stylesheetPaths = customStylesheetPath is null
             ? [stylesheetPath]
             : [stylesheetPath, customStylesheetPath];
 
-        PageContext CreateContext(string pagePath, bool draft = false)
-        {
-            string[] stylesheetUrls = [.. stylesheetPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
-            var canonicalUrl = draft ? null : PageUrl.GetAbsolute(pagePath, outputDirectory, configuration.Url);
-            var feed = feedUrl is null ? null : new FeedLink(PageUrl.GetRelative(pagePath, feedPath), feedUrl);
-            var faviconUrl = faviconPath is null ? null : PageUrl.GetRelative(pagePath, faviconPath);
-            return new PageContext(configuration, stylesheetUrls, canonicalUrl, feed, faviconUrl);
-        }
+        ArticleOutput[] orderedPages =
+        [
+            .. outputs.OrderByDescending(output => output.Article.Info.Date)
+                .ThenBy(output => output.Url, StringComparer.Ordinal)
+        ];
 
-        var articles = new List<ArticleLink>();
-
-        foreach (var (sourceFile, article) in sources)
+        for (var index = 0; index < orderedPages.Length; index++)
         {
-            var outputPath = GetOutputPath(sourceFile, contentDirectory, outputDirectory);
+            var (article, outputPath, _) = orderedPages[index];
             var homeUrl = PageUrl.GetRelative(outputPath, homePath);
             var tagsUrl = PageUrl.GetRelative(outputPath, tagsPath);
             TagLink[] tags =
             [
                 .. article.Info.Tags.Select(tag => new TagLink(tag, tagsUrl + "#" + TagGroup.GetId(tag)))
             ];
+            var navigation = new ArticleNavigation(
+                GetAdjacentArticle(orderedPages, index - 1, outputPath),
+                GetAdjacentArticle(orderedPages, index + 1, outputPath));
             var bodyHtml = markdownRenderer.Render(article.Body);
             var page = new ArticlePage(
-                article.Info, bodyHtml, CreateContext(outputPath, article.Info.Draft), homeUrl, tags);
+                article.Info, bodyHtml, CreateContext(outputPath, article.Info.Draft), homeUrl, tags, navigation);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
             await File.WriteAllTextAsync(outputPath, html, cancellationToken);
-            var articleUrl = PageUrl.GetRelative(homePath, outputPath);
-            articles.Add(new ArticleLink(article.Info, articleUrl));
         }
 
         ArticleLink[] orderedArticles =
         [
-            .. articles.OrderByDescending(article => article.Info.Date)
-                .ThenBy(article => article.Url, StringComparer.Ordinal)
+            .. orderedPages.Select(output => new ArticleLink(output.Article.Info, output.Url))
         ];
         var home = new HomePage(
             orderedArticles, CreateContext(homePath), hasTags ? PageUrl.GetRelative(homePath, tagsPath) : null);
@@ -140,6 +137,30 @@ public sealed class SiteBuilder(
             [.. pagePaths, .. reservedPaths, .. metadataPaths, stylesheetPath, .. assetPaths], cancellationToken);
 
         return sources.Count + reservedPaths.Length;
+
+        string? FindCopiedAsset(string relativePath) => assetPaths.FirstOrDefault(path =>
+            string.Equals(path, Path.Combine(outputDirectory, relativePath), comparison));
+
+        PageContext CreateContext(string pagePath, bool draft = false)
+        {
+            string[] stylesheetUrls = [.. stylesheetPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
+            var canonicalUrl = draft ? null : PageUrl.GetAbsolute(pagePath, outputDirectory, configuration.Url);
+            var feed = feedUrl is null ? null : new FeedLink(PageUrl.GetRelative(pagePath, feedPath), feedUrl);
+            var faviconUrl = faviconPath is null ? null : PageUrl.GetRelative(pagePath, faviconPath);
+            return new PageContext(configuration, stylesheetUrls, canonicalUrl, feed, faviconUrl);
+        }
+    }
+
+    private static ArticleLink? GetAdjacentArticle(
+        IReadOnlyList<ArticleOutput> pages, int index, string fromPagePath)
+    {
+        if (index < 0 || index >= pages.Count)
+        {
+            return null;
+        }
+
+        var adjacent = pages[index];
+        return new ArticleLink(adjacent.Article.Info, PageUrl.GetRelative(fromPagePath, adjacent.OutputPath));
     }
 
     private async Task CopyStylesheetAsync(string outputPath, CancellationToken cancellationToken)
@@ -180,4 +201,6 @@ public sealed class SiteBuilder(
         var relativePath = Path.GetRelativePath(contentDirectory, sourceFile);
         return Path.Combine(outputDirectory, Path.ChangeExtension(relativePath, ".html"));
     }
+
+    private sealed record ArticleOutput(ParsedArticle Article, string OutputPath, string Url);
 }

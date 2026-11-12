@@ -30,6 +30,7 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
         {
             try
             {
+                // YAML null documents can deserialize to null despite the return annotation.
                 metadata = deserializer.Deserialize<ArticleMetadata>(frontMatter.Lines.ToString())
                     ?? new ArticleMetadata();
             }

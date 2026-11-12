@@ -7,4 +7,5 @@ public sealed record ArticlePage(
     string BodyHtml,
     PageContext Context,
     string HomeUrl,
-    IReadOnlyList<TagLink> Tags) : IPageModel;
+    IReadOnlyList<TagLink> Tags,
+    ArticleNavigation Navigation) : IPageModel;

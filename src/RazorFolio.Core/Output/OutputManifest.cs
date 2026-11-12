@@ -4,6 +4,8 @@ namespace RazorFolio.Core.Output;
 
 public sealed class OutputManifest
 {
+    private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
+
     private readonly string outputDirectory;
     private readonly string manifestPath;
     private readonly string[] previousFiles;
@@ -77,7 +79,7 @@ public sealed class OutputManifest
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(manifestPath)!);
-        var json = JsonSerializer.Serialize(currentFiles.Order(comparer), new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(currentFiles.Order(comparer), Options);
         var temporaryPath = manifestPath + ".tmp";
         await File.WriteAllTextAsync(temporaryPath, json, cancellationToken);
         File.Move(temporaryPath, manifestPath, overwrite: true);

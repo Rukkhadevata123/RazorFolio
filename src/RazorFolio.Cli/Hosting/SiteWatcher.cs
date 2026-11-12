@@ -14,11 +14,9 @@ internal sealed class SiteWatcher(SiteBuildTarget target, SiteBuilder builder, L
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var watcher = new FileSystemWatcher(target.SiteDirectory)
-        {
-            IncludeSubdirectories = true,
-            NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
-        };
+        using var watcher = new FileSystemWatcher(target.SiteDirectory);
+        watcher.IncludeSubdirectories = true;
+        watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite;
         watcher.Changed += OnChanged;
         watcher.Created += OnChanged;
         watcher.Deleted += OnChanged;

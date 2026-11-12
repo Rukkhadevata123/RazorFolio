@@ -34,3 +34,17 @@
     @* BodyHtml comes from the author's Markdown; ordinary text stays HTML-encoded. *@
     @Html.Raw(Model.BodyHtml)
 </article>
+
+@if (Model.Navigation.Previous is not null || Model.Navigation.Next is not null)
+{
+    <nav class="article-navigation" aria-label="文章导航">
+        @if (Model.Navigation.Previous is { } previous)
+        {
+            <p>上一篇：<a href="@previous.Url" rel="prev">@previous.Info.Title</a></p>
+        }
+        @if (Model.Navigation.Next is { } next)
+        {
+            <p>下一篇：<a href="@next.Url" rel="next">@next.Info.Title</a></p>
+        }
+    </nav>
+}
