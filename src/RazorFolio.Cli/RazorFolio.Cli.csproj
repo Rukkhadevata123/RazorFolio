@@ -6,6 +6,19 @@
     <UseAppHost>true</UseAppHost>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>rf</ToolCommandName>
+    <PackageId>RazorFolio</PackageId>
+    <Version>0.1.0-dev.1</Version>
+    <Description>A static site generator using Markdown and precompiled Razor templates.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="../RazorFolio.Core/RazorFolio.Core.csproj" />

@@ -45,6 +45,34 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/my-new-blog
 
 ## 开发
 
+### 打包和安装工具
+
+CLI 可以打包为 .NET 工具。当前包名是 `RazorFolio`，开发版本为 `0.1.0-dev.1`，安装后的命令是 `rf`。在仓库根目录执行：
+
+```bash
+dotnet pack src/RazorFolio.Cli -c Release -o artifacts/packages
+dotnet tool install RazorFolio --version 0.1.0-dev.1 \
+  --source ./artifacts/packages --tool-path ./artifacts/tools
+./artifacts/tools/rf --help
+```
+
+`dotnet pack` 编译工具并生成本地 `.nupkg`；安装命令通过 `--source` 只读取本地包目录，通过 `--tool-path` 将工具安装到指定位置。`artifacts/` 已被 Git 忽略。这里的步骤不发布到 NuGet，也不进行全局安装。
+
+将安装目录加入当前终端的 PATH 后，可以直接使用短命令：
+
+```bash
+export PATH="$PWD/artifacts/tools:$PATH"
+rf new ~/my-new-blog
+rf build --site ~/my-new-blog
+rf dev --site ~/my-new-blog
+```
+
+工具包包含 Core、预编译默认主题、Markdig 和 YamlDotNet，使用时不需要生成器源码或 `.cshtml` 文件。它仍依赖 .NET 10 和 ASP.NET Core 10 共享运行时；安装工具需要 .NET SDK，本项目开发环境使用 .NET 10 SDK。安装目录中还有工具依赖文件，不能只复制 `rf` 入口。
+
+修改 C# 或主题后，已安装的工具不会自动更新。日常开发继续使用下文的 `dotnet run`；验证新包时可用 `dotnet pack ... -p:Version=0.1.0-dev.2` 打出不同版本，再用 `dotnet tool update` 配合相同的 `--source`、`--tool-path` 和新的 `--version` 更新，避免反复复用同一版本的缓存。
+
+### 从源码运行
+
 在仓库根目录编译程序、查看帮助：
 
 ```bash
