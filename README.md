@@ -250,7 +250,13 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 
 配置后，各页面在 `<head>` 中输出 `<link rel="canonical">`：上述示例的首页为 `https://example.com/blog/`，`Linux/hello.html` 为 `https://example.com/blog/Linux/hello.html`，标签归档为 `https://example.com/blog/tags.html`。中文、空格和文件名中的特殊字符按 URL 编码。canonical 声明页面的首选正式地址，不执行跳转，也不改变输出目录、站内相对链接或本地监听地址。
 
-`dev` 中的已发布文章仍引用配置的正式地址，草稿页不输出 canonical；`preview` 继续原样提供已有 HTML。绝对地址由 `Output/PageUrl.cs` 统一生成，后续 sitemap 或 RSS 可复用。当前尚未生成 sitemap 或 RSS。
+`dev` 中的已发布文章仍引用配置的正式地址，草稿页不输出 canonical；`preview` 继续原样提供已有 HTML。canonical 和 sitemap 的绝对地址都由 `Output/PageUrl.cs` 生成。当前尚未生成 RSS。
+
+配置 `url` 后，正式 `build` 还会生成 `public/sitemap.xml`，包含首页、已发布文章和存在时的标签归档页。地址与各页面的 canonical 一致，支持部署子路径；不包含草稿、CSS、附件、静态目录中的手写 HTML 或标签锚点，也不计入构建报告的 HTML 页面数。`dev` 不自动生成 sitemap，检查正式产物时使用 `build` 和 `preview`。
+
+`Output/SitemapWriter.cs` 使用 .NET 的 XML API 输出 UTF-8 文件，处理命名空间和 XML 转义。第一版只写必需的 `loc`，不填写 `lastmod`、`changefreq` 或 `priority`；发布日期不能代替页面最后修改时间。格式与单文件限制参照 [Sitemaps 协议](https://www.sitemaps.org/protocol.html)：最多 50,000 条地址，每条短于 2,048 字符，文件不超过 50 MB，超限时报错，暂不拆分文件。
+
+生成 sitemap 时会检查 `sitemap.xml` 的路径冲突，并将文件登记到生成清单。删除 `url` 或设为 null 后，下次正式构建会清理此前生成的 sitemap。未启用自动生成时，可以通过 `static/sitemap.xml` 提供自己的文件。当前不自动生成 `robots.txt`，也不向搜索引擎提交。
 
 - `content/`：Markdown 文章。
 - `static/`：原样复制的图片、附件等资源。
@@ -264,7 +270,7 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 
 ## 生成清单与清理
 
-每次成功构建会记录本次页面、主题样式和静态资源的相对输出路径。正式构建使用 `.razorfolio/outputs.json` 管理 `public/`，开发构建使用 `.razorfolio/dev-outputs.json` 管理 `.razorfolio/dev/`，清单放在各自的 HTTP 服务目录之外。
+每次成功构建会记录本次页面、sitemap、主题样式和静态资源的相对输出路径。正式构建使用 `.razorfolio/outputs.json` 管理 `public/`，开发构建使用 `.razorfolio/dev-outputs.json` 管理 `.razorfolio/dev/`，清单放在各自的 HTTP 服务目录之外。
 
 下一次成功生成全部页面后，只删除对应旧清单中不再出现的文件，再替换该清单。手动放在输出目录中、从未被生成器记录的文件不会被清理；如果文件路径曾经由生成器管理，之后仍按生成产物处理。开发构建的清理不会删除正式产物，正式构建也不会清理开发产物。
 

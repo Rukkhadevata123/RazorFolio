@@ -44,8 +44,12 @@ public sealed class SiteBuilder(
         var tagsPath = Path.Combine(outputDirectory, "tags.html");
         var hasTags = sources.Any(source => source.Article.Info.Tags.Count > 0);
         string[] reservedPaths = hasTags ? [homePath, tagsPath] : [homePath];
+        var sitemapPath = configuration.Url is not null && !target.IncludeDrafts
+            ? Path.Combine(outputDirectory, "sitemap.xml")
+            : null;
+        string[] metadataPaths = sitemapPath is null ? [] : [sitemapPath];
         var stylesheetPath = Path.GetFullPath(stylesheet.RelativePath, outputDirectory);
-        string[] protectedPaths = [.. reservedPaths, stylesheetPath];
+        string[] protectedPaths = [.. reservedPaths, .. metadataPaths, stylesheetPath];
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
         foreach (var protectedPath in protectedPaths)
@@ -54,7 +58,7 @@ public sealed class SiteBuilder(
                 || path.StartsWith(protectedPath + Path.DirectorySeparatorChar, comparison)
                 || protectedPath.StartsWith(path + Path.DirectorySeparatorChar, comparison)))
             {
-                throw new InvalidDataException($"Path reserved for a generated page or theme asset: {protectedPath}");
+                throw new InvalidDataException($"Path reserved for generated output: {protectedPath}");
             }
         }
 
@@ -114,7 +118,18 @@ public sealed class SiteBuilder(
             await File.WriteAllTextAsync(tagsPath, tagsHtml, cancellationToken);
         }
 
-        await manifest.CompleteAsync([.. pagePaths, .. reservedPaths, stylesheetPath, .. assetPaths], cancellationToken);
+        if (sitemapPath is not null)
+        {
+            string[] urls =
+            [
+                .. reservedPaths.Concat(pagePaths)
+                    .Select(path => PageUrl.GetAbsolute(path, outputDirectory, configuration.Url)!)
+            ];
+            await SitemapWriter.WriteAsync(sitemapPath, urls, cancellationToken);
+        }
+
+        await manifest.CompleteAsync(
+            [.. pagePaths, .. reservedPaths, .. metadataPaths, stylesheetPath, .. assetPaths], cancellationToken);
 
         return sources.Count + reservedPaths.Length;
     }

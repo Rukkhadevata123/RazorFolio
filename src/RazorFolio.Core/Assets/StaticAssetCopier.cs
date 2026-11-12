@@ -30,7 +30,7 @@ public sealed class StaticAssetCopier
                 || targetPath.StartsWith(path + Path.DirectorySeparatorChar, comparison)
                 || path.StartsWith(targetPath + Path.DirectorySeparatorChar, comparison)))
             {
-                throw new InvalidDataException($"Static asset conflicts with a generated page or theme asset: {sourcePath}");
+                throw new InvalidDataException($"Static asset conflicts with generated output: {sourcePath}");
             }
         }
 
