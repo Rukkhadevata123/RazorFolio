@@ -239,11 +239,18 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 ```json
 {
   "title": "我的博客",
-  "language": "zh-CN"
+  "language": "zh-CN",
+  "url": "https://example.com/blog/"
 }
 ```
 
-`title` 用于首页标题和文章标签页标题的后缀；`language` 写入 HTML 的 `lang` 属性，不自动翻译主题文案。配置文件不存在或字段省略时，分别使用 `RazorFolio` 和 `zh-CN`。显式的 null、空白字段、未知字段及无效 JSON 会报错，错误包含配置文件路径。配置由 `Configuration/SiteConfigurationLoader.cs` 每次构建读取一次，再通过页面模型传给主题。
+`title` 用于首页标题和文章标签页标题的后缀；`language` 写入 HTML 的 `lang` 属性，不自动翻译主题文案。配置文件不存在或这两个字段省略时，分别使用 `RazorFolio` 和 `zh-CN`；显式设为 null 或空白会报错。未知字段及无效 JSON 也会报错，错误包含配置文件路径。配置由 `Configuration/SiteConfigurationLoader.cs` 每次构建读取一次，再通过页面模型传给主题。
+
+可选的 `url` 表示站点正式部署地址，支持根域名和 `/blog/` 等子路径。省略或设为 null 时不输出 canonical，`rf new` 也不会替作者填写域名。填写时必须是完整的 HTTP(S) URL，不能带用户名密码、查询参数或片段；空字符串和相对路径会报错。首尾空白会去掉，末尾缺少 `/` 时自动补上，将配置路径作为站点目录。
+
+配置后，各页面在 `<head>` 中输出 `<link rel="canonical">`：上述示例的首页为 `https://example.com/blog/`，`Linux/hello.html` 为 `https://example.com/blog/Linux/hello.html`，标签归档为 `https://example.com/blog/tags.html`。中文、空格和文件名中的特殊字符按 URL 编码。canonical 声明页面的首选正式地址，不执行跳转，也不改变输出目录、站内相对链接或本地监听地址。
+
+`dev` 中的已发布文章仍引用配置的正式地址，草稿页不输出 canonical；`preview` 继续原样提供已有 HTML。绝对地址由 `Output/PageUrl.cs` 统一生成，后续 sitemap 或 RSS 可复用。当前尚未生成 sitemap 或 RSS。
 
 - `content/`：Markdown 文章。
 - `static/`：原样复制的图片、附件等资源。

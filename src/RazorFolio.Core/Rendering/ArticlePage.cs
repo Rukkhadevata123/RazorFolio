@@ -9,4 +9,5 @@ public sealed record ArticlePage(
     SiteConfiguration Site,
     string HomeUrl,
     IReadOnlyList<TagLink> Tags,
-    IReadOnlyList<string> StylesheetUrls);
+    IReadOnlyList<string> StylesheetUrls,
+    string? CanonicalUrl);

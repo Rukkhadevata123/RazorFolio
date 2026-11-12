@@ -78,8 +78,12 @@ public sealed class SiteBuilder(
                 .. article.Info.Tags.Select(tag => new TagLink(tag, tagsUrl + "#" + TagGroup.GetId(tag)))
             ];
             var bodyHtml = markdownRenderer.Render(article.Body);
+            var canonicalUrl = article.Info.Draft
+                ? null
+                : PageUrl.GetAbsolute(outputPath, outputDirectory, configuration.Url);
             var page = new ArticlePage(
-                article.Info, bodyHtml, configuration, homeUrl, tags, GetStylesheetUrls(outputPath, stylesheetPaths));
+                article.Info, bodyHtml, configuration, homeUrl, tags,
+                GetStylesheetUrls(outputPath, stylesheetPaths), canonicalUrl);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
@@ -95,7 +99,8 @@ public sealed class SiteBuilder(
         ];
         var home = new HomePage(
             orderedArticles, configuration, hasTags ? PageUrl.GetRelative(homePath, tagsPath) : null,
-            GetStylesheetUrls(homePath, stylesheetPaths));
+            GetStylesheetUrls(homePath, stylesheetPaths),
+            PageUrl.GetAbsolute(homePath, outputDirectory, configuration.Url));
         var homeHtml = await pageRenderer.RenderAsync(home, cancellationToken);
         await File.WriteAllTextAsync(homePath, homeHtml, cancellationToken);
 
@@ -103,7 +108,8 @@ public sealed class SiteBuilder(
         {
             var archive = new TagArchivePage(
                 GroupByTag(orderedArticles), configuration, PageUrl.GetRelative(tagsPath, homePath),
-                GetStylesheetUrls(tagsPath, stylesheetPaths));
+                GetStylesheetUrls(tagsPath, stylesheetPaths),
+                PageUrl.GetAbsolute(tagsPath, outputDirectory, configuration.Url));
             var tagsHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
             await File.WriteAllTextAsync(tagsPath, tagsHtml, cancellationToken);
         }

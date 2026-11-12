@@ -2,6 +2,22 @@ namespace RazorFolio.Core.Output;
 
 public static class PageUrl
 {
+    public static string? GetAbsolute(string pagePath, string outputDirectory, string? siteUrl)
+    {
+        if (siteUrl is null)
+        {
+            return null;
+        }
+
+        var relativeUrl = GetRelative(Path.Combine(outputDirectory, "index.html"), pagePath);
+        if (relativeUrl == "./index.html")
+        {
+            relativeUrl = "./";
+        }
+
+        return new Uri(new Uri(siteUrl), relativeUrl).AbsoluteUri;
+    }
+
     public static string GetRelative(string fromPagePath, string toPagePath)
     {
         var directory = Path.GetDirectoryName(fromPagePath)!;

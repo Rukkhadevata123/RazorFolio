@@ -8,6 +8,10 @@
     {
         <meta name="description" content="@description">
     }
+    @if (ViewData["CanonicalUrl"] is string canonicalUrl)
+    {
+        <link rel="canonical" href="@canonicalUrl">
+    }
     @if (ViewData["StylesheetUrls"] is IReadOnlyList<string> stylesheetUrls)
     {
         @foreach (var stylesheetUrl in stylesheetUrls)

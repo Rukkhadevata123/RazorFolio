@@ -38,6 +38,31 @@ public static class SiteConfigurationLoader
             throw new InvalidDataException($"Site configuration '{path}' must have non-empty title and language values.");
         }
 
-        return configuration with { Title = configuration.Title.Trim(), Language = configuration.Language.Trim() };
+        return configuration with
+        {
+            Title = configuration.Title.Trim(),
+            Language = configuration.Language.Trim(),
+            Url = NormalizeUrl(configuration.Url, path)
+        };
+    }
+
+    private static string? NormalizeUrl(string? value, string configurationPath)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        if (!Uri.TryCreate(value.Trim(), UriKind.Absolute, out var url)
+            || !url.IsWellFormedOriginalString()
+            || url.Scheme is not ("http" or "https")
+            || url.UserInfo.Length > 0 || url.Query.Length > 0 || url.Fragment.Length > 0)
+        {
+            throw new InvalidDataException(
+                $"Invalid url in '{configurationPath}'. Use an absolute HTTP(S) site URL without credentials, query or fragment.");
+        }
+
+        // Treat the configured path as the site directory when resolving page URLs.
+        return url.AbsoluteUri.EndsWith('/') ? url.AbsoluteUri : url.AbsoluteUri + "/";
     }
 }
