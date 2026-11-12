@@ -64,7 +64,7 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
         var info = new ArticleInfo(
             title, date, metadata.Draft, description,
             NormalizeNames(metadata.Tags), NormalizeNames(metadata.Category), metadata.Article);
-        return new ParsedArticle(info, document);
+        return new ParsedArticle(info, document, ContentUrl.Normalize(metadata.Url, sourcePath));
     }
 
     private static ReadOnlyCollection<string> NormalizeNames(List<string?>? names)

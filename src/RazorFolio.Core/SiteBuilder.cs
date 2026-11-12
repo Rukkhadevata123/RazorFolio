@@ -34,7 +34,8 @@ public sealed class SiteBuilder(
                 .Where(path => Path.GetExtension(path).Equals(".md", StringComparison.OrdinalIgnoreCase))
         ];
         Array.Sort(sourceFiles, StringComparer.Ordinal);
-        var sources = await LoadArticlesAsync(sourceFiles, target.IncludeDrafts, cancellationToken);
+        var allSources = await LoadArticlesAsync(sourceFiles, cancellationToken);
+        var sources = allSources.Where(source => target.IncludeDrafts || !source.Article.Info.Draft).ToList();
 
         var homePath = Path.Combine(outputDirectory, "index.html");
         var articleCount = sources.Count(source => source.Article.Info.IsArticle);
@@ -45,14 +46,21 @@ public sealed class SiteBuilder(
                 ? homePath
                 : Path.Combine(outputDirectory, "page", number.ToString(CultureInfo.InvariantCulture) + ".html"))
         ];
-        ArticleOutput[] outputs =
+        ArticleOutput[] allOutputs =
         [
-            .. sources.Select(source =>
+            .. allSources.Select(source =>
             {
-                var outputPath = GetOutputPath(source.Path, contentDirectory, outputDirectory);
-                return new ArticleOutput(source.Article, outputPath, PageUrl.GetRelative(homePath, outputPath));
+                var originalPath = Path.Combine(outputDirectory, Path.GetRelativePath(contentDirectory, source.Path));
+                var outputPath = source.Article.OutputUrl is { } customUrl
+                    ? Path.Combine(outputDirectory, customUrl.Replace('/', Path.DirectorySeparatorChar))
+                    : Path.ChangeExtension(originalPath, ".html");
+                return new ArticleOutput(source.Article, outputPath, PageUrl.GetRelative(homePath, outputPath), originalPath);
             })
         ];
+        ArticleOutput[] outputs = [.. allOutputs.Where(output => target.IncludeDrafts || !output.Article.Info.Draft)];
+        var pathComparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        var linkResolver = new ContentLinkResolver(allOutputs.ToDictionary(
+            output => output.OriginalPath, output => output.OutputPath, pathComparer));
         string[] pagePaths = [.. outputs.Select(output => output.OutputPath)];
         OutputPathValidator.Validate(pagePaths);
         var tagsPath = Path.Combine(outputDirectory, "tags.html");
@@ -124,8 +132,10 @@ public sealed class SiteBuilder(
                 GetAdjacentArticle(orderedArticlePages, index + 1, output.OutputPath))))
             .ToDictionary();
 
-        foreach (var (article, outputPath, _) in outputs)
+        foreach (var output in outputs)
         {
+            var article = output.Article;
+            var outputPath = output.OutputPath;
             var homeUrl = PageUrl.GetRelative(outputPath, homePath);
             TagLink[] tags = article.Info.IsArticle ?
             [
@@ -138,7 +148,8 @@ public sealed class SiteBuilder(
                     new CategoryLink(category, categoriesUrl + "#" + CategoryGroup.GetId(category)))
             ] : [];
             var navigation = navigations.GetValueOrDefault(outputPath) ?? new ArticleNavigation(null, null);
-            var bodyHtml = markdownRenderer.Render(article.Body);
+            var bodyHtml = markdownRenderer.Render(article.Body,
+                link => linkResolver.Resolve(link, output.OriginalPath, outputPath));
             var page = new ArticlePage(
                 article.Info, bodyHtml, CreateContext(outputPath, article.Info.Draft), homeUrl, tags, categories, navigation);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
@@ -245,7 +256,7 @@ public sealed class SiteBuilder(
             NavigationLink[] navigation =
             [
                 .. configuration.Navigation.Select(item => new NavigationLink(
-                    item.Text, PageUrl.ResolveNavigation(item.Link, pagePath, homePath)))
+                    item.Text, linkResolver.Resolve(item.Link, homePath, pagePath)))
             ];
             var canonicalUrl = draft ? null : PageUrl.GetAbsolute(pagePath, outputDirectory, configuration.Url);
             var feed = feedUrl is null ? null : new FeedLink(PageUrl.GetRelative(pagePath, feedPath), feedUrl);
@@ -300,27 +311,18 @@ public sealed class SiteBuilder(
     ];
 
     private async Task<List<(string Path, ParsedArticle Article)>> LoadArticlesAsync(
-        IEnumerable<string> sourceFiles, bool includeDrafts, CancellationToken cancellationToken)
+        IEnumerable<string> sourceFiles, CancellationToken cancellationToken)
     {
         var sources = new List<(string Path, ParsedArticle Article)>();
         foreach (var path in sourceFiles)
         {
             var markdown = await File.ReadAllTextAsync(path, cancellationToken);
             var article = articleParser.Parse(markdown, path);
-            if (includeDrafts || !article.Info.Draft)
-            {
-                sources.Add((path, article));
-            }
+            sources.Add((path, article));
         }
 
         return sources;
     }
 
-    private static string GetOutputPath(string sourceFile, string contentDirectory, string outputDirectory)
-    {
-        var relativePath = Path.GetRelativePath(contentDirectory, sourceFile);
-        return Path.Combine(outputDirectory, Path.ChangeExtension(relativePath, ".html"));
-    }
-
-    private sealed record ArticleOutput(ParsedArticle Article, string OutputPath, string Url);
+    private sealed record ArticleOutput(ParsedArticle Article, string OutputPath, string Url, string OriginalPath);
 }
