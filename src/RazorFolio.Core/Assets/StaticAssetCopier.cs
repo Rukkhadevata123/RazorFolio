@@ -5,7 +5,7 @@ public sealed class StaticAssetCopier
     public async Task<IReadOnlyList<string>> CopyAsync(
         string sourceDirectory,
         string outputDirectory,
-        IReadOnlyCollection<string> pagePaths,
+        IReadOnlyCollection<string> reservedPaths,
         CancellationToken cancellationToken = default)
     {
         if (!Directory.Exists(sourceDirectory))
@@ -25,12 +25,12 @@ public sealed class StaticAssetCopier
         // Reject file and directory conflicts before copying any assets.
         foreach (var (sourcePath, targetPath) in copies)
         {
-            if (pagePaths.Any(page =>
-                string.Equals(page, targetPath, comparison)
-                || targetPath.StartsWith(page + Path.DirectorySeparatorChar, comparison)
-                || page.StartsWith(targetPath + Path.DirectorySeparatorChar, comparison)))
+            if (reservedPaths.Any(path =>
+                string.Equals(path, targetPath, comparison)
+                || targetPath.StartsWith(path + Path.DirectorySeparatorChar, comparison)
+                || path.StartsWith(targetPath + Path.DirectorySeparatorChar, comparison)))
             {
-                throw new InvalidDataException($"Static asset conflicts with a generated page: {sourcePath}");
+                throw new InvalidDataException($"Static asset conflicts with a generated page or theme asset: {sourcePath}");
             }
         }
 

@@ -31,7 +31,11 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/my-new-blog
 
 `Views/_ViewStart.cshtml` 为页面选择共享的 `Views/Shared/_Layout.cshtml`。布局负责 HTML 外壳、字符集、viewport 和基础排版；文章页与首页只提供正文和 `ViewData["Title"]`，布局通过 `RenderBody()` 插入正文。修改主题后需要重新编译并构建站点。
 
-基础 CSS 暂时内联在共享布局中，包含正文宽度、行距、图片缩放和代码块横向滚动，并通过 `color-scheme` 跟随系统深浅色偏好。后续需要独立样式资源时，再接入主题资源输出。
+基础 CSS 位于默认主题的 `Styles/theme.css`，包含正文宽度、行距、图片缩放和代码块横向滚动，并通过 `color-scheme` 跟随系统深浅色偏好。CSS 作为嵌入资源随主题程序集和工具包携带，构建站点时写入 `assets/razorfolio.css`，所有页面通过共享布局的 `<link rel="stylesheet">` 引用。
+
+Core 中的 `IThemeAsset` 只约定资源的相对输出路径和读取流；`DefaultStylesheet` 负责从默认主题程序集打开 CSS，`SiteBuilder` 负责复制、生成相对 URL 并登记到输出清单。顶层页面使用 `./assets/razorfolio.css`，子目录文章自动使用 `../assets/razorfolio.css` 等路径，支持站点部署子路径。主题负责资源内容，Core 不需要知道程序集里的资源名称。
+
+当前只输出这一份主题样式，不执行 Sass 编译、压缩或文件名指纹处理。修改主题 CSS 后需要重新编译工具并构建站点；已安装工具中的 CSS 随工具更新。开发模式同样将样式写入自己的输出目录。静态资源或文章与主题样式的输出路径冲突时会报错，不隐式覆盖主题。
 
 `Views/Home.cshtml` 生成根目录的 `index.html`，列出所有文章标题和链接，按发布日期从新到旧排序，无日期文章在后；同一天或都无日期时按输出 URL 排序。没有文章时显示空状态；构建报告的页面数包含首页和生成的标签归档页。根目录的 `index.html` 保留给自动首页，`content/index.md` 或与首页路径冲突的静态资源会报错。
 
@@ -68,7 +72,7 @@ rf build --site ~/my-new-blog
 rf dev --site ~/my-new-blog
 ```
 
-工具包包含 Core、预编译默认主题、Markdig 和 YamlDotNet，使用时不需要生成器源码或 `.cshtml` 文件。它仍依赖 .NET 10 和 ASP.NET Core 10 共享运行时；安装工具需要 .NET SDK，本项目开发环境使用 .NET 10 SDK。安装目录中还有工具依赖文件，不能只复制 `rf` 入口。
+工具包包含 Core、预编译默认主题及其嵌入样式、Markdig 和 YamlDotNet，使用时不需要生成器源码、`.cshtml` 或主题 CSS 源文件。它仍依赖 .NET 10 和 ASP.NET Core 10 共享运行时；安装工具需要 .NET SDK，本项目开发环境使用 .NET 10 SDK。安装目录中还有工具依赖文件，不能只复制 `rf` 入口。
 
 修改 C# 或主题后，已安装的工具不会自动更新。日常开发继续使用下文的 `dotnet run`；验证新包时可用 `dotnet pack ... -p:Version=0.1.0-dev.2` 打出不同版本，再用 `dotnet tool update` 配合相同的 `--source`、`--tool-path` 和新的 `--version` 更新，避免反复复用同一版本的缓存。
 
@@ -182,7 +186,7 @@ Markdig 负责容器语法，`Rendering/BlogContainerRenderer.cs` 将提示框�
 
 图片和附件放在 `static/`，例如 `static/images/example.svg` 会复制到 `public/images/example.svg`。顶层文章可写 `![示例](images/example.svg)`；复制不会改写文件内容，也不会压缩或编译 CSS、JS。
 
-`static/` 可以不存在。已有资源在再次构建时覆盖更新；静态资源与本次生成的页面路径冲突时会报错。删除源资源后，下次成功构建会清理生成清单中对应的旧输出。复制逻辑位于 `Assets/StaticAssetCopier.cs`。
+`static/` 可以不存在。已有资源在再次构建时覆盖更新；静态资源与本次生成的页面或主题样式路径冲突时会报错。删除源资源后，下次成功构建会清理生成清单中对应的旧输出。复制逻辑位于 `Assets/StaticAssetCopier.cs`。
 
 文本附件约定使用 UTF-8。预览服务为 `.txt` 返回 `text/plain; charset=utf-8`，避免浏览器猜错编码；复制过程不转码。部署后的响应头由实际静态托管服务决定。
 
@@ -241,7 +245,7 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 
 ## 生成清单与清理
 
-每次成功构建会记录本次文章、首页和静态资源的相对输出路径。正式构建使用 `.razorfolio/outputs.json` 管理 `public/`，开发构建使用 `.razorfolio/dev-outputs.json` 管理 `.razorfolio/dev/`，清单放在各自的 HTTP 服务目录之外。
+每次成功构建会记录本次页面、主题样式和静态资源的相对输出路径。正式构建使用 `.razorfolio/outputs.json` 管理 `public/`，开发构建使用 `.razorfolio/dev-outputs.json` 管理 `.razorfolio/dev/`，清单放在各自的 HTTP 服务目录之外。
 
 下一次成功生成全部页面后，只删除对应旧清单中不再出现的文件，再替换该清单。手动放在输出目录中、从未被生成器记录的文件不会被清理；如果文件路径曾经由生成器管理，之后仍按生成产物处理。开发构建的清理不会删除正式产物，正式构建也不会清理开发产物。
 

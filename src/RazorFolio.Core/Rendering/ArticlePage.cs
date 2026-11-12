@@ -8,4 +8,5 @@ public sealed record ArticlePage(
     string BodyHtml,
     SiteConfiguration Site,
     string HomeUrl,
-    IReadOnlyList<TagLink> Tags);
+    IReadOnlyList<TagLink> Tags,
+    string StylesheetUrl);

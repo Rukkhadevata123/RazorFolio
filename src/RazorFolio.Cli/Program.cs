@@ -80,7 +80,8 @@ try
         new ArticleParser(markdownPipeline),
         new MarkdownRenderer(markdownPipeline),
         pageRenderer,
-        new StaticAssetCopier());
+        new StaticAssetCopier(),
+        new DefaultStylesheet());
     var target = command.Name == "dev"
         ? SiteBuildTarget.Development(command.SiteDirectory)
         : SiteBuildTarget.Production(command.SiteDirectory);

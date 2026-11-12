@@ -10,7 +10,8 @@ public sealed class SiteBuilder(
     ArticleParser articleParser,
     MarkdownRenderer markdownRenderer,
     IPageRenderer pageRenderer,
-    StaticAssetCopier assetCopier)
+    StaticAssetCopier assetCopier,
+    IThemeAsset stylesheet)
 {
     public async Task<int> BuildAsync(
         SiteBuildTarget target, CancellationToken cancellationToken = default)
@@ -43,19 +44,23 @@ public sealed class SiteBuilder(
         var tagsPath = Path.Combine(outputDirectory, "tags.html");
         var hasTags = sources.Any(source => source.Article.Info.Tags.Count > 0);
         string[] reservedPaths = hasTags ? [homePath, tagsPath] : [homePath];
+        var stylesheetPath = Path.GetFullPath(stylesheet.RelativePath, outputDirectory);
+        string[] protectedPaths = [.. reservedPaths, stylesheetPath];
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
-        foreach (var reservedPath in reservedPaths)
+        foreach (var protectedPath in protectedPaths)
         {
-            if (pagePaths.Any(path => string.Equals(path, reservedPath, comparison)
-                || path.StartsWith(reservedPath + Path.DirectorySeparatorChar, comparison)))
+            if (pagePaths.Any(path => string.Equals(path, protectedPath, comparison)
+                || path.StartsWith(protectedPath + Path.DirectorySeparatorChar, comparison)
+                || protectedPath.StartsWith(path + Path.DirectorySeparatorChar, comparison)))
             {
-                throw new InvalidDataException($"Path reserved for a generated page: {reservedPath}");
+                throw new InvalidDataException($"Path reserved for a generated page or theme asset: {protectedPath}");
             }
         }
 
         var assetPaths = await assetCopier.CopyAsync(
-            Path.Combine(siteRoot, "static"), outputDirectory, [.. pagePaths, .. reservedPaths], cancellationToken);
+            Path.Combine(siteRoot, "static"), outputDirectory, [.. pagePaths, .. protectedPaths], cancellationToken);
+        await CopyStylesheetAsync(stylesheetPath, cancellationToken);
         var articles = new List<ArticleLink>();
 
         foreach (var (sourceFile, article) in sources)
@@ -68,7 +73,8 @@ public sealed class SiteBuilder(
                 .. article.Info.Tags.Select(tag => new TagLink(tag, tagsUrl + "#" + TagGroup.GetId(tag)))
             ];
             var bodyHtml = markdownRenderer.Render(article.Body);
-            var page = new ArticlePage(article.Info, bodyHtml, configuration, homeUrl, tags);
+            var page = new ArticlePage(
+                article.Info, bodyHtml, configuration, homeUrl, tags, PageUrl.GetRelative(outputPath, stylesheetPath));
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
@@ -82,21 +88,32 @@ public sealed class SiteBuilder(
             .. articles.OrderByDescending(article => article.Info.Date)
                 .ThenBy(article => article.Url, StringComparer.Ordinal)
         ];
-        var home = new HomePage(orderedArticles, configuration, hasTags ? PageUrl.GetRelative(homePath, tagsPath) : null);
+        var home = new HomePage(
+            orderedArticles, configuration, hasTags ? PageUrl.GetRelative(homePath, tagsPath) : null,
+            PageUrl.GetRelative(homePath, stylesheetPath));
         var homeHtml = await pageRenderer.RenderAsync(home, cancellationToken);
         await File.WriteAllTextAsync(homePath, homeHtml, cancellationToken);
 
         if (hasTags)
         {
             var archive = new TagArchivePage(
-                GroupByTag(orderedArticles), configuration, PageUrl.GetRelative(tagsPath, homePath));
+                GroupByTag(orderedArticles), configuration, PageUrl.GetRelative(tagsPath, homePath),
+                PageUrl.GetRelative(tagsPath, stylesheetPath));
             var tagsHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
             await File.WriteAllTextAsync(tagsPath, tagsHtml, cancellationToken);
         }
 
-        await manifest.CompleteAsync([.. pagePaths, .. reservedPaths, .. assetPaths], cancellationToken);
+        await manifest.CompleteAsync([.. pagePaths, .. reservedPaths, stylesheetPath, .. assetPaths], cancellationToken);
 
         return sources.Count + reservedPaths.Length;
+    }
+
+    private async Task CopyStylesheetAsync(string outputPath, CancellationToken cancellationToken)
+    {
+        await using var source = stylesheet.OpenRead();
+        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+        await using var target = File.Create(outputPath);
+        await source.CopyToAsync(target, cancellationToken);
     }
 
     private static TagGroup[] GroupByTag(IReadOnlyList<ArticleLink> articles) =>

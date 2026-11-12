@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Styles/theme.css" LogicalName="RazorFolio.Themes.Default.theme.css" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="../RazorFolio.Core/RazorFolio.Core.csproj" />
   </ItemGroup>
