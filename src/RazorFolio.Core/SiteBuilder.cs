@@ -13,13 +13,13 @@ public sealed class SiteBuilder(
     StaticAssetCopier assetCopier)
 {
     public async Task<int> BuildAsync(
-        string siteDirectory, bool includeDrafts = false, CancellationToken cancellationToken = default)
+        SiteBuildTarget target, CancellationToken cancellationToken = default)
     {
-        var siteRoot = Path.GetFullPath(siteDirectory);
+        var siteRoot = target.SiteDirectory;
         var configuration = await SiteConfigurationLoader.LoadAsync(siteRoot, cancellationToken);
-        var manifest = await OutputManifest.LoadAsync(siteRoot, cancellationToken);
+        var manifest = await OutputManifest.LoadAsync(target.OutputDirectory, target.ManifestPath, cancellationToken);
         var contentDirectory = Path.Combine(siteRoot, "content");
-        var outputDirectory = Path.Combine(siteRoot, "public");
+        var outputDirectory = target.OutputDirectory;
 
         if (!Directory.Exists(contentDirectory))
         {
@@ -32,7 +32,7 @@ public sealed class SiteBuilder(
                 .Where(path => Path.GetExtension(path).Equals(".md", StringComparison.OrdinalIgnoreCase))
         ];
         Array.Sort(sourceFiles, StringComparer.Ordinal);
-        var sources = await LoadArticlesAsync(sourceFiles, includeDrafts, cancellationToken);
+        var sources = await LoadArticlesAsync(sourceFiles, target.IncludeDrafts, cancellationToken);
         Directory.CreateDirectory(outputDirectory);
 
         string[] pagePaths =

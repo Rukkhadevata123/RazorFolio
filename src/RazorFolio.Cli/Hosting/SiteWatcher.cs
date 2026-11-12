@@ -4,7 +4,7 @@ using RazorFolio.Core;
 
 namespace RazorFolio.Cli.Hosting;
 
-internal sealed class SiteWatcher(string siteDirectory, SiteBuilder builder, LiveReload liveReload) : BackgroundService
+internal sealed class SiteWatcher(SiteBuildTarget target, SiteBuilder builder, LiveReload liveReload) : BackgroundService
 {
     private readonly Channel<bool> changes = Channel.CreateBounded<bool>(new BoundedChannelOptions(1)
     {
@@ -14,7 +14,7 @@ internal sealed class SiteWatcher(string siteDirectory, SiteBuilder builder, Liv
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var watcher = new FileSystemWatcher(siteDirectory)
+        using var watcher = new FileSystemWatcher(target.SiteDirectory)
         {
             IncludeSubdirectories = true,
             NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
@@ -48,7 +48,7 @@ internal sealed class SiteWatcher(string siteDirectory, SiteBuilder builder, Liv
 
                 try
                 {
-                    var count = await builder.BuildAsync(siteDirectory, includeDrafts: true, cancellationToken: stoppingToken);
+                    var count = await builder.BuildAsync(target, stoppingToken);
                     liveReload.Publish();
                     Console.WriteLine($"Rebuilt {count} page(s). Notified browsers.");
                 }
@@ -69,7 +69,7 @@ internal sealed class SiteWatcher(string siteDirectory, SiteBuilder builder, Liv
 
     private void QueueChange(string path)
     {
-        var relative = Path.GetRelativePath(siteDirectory, path);
+        var relative = Path.GetRelativePath(target.SiteDirectory, path);
         var root = relative.Split(Path.DirectorySeparatorChar)[0];
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 

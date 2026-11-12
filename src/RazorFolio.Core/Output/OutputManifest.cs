@@ -15,25 +15,25 @@ public sealed class OutputManifest
         this.previousFiles = previousFiles;
     }
 
-    public static async Task<OutputManifest> LoadAsync(string siteRoot, CancellationToken cancellationToken)
+    public static async Task<OutputManifest> LoadAsync(
+        string outputDirectory, string manifestPath, CancellationToken cancellationToken)
     {
-        var path = Path.Combine(siteRoot, ".razorfolio", "outputs.json");
         string[] files = [];
-        if (File.Exists(path))
+        if (File.Exists(manifestPath))
         {
             try
             {
-                var json = await File.ReadAllTextAsync(path, cancellationToken);
+                var json = await File.ReadAllTextAsync(manifestPath, cancellationToken);
                 files = JsonSerializer.Deserialize<string[]>(json)
-                    ?? throw new InvalidDataException($"Output manifest is null: {path}");
+                    ?? throw new InvalidDataException($"Output manifest is null: {manifestPath}");
             }
             catch (JsonException exception)
             {
-                throw new InvalidDataException($"Invalid output manifest: {path}", exception);
+                throw new InvalidDataException($"Invalid output manifest: {manifestPath}", exception);
             }
         }
 
-        var manifest = new OutputManifest(Path.Combine(siteRoot, "public"), path, files);
+        var manifest = new OutputManifest(outputDirectory, manifestPath, files);
         foreach (var file in files)
         {
             manifest.GetSafePath(file);

@@ -24,7 +24,7 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
 
         Preview serves existing files on 127.0.0.1 without rebuilding them.
 
-        Dev rebuilds on source changes and reloads connected browsers.
+        Dev builds into .razorfolio/dev/ with drafts and reloads browsers on source changes.
 
         New creates a minimal site in a new or empty directory.
         """);
@@ -69,14 +69,17 @@ try
         new MarkdownRenderer(markdownPipeline),
         pageRenderer,
         new StaticAssetCopier());
-    var pageCount = await builder.BuildAsync(command.SiteDirectory, includeDrafts: command.Name == "dev");
+    var target = command.Name == "dev"
+        ? SiteBuildTarget.Development(command.SiteDirectory)
+        : SiteBuildTarget.Production(command.SiteDirectory);
+    var pageCount = await builder.BuildAsync(target);
 
-    Console.WriteLine($"Built {pageCount} page(s) in {Path.Combine(command.SiteDirectory, "public")}");
+    Console.WriteLine($"Built {pageCount} page(s) in {target.OutputDirectory}");
     if (command.Name == "dev")
     {
         var liveReload = new LiveReload();
-        using var watcher = new SiteWatcher(command.SiteDirectory, builder, liveReload);
-        await PreviewServer.RunAsync(Path.Combine(command.SiteDirectory, "public"), command.Port, watcher, liveReload);
+        using var watcher = new SiteWatcher(target, builder, liveReload);
+        await PreviewServer.RunAsync(target.OutputDirectory, command.Port, watcher, liveReload);
     }
 
     return 0;
