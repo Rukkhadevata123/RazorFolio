@@ -66,8 +66,12 @@ public sealed class SiteBuilder(
         var assetPaths = await assetCopier.CopyAsync(
             Path.Combine(siteRoot, "static"), outputDirectory, [.. pagePaths, .. protectedPaths], cancellationToken);
         await CopyStylesheetAsync(stylesheetPath, cancellationToken);
-        var customStylesheetPath = assetPaths.FirstOrDefault(path =>
-            string.Equals(path, Path.Combine(outputDirectory, "custom.css"), comparison));
+
+        string? FindCopiedAsset(string relativePath) => assetPaths.FirstOrDefault(path =>
+            string.Equals(path, Path.Combine(outputDirectory, relativePath), comparison));
+
+        var customStylesheetPath = FindCopiedAsset("custom.css");
+        var faviconPath = FindCopiedAsset("favicon.svg");
         string[] stylesheetPaths = customStylesheetPath is null
             ? [stylesheetPath]
             : [stylesheetPath, customStylesheetPath];
@@ -77,7 +81,8 @@ public sealed class SiteBuilder(
             string[] stylesheetUrls = [.. stylesheetPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
             var canonicalUrl = draft ? null : PageUrl.GetAbsolute(pagePath, outputDirectory, configuration.Url);
             var feed = feedUrl is null ? null : new FeedLink(PageUrl.GetRelative(pagePath, feedPath), feedUrl);
-            return new PageContext(configuration, stylesheetUrls, canonicalUrl, feed);
+            var faviconUrl = faviconPath is null ? null : PageUrl.GetRelative(pagePath, faviconPath);
+            return new PageContext(configuration, stylesheetUrls, canonicalUrl, feed, faviconUrl);
         }
 
         var articles = new List<ArticleLink>();

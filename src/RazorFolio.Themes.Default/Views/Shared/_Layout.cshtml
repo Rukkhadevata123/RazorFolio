@@ -9,6 +9,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@ViewData["Title"]</title>
+    @if (context.FaviconUrl is { } faviconUrl)
+    {
+        <link rel="icon" type="image/svg+xml" href="@faviconUrl">
+    }
     @if (ViewData["Description"] is string description)
     {
         <meta name="description" content="@description">

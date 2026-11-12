@@ -6,4 +6,5 @@ public sealed record PageContext(
     SiteConfiguration Site,
     IReadOnlyList<string> StylesheetUrls,
     string? CanonicalUrl,
-    FeedLink? Feed);
+    FeedLink? Feed,
+    string? FaviconUrl);

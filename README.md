@@ -29,7 +29,7 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/my-new-blog
 
 默认主题使用 Razor SDK 预编译 `Views/Article.cshtml`。CLI 通过项目引用携带默认主题，第一版不加载外部主题插件。
 
-`Views/_ViewStart.cshtml` 为页面选择共享的 `Views/Shared/_Layout.cshtml`。布局负责 HTML 外壳、字符集、viewport 和基础排版，通过 `RenderBody()` 插入各页面正文。首页、文章页和标签归档都实现 `IPageModel`，通过 `Context` 提供 `PageContext`，其中包含站点配置、样式链接、canonical 和 RSS 地址。
+`Views/_ViewStart.cshtml` 为页面选择共享的 `Views/Shared/_Layout.cshtml`。布局负责 HTML 外壳、字符集、viewport 和基础排版，通过 `RenderBody()` 插入各页面正文。首页、文章页和标签归档都实现 `IPageModel`，通过 `Context` 提供 `PageContext`，其中包含站点配置、样式链接、favicon、canonical 和 RSS 地址。
 
 共享布局使用 `@model IPageModel`，直接读取 `Model.Context` 中的属性；页面模板只通过 `ViewData["Title"]` 和可选的 `ViewData["Description"]` 设置当前页面的标题与简介。这样公共布局数据有类型约束，不必在三个页面中逐项转存为字符串键。修改主题后需要重新编译并构建站点。
 
@@ -50,6 +50,10 @@ body {
 构建器从本次复制的静态资源中识别这个文件，在所有页面的默认样式之后添加它的 `<link>`。自定义样式仍遵循 CSS 层叠和选择器优先级规则。首页、文章及标签归档都使用相对 URL，支持多层目录和站点部署子路径。其他位置或文件名的 CSS 仍会照常复制，但不会自动加载。
 
 `dev` 会监听 `static/custom.css` 的创建、修改和删除，重建后整页刷新，无需重新编译工具。删除文件后会移除页面中的链接，并按清单清理旧输出；手动放在输出目录中的同名文件不会被自动引用。各页面通过 `Context.StylesheetUrls` 按顺序携带样式链接，共享布局统一输出。
+
+站点图标采用类似约定：将 SVG 文件放到 `static/favicon.svg`，所有页面就会通过 `<link rel="icon" type="image/svg+xml">` 引用它。文件原样复制，链接根据页面所在目录计算，支持多层目录和站点部署子路径；不需要配置 `url` 或重新编译工具。
+
+`dev` 会监听图标文件的创建、修改和删除；删除后移除图标声明，并按清单清理旧文件。这里只识别本次复制的顶层 `favicon.svg`，输出目录里的遗留文件不会被自动引用。其他文件名、ICO 和 PNG 仍作为普通静态资源复制，暂不自动生成图标声明。识别结果通过 `PageContext.FaviconUrl` 传给共享布局，三种具体页面模型无需各自声明图标字段。
 
 `Views/Home.cshtml` 生成根目录的 `index.html`，列出所有文章标题和链接，按发布日期从新到旧排序，无日期文章在后；同一天或都无日期时按输出 URL 排序。没有文章时显示空状态；构建报告的页面数包含首页和生成的标签归档页。根目录的 `index.html` 保留给自动首页，`content/index.md` 或与首页路径冲突的静态资源会报错。
 
@@ -194,7 +198,7 @@ Markdig 负责容器语法，`Rendering/BlogContainerRenderer.cs` 将提示框�
 
 页面渲染通过 Core 中的 `ArticlePage` 和 `IPageRenderer` 连接默认主题。`SiteBuilder` 提交文章信息、正文 HTML、站点配置和首页链接，不接触 ASP.NET Core；主题中的 `RazorPageRenderer` 准备 MVC 视图上下文，再执行预编译模板。例如文章模板通过 `Model.Info.Title` 读取标题。CLI 使用 ASP.NET Core 的服务容器组装渲染器，但不会启动 HTTP 监听。
 
-`SiteBuilder.BuildAsync` 中的 `CreateContext` 是局部函数，可以读取本次构建的站点配置和输出路径，为不同页面计算各自的样式、canonical 和 RSS 链接。`PageContext` 管布局所需的公共信息，`ArticleInfo` 管文章元数据，页面模型再组合正文或文章列表；标题拼接方式仍由主题决定。
+`SiteBuilder.BuildAsync` 中的 `CreateContext` 是局部函数，可以读取本次构建的站点配置和输出路径，为不同页面计算各自的样式、图标、canonical 和 RSS 链接。`PageContext` 管布局所需的公共信息，`ArticleInfo` 管文章元数据，页面模型再组合正文或文章列表；标题拼接方式仍由主题决定。
 
 模板用 `@Model.Info.Title` 输出普通文本，由 Razor 编码；`@Html.Raw(Model.BodyHtml)` 原样插入作者 Markdown 生成的 HTML。当前按可信本地文章处理，不执行 HTML 清洗。
 
