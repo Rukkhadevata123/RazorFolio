@@ -60,6 +60,7 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
 
         var description = string.IsNullOrWhiteSpace(metadata.Description) ? null : metadata.Description.Trim();
 
-        return new ParsedArticle(title, document, date, metadata.Draft, description);
+        var info = new ArticleInfo(title, date, metadata.Draft, description);
+        return new ParsedArticle(info, document);
     }
 }

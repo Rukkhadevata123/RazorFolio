@@ -16,17 +16,17 @@ else
         @foreach (var article in Model.Articles)
         {
             <li>
-                <a href="@article.Url">@article.Title</a>
-                @if (article.Draft)
+                <a href="@article.Url">@article.Info.Title</a>
+                @if (article.Info.Draft)
                 {
                     <span>（草稿）</span>
                 }
-                @if (article.Date is { } date)
+                @if (article.Info.Date is { } date)
                 {
                     var dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                     <time class="article-date" datetime="@dateText">@dateText</time>
                 }
-                @if (article.Description is { } description)
+                @if (article.Info.Description is { } description)
                 {
                     <p class="article-description">@description</p>
                 }

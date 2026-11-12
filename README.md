@@ -122,9 +122,11 @@ Markdig 负责容器语法，`Rendering/BlogContainerRenderer.cs` 将提示框�
 
 阅读代码可以依次看 `Program.cs`、`Commands/SiteCommand.cs`、`SiteBuilder.cs`、`Content/ArticleParser.cs` 和 `Rendering/MarkdownRenderer.cs`。CLI 处理参数与退出码，Core 处理文件生成；`ArticleParser` 管理解析管线、提取元数据，并从语法树中移除 front matter，`MarkdownRenderer` 将剩余语法树渲染为正文 HTML，避免重复解析 Markdown。
 
-页面渲染通过 Core 中的 `ArticlePage` 和 `IPageRenderer` 连接默认主题。`SiteBuilder` 只提交标题和正文，不接触 ASP.NET Core；主题中的 `RazorPageRenderer` 准备 MVC 视图上下文，再执行预编译模板。CLI 使用 ASP.NET Core 的服务容器组装渲染器，但不会启动 HTTP 监听。
+文章信息分为两层：`ArticleMetadata` 接收 YAML 原始值，`ArticleParser` 校验日期、补上默认标题并处理空简介后，生成 `ArticleInfo`。这个 record 集中保存标题、日期、草稿状态和简介；`ParsedArticle`、`ArticlePage` 和 `ArticleLink` 通过 `Info` 属性携带同一个实例，不再逐项复制这些字段。Markdown 语法树、正文 HTML 和链接地址仍由各自的模型持有。
 
-模板用 `@Model.Title` 输出普通文本，由 Razor 编码；`@Html.Raw(Model.BodyHtml)` 原样插入作者 Markdown 生成的 HTML。当前按可信本地文章处理，不执行 HTML 清洗。
+页面渲染通过 Core 中的 `ArticlePage` 和 `IPageRenderer` 连接默认主题。`SiteBuilder` 提交文章信息、正文 HTML、站点配置和首页链接，不接触 ASP.NET Core；主题中的 `RazorPageRenderer` 准备 MVC 视图上下文，再执行预编译模板。例如文章模板通过 `Model.Info.Title` 读取标题。CLI 使用 ASP.NET Core 的服务容器组装渲染器，但不会启动 HTTP 监听。
+
+模板用 `@Model.Info.Title` 输出普通文本，由 Razor 编码；`@Html.Raw(Model.BodyHtml)` 原样插入作者 Markdown 生成的 HTML。当前按可信本地文章处理，不执行 HTML 清洗。
 
 ## 预览已有产物
 

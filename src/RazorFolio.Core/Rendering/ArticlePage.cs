@@ -1,12 +1,10 @@
 using RazorFolio.Core.Configuration;
+using RazorFolio.Core.Content;
 
 namespace RazorFolio.Core.Rendering;
 
 public sealed record ArticlePage(
-    string Title,
+    ArticleInfo Info,
     string BodyHtml,
     SiteConfiguration Site,
-    DateOnly? Date,
-    bool Draft,
-    string HomeUrl,
-    string? Description);
+    string HomeUrl);

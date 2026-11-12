@@ -57,19 +57,18 @@ public sealed class SiteBuilder(
             var outputPath = GetOutputPath(sourceFile, contentDirectory, outputDirectory);
             var homeUrl = PageUrl.GetRelative(outputPath, homePath);
             var bodyHtml = markdownRenderer.Render(article.Body);
-            var page = new ArticlePage(
-                article.Title, bodyHtml, configuration, article.Date, article.Draft, homeUrl, article.Description);
+            var page = new ArticlePage(article.Info, bodyHtml, configuration, homeUrl);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
             await File.WriteAllTextAsync(outputPath, html, cancellationToken);
             var articleUrl = PageUrl.GetRelative(homePath, outputPath);
-            articles.Add(new ArticleLink(article.Title, articleUrl, article.Date, article.Draft, article.Description));
+            articles.Add(new ArticleLink(article.Info, articleUrl));
         }
 
         ArticleLink[] orderedArticles =
         [
-            .. articles.OrderByDescending(article => article.Date)
+            .. articles.OrderByDescending(article => article.Info.Date)
                 .ThenBy(article => article.Url, StringComparer.Ordinal)
         ];
         var homeHtml = await pageRenderer.RenderAsync(new HomePage(orderedArticles, configuration), cancellationToken);
@@ -87,7 +86,7 @@ public sealed class SiteBuilder(
         {
             var markdown = await File.ReadAllTextAsync(path, cancellationToken);
             var article = articleParser.Parse(markdown, path);
-            if (includeDrafts || !article.Draft)
+            if (includeDrafts || !article.Info.Draft)
             {
                 sources.Add((path, article));
             }

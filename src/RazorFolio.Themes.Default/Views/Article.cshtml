@@ -1,9 +1,9 @@
 @model RazorFolio.Core.Rendering.ArticlePage
 @using System.Globalization
 @{
-    ViewData["Title"] = $"{Model.Title} — {Model.Site.Title}";
+    ViewData["Title"] = $"{Model.Info.Title} — {Model.Site.Title}";
     ViewData["Language"] = Model.Site.Language;
-    ViewData["Description"] = Model.Description;
+    ViewData["Description"] = Model.Info.Description;
 }
 
 <nav aria-label="站点导航">
@@ -11,12 +11,12 @@
 </nav>
 
 <article>
-    @if (Model.Draft)
+    @if (Model.Info.Draft)
     {
         <p><strong>草稿</strong> · 仅供开发预览</p>
     }
 
-    @if (Model.Date is { } date)
+    @if (Model.Info.Date is { } date)
     {
         var dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         <p class="article-date"><time datetime="@dateText">@dateText</time></p>
