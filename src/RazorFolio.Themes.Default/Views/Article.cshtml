@@ -1,12 +1,8 @@
 @model RazorFolio.Core.Rendering.ArticlePage
 @using System.Globalization
 @{
-    ViewData["Title"] = $"{Model.Info.Title} — {Model.Site.Title}";
-    ViewData["Language"] = Model.Site.Language;
+    ViewData["Title"] = $"{Model.Info.Title} — {Model.Context.Site.Title}";
     ViewData["Description"] = Model.Info.Description;
-    ViewData["StylesheetUrls"] = Model.StylesheetUrls;
-    ViewData["CanonicalUrl"] = Model.CanonicalUrl;
-    ViewData["Feed"] = Model.Feed;
 }
 
 <nav aria-label="站点导航">

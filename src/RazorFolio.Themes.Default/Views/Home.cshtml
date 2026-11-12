@@ -1,13 +1,9 @@
 @model RazorFolio.Core.Rendering.HomePage
 @{
-    ViewData["Title"] = Model.Site.Title;
-    ViewData["Language"] = Model.Site.Language;
-    ViewData["StylesheetUrls"] = Model.StylesheetUrls;
-    ViewData["CanonicalUrl"] = Model.CanonicalUrl;
-    ViewData["Feed"] = Model.Feed;
+    ViewData["Title"] = Model.Context.Site.Title;
 }
 
-<h1>@Model.Site.Title</h1>
+<h1>@Model.Context.Site.Title</h1>
 @if (Model.TagsUrl is { } tagsUrl)
 {
     <p><a href="@tagsUrl">按标签浏览</a></p>

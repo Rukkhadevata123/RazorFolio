@@ -1,9 +1,10 @@
-@using RazorFolio.Core.Rendering
+@model RazorFolio.Core.Rendering.IPageModel
 @{
-    var feed = ViewData["Feed"] as FeedLink;
+    var context = Model.Context;
+    var feed = context.Feed;
 }
 <!doctype html>
-<html lang="@ViewData["Language"]">
+<html lang="@context.Site.Language">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,7 +13,7 @@
     {
         <meta name="description" content="@description">
     }
-    @if (ViewData["CanonicalUrl"] is string canonicalUrl)
+    @if (context.CanonicalUrl is { } canonicalUrl)
     {
         <link rel="canonical" href="@canonicalUrl">
     }
@@ -20,12 +21,9 @@
     {
         <link rel="alternate" type="application/rss+xml" title="RSS" href="@feed.AbsoluteUrl">
     }
-    @if (ViewData["StylesheetUrls"] is IReadOnlyList<string> stylesheetUrls)
+    @foreach (var stylesheetUrl in context.StylesheetUrls)
     {
-        @foreach (var stylesheetUrl in stylesheetUrls)
-        {
-            <link rel="stylesheet" href="@stylesheetUrl">
-        }
+        <link rel="stylesheet" href="@stylesheetUrl">
     }
 </head>
 <body>

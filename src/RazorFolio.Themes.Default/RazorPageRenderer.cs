@@ -34,7 +34,7 @@ public sealed class RazorPageRenderer(
     private async Task<string> RenderViewAsync<TModel>(
         string viewPath,
         TModel page,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken) where TModel : IPageModel
     {
         cancellationToken.ThrowIfCancellationRequested();
         var result = viewEngine.GetView(null, viewPath, isMainPage: true);

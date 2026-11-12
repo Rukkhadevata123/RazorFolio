@@ -1,10 +1,6 @@
 @model RazorFolio.Core.Rendering.TagArchivePage
 @{
-    ViewData["Title"] = $"标签归档 — {Model.Site.Title}";
-    ViewData["Language"] = Model.Site.Language;
-    ViewData["StylesheetUrls"] = Model.StylesheetUrls;
-    ViewData["CanonicalUrl"] = Model.CanonicalUrl;
-    ViewData["Feed"] = Model.Feed;
+    ViewData["Title"] = $"标签归档 — {Model.Context.Site.Title}";
 }
 
 <nav aria-label="站点导航">

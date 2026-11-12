@@ -71,6 +71,15 @@ public sealed class SiteBuilder(
         string[] stylesheetPaths = customStylesheetPath is null
             ? [stylesheetPath]
             : [stylesheetPath, customStylesheetPath];
+
+        PageContext CreateContext(string pagePath, bool draft = false)
+        {
+            string[] stylesheetUrls = [.. stylesheetPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
+            var canonicalUrl = draft ? null : PageUrl.GetAbsolute(pagePath, outputDirectory, configuration.Url);
+            var feed = feedUrl is null ? null : new FeedLink(PageUrl.GetRelative(pagePath, feedPath), feedUrl);
+            return new PageContext(configuration, stylesheetUrls, canonicalUrl, feed);
+        }
+
         var articles = new List<ArticleLink>();
 
         foreach (var (sourceFile, article) in sources)
@@ -83,13 +92,8 @@ public sealed class SiteBuilder(
                 .. article.Info.Tags.Select(tag => new TagLink(tag, tagsUrl + "#" + TagGroup.GetId(tag)))
             ];
             var bodyHtml = markdownRenderer.Render(article.Body);
-            var canonicalUrl = article.Info.Draft
-                ? null
-                : PageUrl.GetAbsolute(outputPath, outputDirectory, configuration.Url);
             var page = new ArticlePage(
-                article.Info, bodyHtml, configuration, homeUrl, tags,
-                GetStylesheetUrls(outputPath, stylesheetPaths), canonicalUrl,
-                GetFeedLink(outputPath, feedPath, feedUrl));
+                article.Info, bodyHtml, CreateContext(outputPath, article.Info.Draft), homeUrl, tags);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
@@ -104,20 +108,14 @@ public sealed class SiteBuilder(
                 .ThenBy(article => article.Url, StringComparer.Ordinal)
         ];
         var home = new HomePage(
-            orderedArticles, configuration, hasTags ? PageUrl.GetRelative(homePath, tagsPath) : null,
-            GetStylesheetUrls(homePath, stylesheetPaths),
-            PageUrl.GetAbsolute(homePath, outputDirectory, configuration.Url),
-            GetFeedLink(homePath, feedPath, feedUrl));
+            orderedArticles, CreateContext(homePath), hasTags ? PageUrl.GetRelative(homePath, tagsPath) : null);
         var homeHtml = await pageRenderer.RenderAsync(home, cancellationToken);
         await File.WriteAllTextAsync(homePath, homeHtml, cancellationToken);
 
         if (hasTags)
         {
             var archive = new TagArchivePage(
-                GroupByTag(orderedArticles), configuration, PageUrl.GetRelative(tagsPath, homePath),
-                GetStylesheetUrls(tagsPath, stylesheetPaths),
-                PageUrl.GetAbsolute(tagsPath, outputDirectory, configuration.Url),
-                GetFeedLink(tagsPath, feedPath, feedUrl));
+                GroupByTag(orderedArticles), CreateContext(tagsPath), PageUrl.GetRelative(tagsPath, homePath));
             var tagsHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
             await File.WriteAllTextAsync(tagsPath, tagsHtml, cancellationToken);
         }
@@ -138,12 +136,6 @@ public sealed class SiteBuilder(
 
         return sources.Count + reservedPaths.Length;
     }
-
-    private static FeedLink? GetFeedLink(string pagePath, string feedPath, string? absoluteUrl) =>
-        absoluteUrl is null ? null : new FeedLink(PageUrl.GetRelative(pagePath, feedPath), absoluteUrl);
-
-    private static string[] GetStylesheetUrls(string pagePath, IReadOnlyList<string> stylesheetPaths) =>
-        [.. stylesheetPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
 
     private async Task CopyStylesheetAsync(string outputPath, CancellationToken cancellationToken)
     {

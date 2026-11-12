@@ -1,4 +1,3 @@
-using RazorFolio.Core.Configuration;
 using RazorFolio.Core.Content;
 
 namespace RazorFolio.Core.Rendering;
@@ -6,9 +5,6 @@ namespace RazorFolio.Core.Rendering;
 public sealed record ArticlePage(
     ArticleInfo Info,
     string BodyHtml,
-    SiteConfiguration Site,
+    PageContext Context,
     string HomeUrl,
-    IReadOnlyList<TagLink> Tags,
-    IReadOnlyList<string> StylesheetUrls,
-    string? CanonicalUrl,
-    FeedLink? Feed);
+    IReadOnlyList<TagLink> Tags) : IPageModel;
