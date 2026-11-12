@@ -5,6 +5,10 @@
     ViewData["Language"] = Model.Site.Language;
 }
 
+<nav aria-label="站点导航">
+    <a href="@Model.HomeUrl">← 返回首页</a>
+</nav>
+
 <article>
     @if (Model.Draft)
     {

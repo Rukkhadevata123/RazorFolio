@@ -54,14 +54,16 @@ public sealed class SiteBuilder(
 
         foreach (var (sourceFile, article) in sources)
         {
-            var bodyHtml = markdownRenderer.Render(article.Body);
-            var page = new ArticlePage(article.Title, bodyHtml, configuration, article.Date, article.Draft);
-            var html = await pageRenderer.RenderAsync(page, cancellationToken);
             var outputPath = GetOutputPath(sourceFile, contentDirectory, outputDirectory);
+            var homeUrl = PageUrl.GetRelative(outputPath, homePath);
+            var bodyHtml = markdownRenderer.Render(article.Body);
+            var page = new ArticlePage(article.Title, bodyHtml, configuration, article.Date, article.Draft, homeUrl);
+            var html = await pageRenderer.RenderAsync(page, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
             await File.WriteAllTextAsync(outputPath, html, cancellationToken);
-            articles.Add(new ArticleLink(article.Title, GetPageUrl(outputPath, outputDirectory), article.Date, article.Draft));
+            var articleUrl = PageUrl.GetRelative(homePath, outputPath);
+            articles.Add(new ArticleLink(article.Title, articleUrl, article.Date, article.Draft));
         }
 
         ArticleLink[] orderedArticles =
@@ -97,11 +99,5 @@ public sealed class SiteBuilder(
     {
         var relativePath = Path.GetRelativePath(contentDirectory, sourceFile);
         return Path.Combine(outputDirectory, Path.ChangeExtension(relativePath, ".html"));
-    }
-
-    private static string GetPageUrl(string outputPath, string outputDirectory)
-    {
-        var segments = Path.GetRelativePath(outputDirectory, outputPath).Split(Path.DirectorySeparatorChar);
-        return "./" + string.Join("/", segments.Select(Uri.EscapeDataString));
     }
 }

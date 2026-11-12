@@ -37,6 +37,8 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/my-new-blog
 
 首页链接按相对路径生成，各路径段分别进行 URL 编码，支持中文、空格和 `#` 等文件名字符。
 
+文章页提供“返回首页”链接：顶层文章使用 `./index.html`，`Linux/hello.html` 使用 `../index.html`，更深目录依次增加 `../`。首页到文章、文章到首页的链接统一由 `Output/PageUrl.cs` 根据输出文件位置计算，再通过页面模型传给主题。因此这两类导航在站点部署到 `/仓库名/` 等子路径时也能使用，不需要写死域名根路径。Markdown 正文中手写的 `/images/example.svg` 等根路径链接仍由作者自行处理。
+
 文章之间可以写 `[示例](Linux/hello.md)`，Markdig 在 HTML 输出阶段将本地 `.md` 链接改成 `.html`，包括引用式链接。路径和文件名保持不变，查询参数与锚点也保留，例如 `hello.md?view=full#section` 变为 `hello.html?view=full#section`。不会重新计算旧锚点，也不会检查目标文章是否存在。
 
 带协议的外部链接、`//example.com/hello.md`、纯锚点及 `.png`、`.txt` 等资源链接不改写。当前把本地 `.md` 目标都视为文章；如果需要提供 Markdown 源文件下载，需要另外设计下载路径或规则。原始 HTML 中的链接和代码块文本不参与这项 Markdown 链接转换。
