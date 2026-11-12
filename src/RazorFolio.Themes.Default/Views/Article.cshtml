@@ -35,6 +35,8 @@
     @Html.Raw(Model.BodyHtml)
 </article>
 
+@await Html.PartialAsync("_CodeCopyScript")
+
 @if (Model.Navigation.Previous is not null || Model.Navigation.Next is not null)
 {
     <nav class="article-navigation" aria-label="文章导航">
