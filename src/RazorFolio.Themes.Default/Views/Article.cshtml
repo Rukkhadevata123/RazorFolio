@@ -45,7 +45,7 @@
     @Html.Raw(Model.BodyHtml)
 </article>
 
-@await Html.PartialAsync("_CodeCopyScript")
+@await Html.PartialAsync("_CodeBlockScripts")
 
 @if (Model.Navigation.Previous is not null || Model.Navigation.Next is not null)
 {

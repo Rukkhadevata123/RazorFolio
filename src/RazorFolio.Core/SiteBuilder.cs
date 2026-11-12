@@ -12,7 +12,7 @@ public sealed class SiteBuilder(
     MarkdownRenderer markdownRenderer,
     IPageRenderer pageRenderer,
     StaticAssetCopier assetCopier,
-    IThemeAsset stylesheet)
+    IReadOnlyList<IThemeAsset> themeAssets)
 {
     public async Task<int> BuildAsync(
         SiteBuildTarget target, CancellationToken cancellationToken = default)
@@ -97,8 +97,11 @@ public sealed class SiteBuilder(
         var feedPath = Path.Combine(outputDirectory, "feed.xml");
         var feedUrl = generateMetadata ? PageUrl.GetAbsolute(feedPath, outputDirectory, configuration.Url) : null;
         string[] metadataPaths = generateMetadata ? [sitemapPath, feedPath] : [];
-        var stylesheetPath = Path.GetFullPath(stylesheet.RelativePath, outputDirectory);
-        string[] protectedPaths = [.. reservedPaths, .. metadataPaths, stylesheetPath];
+        string[] themeAssetPaths =
+        [
+            .. themeAssets.Select(asset => Path.GetFullPath(asset.RelativePath, outputDirectory))
+        ];
+        string[] protectedPaths = [.. reservedPaths, .. metadataPaths, .. themeAssetPaths];
         OutputPathValidator.Validate(protectedPaths);
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
@@ -115,13 +118,19 @@ public sealed class SiteBuilder(
         Directory.CreateDirectory(outputDirectory);
         var assetPaths = await assetCopier.CopyAsync(
             Path.Combine(siteRoot, "static"), outputDirectory, [.. contentPaths, .. protectedPaths], cancellationToken);
-        await CopyStylesheetAsync(stylesheetPath, cancellationToken);
+        for (var index = 0; index < themeAssets.Count; index++)
+        {
+            await CopyThemeAssetAsync(themeAssets[index], themeAssetPaths[index], cancellationToken);
+        }
 
         var customStylesheetPath = FindCopiedAsset("custom.css");
         var faviconPath = FindCopiedAsset("favicon.svg");
-        string[] stylesheetPaths = customStylesheetPath is null
-            ? [stylesheetPath]
-            : [stylesheetPath, customStylesheetPath];
+        List<string> stylesheetPaths = [.. themeAssetPaths.Where(path => path.EndsWith(".css", StringComparison.Ordinal))];
+        if (customStylesheetPath is not null)
+        {
+            stylesheetPaths.Add(customStylesheetPath);
+        }
+        string[] scriptPaths = [.. themeAssetPaths.Where(path => path.EndsWith(".js", StringComparison.Ordinal))];
 
         ArticleOutput[] orderedArticlePages =
         [
@@ -257,7 +266,7 @@ public sealed class SiteBuilder(
         }
 
         await manifest.CompleteAsync(
-            [.. contentPaths, .. reservedPaths, .. metadataPaths, stylesheetPath, .. assetPaths], cancellationToken);
+            [.. contentPaths, .. reservedPaths, .. metadataPaths, .. themeAssetPaths, .. assetPaths], cancellationToken);
 
         return sources.Count + reservedPaths.Count + aliases.Length;
 
@@ -267,6 +276,7 @@ public sealed class SiteBuilder(
         PageContext CreateContext(string pagePath, bool draft = false)
         {
             string[] stylesheetUrls = [.. stylesheetPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
+            string[] scriptUrls = [.. scriptPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
             NavigationLink[] navigation =
             [
                 .. configuration.Navigation.Select(item => new NavigationLink(
@@ -275,7 +285,7 @@ public sealed class SiteBuilder(
             var canonicalUrl = draft ? null : PageUrl.GetAbsolute(pagePath, outputDirectory, configuration.Url);
             var feed = feedUrl is null ? null : new FeedLink(PageUrl.GetRelative(pagePath, feedPath), feedUrl);
             var faviconUrl = faviconPath is null ? null : PageUrl.GetRelative(pagePath, faviconPath);
-            return new PageContext(configuration, stylesheetUrls, navigation, canonicalUrl, feed, faviconUrl);
+            return new PageContext(configuration, stylesheetUrls, scriptUrls, navigation, canonicalUrl, feed, faviconUrl);
         }
     }
 
@@ -291,9 +301,10 @@ public sealed class SiteBuilder(
         return new ArticleLink(adjacent.Article.Info, PageUrl.GetRelative(fromPagePath, adjacent.OutputPath));
     }
 
-    private async Task CopyStylesheetAsync(string outputPath, CancellationToken cancellationToken)
+    private static async Task CopyThemeAssetAsync(
+        IThemeAsset asset, string outputPath, CancellationToken cancellationToken)
     {
-        await using var source = stylesheet.OpenRead();
+        await using var source = asset.OpenRead();
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         await using var target = File.Create(outputPath);
         await source.CopyToAsync(target, cancellationToken);

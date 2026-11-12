@@ -144,7 +144,11 @@ article: false
 
 没有显式 ID 的标题继续使用既有自动生成规则；本功能不自动推算或批量兼容 VuePress 的历史 ID。单篇文章内，显式 ID 重复或与自动 ID 冲突会报错并给出文件和行号，大小写不同的 ID 视为不同。检查范围是 Markdown 标题，不扫描手写 HTML 或其他组件的 ID。修改标题但保留显式 ID 时，原锚点链接仍可使用；`aliases` 只保留访问时的片段，不会转换旧标题 ID。
 
-代码块提供“复制代码”按钮，保留原文的缩进和换行，并提示复制结果。需要启用 JavaScript 且浏览器支持剪贴板写入（通常为 HTTPS 或本机预览）；接口不可用时不显示按钮，仍可手动选择复制。
+代码块顶部左侧显示围栏声明的语言（如 `csharp`、`bash`），右侧显示“复制代码”。未声明语言及缩进代码块显示“纯文本”；未知语言保留作者写的名称。语言栏随 HTML 生成，关闭 JavaScript 仍可见。
+
+语法高亮使用随主题发布的 highlight.js 11.11.1，在浏览器中运行，无需 CDN、npm 或额外构建步骤。按声明的语言及别名选择语法，覆盖 C#、C++、JavaScript/TypeScript、HTML/XML、CSS、JSON、YAML、Python、Bash 等常用语言，并额外包含 CMake、Dockerfile 和 PowerShell。未声明或不支持的语言保留纯文本，不猜测语言；脚本加载失败或禁用 JavaScript 时仍显示代码原文。高亮样式跟随系统明暗偏好，也支持主题在根元素设置 `data-theme="light"` / `"dark"`；可通过 `custom.css` 覆盖 `--code-*` 变量。
+
+“复制代码”保留原文的缩进和换行，并提示复制结果；语言名称和高亮装饰不进入剪贴板。需要启用 JavaScript 且浏览器支持剪贴板写入（通常为 HTTPS 或本机预览）；接口不可用时隐藏复制按钮，语言和高亮仍可显示。手写 HTML 的 `pre > code` 也会在启用 JS 时增强。
 
 文章按日期从新到旧排列，无日期的在后，同日期按输出 URL 排序。首页依次生成 `index.html`、`page/2.html` 等；“上一篇 / 下一篇”沿用全站顺序，标签归档集中在 `tags.html`。
 
@@ -168,6 +172,8 @@ article: false
 | --- | --- |
 | `static/custom.css` | 在默认样式之后加载 |
 | `static/favicon.svg` | 自动作为站点图标引用 |
+
+主题资源 `assets/razorfolio.css`、`assets/code.css`、`assets/highlight.min.js`、`assets/code-blocks.js` 和 `assets/highlight-LICENSE.txt` 由生成器管理，不能被同路径静态文件覆盖。脚本仅在文章和普通内容页加载，使用相对路径以支持子目录部署；`custom.css` 始终在内置样式之后加载。第三方库来源与许可见 [vendor/README.md](src/RazorFolio.Themes.Default/Scripts/vendor/README.md)。
 
 配置 `url` 后，正式构建还会输出 canonical 链接、`sitemap.xml` 和 `feed.xml`，并显示 RSS 订阅入口。RSS 提供最近 20 篇已发布文章的标题、链接和可选简介；标签归档、RSS 和相邻文章导航不受首页分页大小限制。
 

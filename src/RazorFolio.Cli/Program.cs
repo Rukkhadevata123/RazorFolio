@@ -81,7 +81,7 @@ try
         new MarkdownRenderer(markdownPipeline),
         pageRenderer,
         new StaticAssetCopier(),
-        new DefaultStylesheet());
+        DefaultThemeAssets.All);
     var target = command.Name == "dev"
         ? SiteBuildTarget.Development(command.SiteDirectory)
         : SiteBuildTarget.Production(command.SiteDirectory);
