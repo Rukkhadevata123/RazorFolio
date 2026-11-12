@@ -94,6 +94,22 @@ details.custom-container > summary { cursor: pointer; font-weight: bold; }
 .toc ul { padding-inline-start: 1.5rem; }
 h1, h2, h3, h4, h5, h6 { scroll-margin-top: 1rem; }
 
+.heading-anchor {
+    margin-inline-start: 0.25em;
+    text-decoration: none;
+    font-weight: normal;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .heading-anchor { opacity: 0; }
+    :is(h2, h3, h4, h5, h6):hover > .heading-anchor,
+    .heading-anchor:focus { opacity: 1; }
+}
+
+@media print {
+    .heading-anchor { display: none; }
+}
+
 .site-footer {
     margin-top: 2rem;
     padding-top: 1rem;

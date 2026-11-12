@@ -20,6 +20,7 @@ public sealed class MarkdownRenderer(MarkdownPipeline pipeline)
         }
 
         renderer.ObjectRenderers.Insert(0, new BlogContainerRenderer());
+        renderer.ObjectRenderers.Insert(0, new BlogHeadingRenderer());
         renderer.Render(document);
         return writer.ToString();
     }
