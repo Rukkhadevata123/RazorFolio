@@ -1,285 +1,147 @@
 # RazorFolio
 
-用 C# / .NET 10 编写的静态站点生成器，命令名为 `rf`。Markdown 由 Markdig 处理，YAML 由 YamlDotNet 解析，默认主题使用预编译 Razor 模板。
+C# / .NET 10 静态博客生成器，命令名为 `rf`。使用 Markdig、YamlDotNet 和预编译 Razor 模板。
 
-目前支持首页分页、年份/分类/标签归档、相邻文章导航、草稿预览、RSS、sitemap，以及本地监听和整页刷新。项目仍在逐步开发。
+支持卡片主题、明暗配色、代码高亮与复制、文章目录、分页、分类/标签/年份归档、草稿预览、RSS 和 sitemap。仍在开发中。
 
 ## 快速开始
 
-开发需要 .NET 10 SDK。[global.json](global.json) 会选择本机已安装的最新稳定 .NET 10 SDK，允许更新功能带和补丁版本。其中 `10.0.100` 是 SDK 选择的最低基线，不要求单独安装这个版本。
-
-在仓库根目录执行：
+安装 .NET 10 SDK，在仓库根目录运行：
 
 ```bash
 dotnet build
-dotnet run --project src/RazorFolio.Cli -- new ~/my-new-blog
-dotnet run --project src/RazorFolio.Cli -- dev --site ~/my-new-blog
+dotnet run --project src/RazorFolio.Cli -- new ~/my-blog
+dotnet run --project src/RazorFolio.Cli -- dev --site ~/my-blog
 ```
 
-打开 `http://127.0.0.1:8080/`，按 Ctrl+C 停止。`new` 只接受不存在或为空的目录；文章放在独立站点中，不需要放进工具源码仓库。
+打开 `http://127.0.0.1:8080/`。`new` 的目标目录须不存在或为空；博客内容独立于生成器源码。
 
-生成并检查正式产物：
+以下命令从源码运行时，将 `rf` 换成 `dotnet run --project src/RazorFolio.Cli --`：
 
-```bash
-dotnet run --project src/RazorFolio.Cli -- build --site ~/my-new-blog
-dotnet run --project src/RazorFolio.Cli -- preview --site ~/my-new-blog
+| 命令 | 用途 |
+| --- | --- |
+| `rf new <directory>` | 创建站点 |
+| `rf dev --site <directory>` | 包含草稿，监听修改并刷新 |
+| `rf build --site <directory>` | 生成正式网站，排除草稿 |
+| `rf preview --site <directory>` | 预览已有产物 |
+| `rf --help` / `rf --version` | 帮助与版本 |
+
+`dev` 和 `preview` 可用 `--port` 指定端口。
+
+## 站点配置
+
+```text
+my-blog/
+├── razorfolio.json   # 配置，可省略
+├── content/          # Markdown，支持子目录
+├── static/           # 图片、附件、custom.css、favicon.svg
+├── public/           # 正式输出
+└── .razorfolio/       # 开发输出与生成清单
 ```
-
-安装工具后，下表中的命令可直接使用；从源码运行时，将 `rf` 换成 `dotnet run --project src/RazorFolio.Cli --`。
-
-| 命令 | 行为 |
-| --- | --- |
-| `rf new <directory>` | 创建配置、示例文章、静态资源目录和 `.gitignore` |
-| `rf dev --site <directory> [--port 8080]` | 包含草稿，监听内容变化并刷新浏览器 |
-| `rf build --site <directory>` | 排除草稿，生成正式网站后退出 |
-| `rf preview --site <directory> [--directory public] [--port 8080]` | 只提供已有文件，不构建或监听 |
-| `rf --help` / `rf --version` | 查看用法或当前程序版本 |
-
-## 站点目录与配置
-
-| 路径 | 用途 |
-| --- | --- |
-| `content/` | Markdown 文章，支持子目录 |
-| `static/` | 原样复制的图片、CSS、附件等 |
-| `razorfolio.json` | 站点配置，可省略 |
-| `public/` | 正式输出 |
-| `.razorfolio/dev/` | 开发输出 |
-| `.razorfolio/*.json` | 生成清单，用于清理旧文件 |
 
 `razorfolio.json` 示例：
 
 ```json
 {
   "title": "我的博客",
+  "description": "记录开发与日常。",
   "language": "zh-CN",
   "pageSize": 20,
+  "url": "https://example.com/blog/",
   "navigation": [
     { "text": "首页", "link": "index.html" },
-    { "text": "关于", "link": "about.html" },
-    { "text": "GitHub", "link": "https://github.com/" }
+    { "text": "关于", "link": "about.md" }
   ],
-  "description": "记录开发环境、工具使用和日常折腾。",
-  "url": "https://example.com/blog/"
-}
-```
-
-| 字段 | 默认值 | 用途 |
-| --- | --- | --- |
-| `title` | `RazorFolio` | 站点名称 |
-| `language` | `zh-CN` | HTML 的 `lang`，不翻译主题文案 |
-| `pageSize` | `20` | 首页每页文章数，必须是正整数 |
-| `navigation` | `[]` | 按顺序显示的全站导航，每项包含非空的 `text` 和 `link` |
-| `description` | 无 | 首页简介、首页 meta description 和 RSS 频道说明 |
-| `url` | 无 | 正式部署地址，支持 `/blog/` 等子路径 |
-| `theme` | 默认主题选项 | 站点标识、首页首屏、作者卡片、文章侧栏及页脚，见下文 |
-
-未知配置字段会报错。`title`、`language` 不能为空；`description` 留空时首页省略简介，RSS 频道说明回退到站点名称。`url` 可省略或设为 null，填写时须为完整 HTTP(S) 地址，不带认证信息、查询参数或片段，末尾 `/` 会自动补齐。
-
-导航中的站内 `link` 按站点根目录解析，可以使用输出地址（如 `about.html`），也可以使用内容源路径（如 `about.md`、`Linux/hello.md`）。`.md` 链接会跟随目标页面的自定义 `url`；输出地址不会被再次映射。`/` 指向首页，`/about.md` 与 `about.md` 相同；开头的 `/` 在导航配置中表示站点根目录，不是域名根目录。支持查询参数和锚点，中文及空格会编码；生成相对链接以兼容子目录页面和部署子路径。
-
-外部导航支持完整 HTTP(S) 地址，默认在当前标签页打开。不支持 `//` 地址、其他协议、反斜杠或 `.`/`..` 路径段。省略 `navigation` 或设置 `[]` 时不显示主导航；`null`、空项和未知字段会报错。当前不校验导航目标是否存在，链接到草稿也不会使草稿在正式构建中发布。
-
-## 写文章
-
-`content/Linux/hello.md` 会生成 `public/Linux/hello.html`。文件开头可写 YAML front matter：
-
-```markdown
----
-title: 用 Podman 搭建开发环境
-description: 记录容器创建、目录挂载和日常使用的命令。
-date: 2026-11-12
-draft: false
-tags: [Linux, Podman]
-category: [Linux Daily Use]
----
-
-# 正文标题
-
-[TOC]
-
-## 安装
-
-::: tip 小提示
-正文可以包含 **强调**、列表和代码块。
-:::
-```
-
-- `title` 未填写时使用文件名。正文开头的 Markdown H1 会作为页面标题移到文章头部，保留原文格式与 ID；没有开头 H1 时，主题使用此字段生成页面标题。
-- `description` 是文章的纯文本简介，与站点简介分开；不自动截取正文。
-- `date` 可省略，填写时必须是 `yyyy-MM-dd`。它不含时间、时区，未来日期也照常发布。
-- `draft: true` 仅在 `dev` 中生成。
-- `article` 默认为 `true`；设为 `false` 时生成普通页面，适合关于页、收藏夹等。
-- `url` 可为文章或普通页面指定站点内的输出路径，例如 `/posts/podman.html`。省略或为 `null` 时沿用源文件路径；它与站点配置中表示部署地址的 `url` 不同。
-- `aliases` 是旧地址列表，如 `aliases: [/old-post.html, /notes/old-post.html]`，用于生成指向当前页面的静态跳转页。省略、`null` 或 `[]` 时不生成别名。
-- `tags` 使用列表，去掉空项和重复项，区分大小写。
-- `category` 使用列表，如 `category: [Linux, 开发环境]`；首尾空白会去除，忽略空项并去重，区分大小写。多个分类是并列关系，不表示层级；省略或为 `null` 时无分类。
-
-普通页面的输出路径和 Markdown 能力与文章相同，但不进入首页分页、年份/分类/标签归档、RSS 或上一篇/下一篇，也不显示日期、分类和标签。配置 `url` 后仍输出 canonical 并收录到正式 sitemap。`draft: true` 对普通页面同样生效；普通页面不是私密页面。
-
-例如创建 `content/about.md`：
-
-```markdown
----
-title: 关于
-article: false
----
-
-# 关于
-
-这里介绍作者和网站。
-```
-
-通过 `about.html`、其他页面中的 `[关于](about.md)` 或配置站点导航访问。
-
-自定义地址必须以 `.html` 结尾，可带一个开头的 `/`，如 `url: /pages/about.html` 生成 `public/pages/about.html`。输入使用原始中文和空格，生成链接时自动编码；不接受外部 URL、查询参数、锚点、百分号编码、反斜杠、`.`/`..` 路径段或不兼容 Windows 的文件名。输出路径与其他页面、主题资源或静态资源冲突时构建失败。暂不支持目录简写；改地址后，成功构建会清理清单登记的旧页面，除非把该旧地址保留为 alias。
-
-别名遵循相同的路径规则，重复的规范化地址会去重；空项、指向当前输出地址的别名，以及与其他页面、别名、生成资源或静态文件冲突的地址会报错。旧址直接跳到该内容的当前地址，不形成别名链。它是 HTML 客户端跳转，不是 HTTP 301/308：启用 JavaScript 时使用 `location.replace`，保留访问旧址时的查询参数和锚点；禁用 JavaScript 时使用 meta refresh，并提供手动链接，不保证保留查询参数和锚点，也不会转换旧标题 ID。
-
-别名页带 `noindex`，正式构建配置了站点 `url` 时 canonical 指向目标页；不进入 sitemap、RSS 或文章归档。草稿的别名只在开发预览中生成。移除别名或停止发布目标内容后，清单会清理旧跳转文件；改变目标的 `url` 会更新跳转目标。站内 `.md` 链接仍直接指向当前页面，不经过别名。
-
-支持表格、任务列表、脚注，以及 `::: tip`、`::: warning`、`::: details` 容器。`[TOC]` 单独成段时列出二至六级标题；嵌套容器的外层使用更多冒号。
-
-主题也自动从 Markdown 标题生成二至六级目录：宽屏在右侧，中等屏幕和手机在正文前折叠。目录与正文共享标题 ID，无需写 `[TOC]`，禁用 JS 也可点击跳转；手写 `[TOC]` 仍保留在原位置。文章开头 H1 的格式和锚点不会因移入标题区丢失，其后的其他 H1 或手写 HTML 不会自动删除或降级。
-
-二至六级标题旁提供 `#` 锚点链接，方便分享某一节。鼠标悬停或键盘聚焦时显示，触屏设备默认显示；链接沿用目录中的标题 ID。
-
-标题末尾可用 `{#id}` 固定 ID，例如 `## 安装与配置 {#installation}`，迁移时可填写旧站实际使用的锚点。支持一至六级标题及下划线式标题；标记与前面的文字用空白分隔，ID 可含中英文字母、数字、`-`、`_`、`.`、`:`。目录和标题旁的 `#` 链接使用同一 ID，标记不显示在标题中；代码和转义后的 `\{#id}` 保留原文。
-
-没有显式 ID 的标题继续使用既有自动生成规则；本功能不自动推算或批量兼容 VuePress 的历史 ID。单篇文章内，显式 ID 重复或与自动 ID 冲突会报错并给出文件和行号，大小写不同的 ID 视为不同。检查范围是 Markdown 标题，不扫描手写 HTML 或其他组件的 ID。修改标题但保留显式 ID 时，原锚点链接仍可使用；`aliases` 只保留访问时的片段，不会转换旧标题 ID。
-
-代码块顶部左侧显示围栏声明的语言（如 `csharp`、`bash`），右侧显示“复制代码”。未声明语言及缩进代码块显示“纯文本”；未知语言保留作者写的名称。语言栏随 HTML 生成，关闭 JavaScript 仍可见。
-
-语法高亮使用随主题发布的 highlight.js 11.11.1，在浏览器中运行，无需 CDN、npm 或额外构建步骤。按声明的语言及别名选择语法，覆盖 C#、C++、JavaScript/TypeScript、HTML/XML、CSS、JSON、YAML、Python、Bash 等常用语言，并额外包含 CMake、Dockerfile 和 PowerShell。未声明或不支持的语言保留纯文本，不猜测语言；脚本加载失败或禁用 JavaScript 时仍显示代码原文。高亮样式跟随系统明暗偏好，也支持主题在根元素设置 `data-theme="light"` / `"dark"`；可通过 `custom.css` 覆盖 `--code-*` 变量。
-
-“复制代码”保留原文的缩进和换行，并提示复制结果；语言名称和高亮装饰不进入剪贴板。需要启用 JavaScript 且浏览器支持剪贴板写入（通常为 HTTPS 或本机预览）；接口不可用时隐藏复制按钮，语言和高亮仍可显示。手写 HTML 的 `pre > code` 也会在启用 JS 时增强。
-
-文章按日期从新到旧排列，无日期的在后，同日期按输出 URL 排序。首页依次生成 `index.html`、`page/2.html` 等；“上一篇 / 下一篇”沿用全站顺序，标签归档集中在 `tags.html`。
-
-每个已收录文章的标签还生成独立页面 `tags/<hash>.html`，文章标签及汇总页的标签标题链接到该页。文件名为清理后标签名的 UTF-8 SHA-256 小写十六进制值，长度固定且区分大小写；页面仍显示原标签名。独立页沿用全站文章顺序，不受首页分页限制，提供返回首页和全部标签入口。原 `tags.html` 的分组、文章列表及 `tag-...` 锚点继续保留。
-
-普通页面和正式构建排除的草稿不产生标签页；开发预览可包含草稿标签。正式配置 `url` 时，标签页有 canonical 并加入 sitemap。标签改名或不再有收录文章时，清单清理旧标签页；改名不生成跳转。只有实际生成的标签页路径受保护，冲突的内容或静态文件会导致构建失败。
-
-分类归档集中在 `categories.html`：分类名按 Ordinal 顺序排列，分类内文章沿用全站日期顺序，不受首页分页大小限制。首页和文章分类链接可进入归档；没有已收录文章的分类时不生成归档或入口。草稿分类仅在开发预览中出现，普通页面不参与分类。正式归档收录到 sitemap；删除最后一个分类后，清单会清理旧归档。
-
-年份归档在 `archives.html`，首页各分页提供“按年份浏览”入口，也可将它加入站点导航。按 `date` 的年份从新到旧分组，组内沿用全站文章顺序；无日期文章放在最后的“未注明日期”组，不推断文件时间。归档包含全部已收录文章，不受首页分页大小限制；普通页面排除，草稿仅在开发预览中出现。有文章时才生成归档并预留该输出路径；最后一篇文章移除后，清单清理旧归档，首页入口随之消失。正式构建配置 `url` 时，归档有 canonical 并收录到 sitemap。
-
-正文中的相对 `.md` 链接按源文件所在目录寻找目标，再转换为目标的实际输出地址，保留查询参数和锚点；找不到时仍按 `.html` 回退，不检查目标是否存在。被排除的草稿仍可参与地址解析，但不会因此发布。相对图片、附件和显式 `.html` 链接按原来默认输出位置解释，并根据当前页面的新位置重新计算；图片仍放在 `static/`。
-
-例如 `content/Linux/hello.md` 改为 `url: /posts/hello.html` 后，正文里的 `../images/example.svg` 仍指向 `static/images/example.svg`；其他文章中的 `Linux/hello.md` 会跟随新地址，而手写的 `Linux/hello.html` 不代表源文件。外部 URL、正文中的 `/images/...` 等域名根路径、页内锚点及查询不改变；原始 HTML 的 `href`/`src` 不改写，需要作者自行维护。
-
-## 主题与发布文件
-
-默认主题和 CSS 随工具携带。站点可以通过以下文件调整外观，无需重新编译工具：
-
-| 文件 | 效果 |
-| --- | --- |
-| `static/custom.css` | 在默认样式之后加载 |
-| `static/favicon.svg` | 自动作为站点图标引用 |
-
-主题资源 `assets/razorfolio.css`、`assets/code.css`、`assets/theme.js`、`assets/highlight.min.js`、`assets/code-blocks.js` 和 `assets/highlight-LICENSE.txt` 由生成器管理，不能被同路径静态文件覆盖。`theme.js` 在各页面加载，代码高亮与复制脚本仅在文章和普通内容页加载。资源使用相对路径以支持子目录部署；`custom.css` 始终在内置样式之后加载。第三方库来源与许可见 [vendor/README.md](src/RazorFolio.Themes.Default/Scripts/vendor/README.md)。
-
-### 默认主题配置
-
-默认主题采用卡片式文章列表，适配首页分页、标签汇总/独立标签页、分类、年份归档和普通页面。卡片中的分类和标签可点击；归档页提供分组索引。现有顶栏 `navigation` 配置继续使用，当前页面高亮，手机上折叠显示。侧栏与目录在窄屏改为折叠菜单，无需 JS 也能打开。
-
-在 `razorfolio.json` 中添加 `theme`，可分别调整三处文字和头像：
-
-```json
-{
-  "title": "我的博客",
   "theme": {
-    "brand": {
-      "text": "左上角名称",
-      "image": "images/logo.png"
-    },
+    "brand": { "text": "我的博客", "image": "images/logo.png" },
     "hero": {
-      "title": "首页大标题",
-      "description": "首页的一句话介绍。",
-      "image": "images/hero-avatar.png",
+      "title": "欢迎来访",
+      "description": "首页介绍。",
+      "image": "images/hero.png",
       "fullScreen": true,
       "background": { "mode": "bing", "image": "images/background.jpg" }
     },
     "profile": {
       "name": "作者名",
-      "avatar": "images/author.png",
+      "avatar": "images/avatar.png",
       "description": "作者短句",
-      "bio": "较详细的自我介绍。",
+      "bio": "自我介绍。",
       "links": [{ "text": "关于", "link": "about.md" }]
     },
-    "sidebar": [{ "text": "入门", "link": "hello.md" }],
+    "sidebar": [{ "text": "第一篇文章", "link": "hello.md" }],
     "footer": "页脚文字"
   }
 }
 ```
 
-上面是配置结构示例，图片需要自行放进 `static/images/`；不使用的图片字段可省略。各字段行为：
+图片放在 `static/images/`，不需要的配置可省略。
 
-| 字段 | 行为 |
+- `brand`、`hero`、`profile` 分别控制左上角标识、首页首屏和作者卡片，文字与头像互相独立。
+- 省略 `hero` 显示简洁标题区；省略 `profile` 隐藏作者卡片。首屏仅在首页第一页显示。
+- `background.mode` 支持 `none`、`image`、`bing`。固定图片模式须填写 `image`；Bing 使用第三方壁纸服务，失败时保留指定图片或纯色。
+- 顶栏读取 `navigation`；文章侧栏只显示 `theme.sidebar`，未配置时隐藏。
+- 配置中的站内链接和图片按站点根目录解析，也支持 HTTP(S) 地址；`.md` 链接跟随文章的自定义 URL。
+- `static/custom.css` 覆盖默认样式，`static/favicon.svg` 设置图标。配置 `url` 后，正式构建生成 canonical、RSS 和 sitemap。
+
+完整字段见 [SiteConfiguration](src/RazorFolio.Core/Configuration/SiteConfiguration.cs) 和 [ThemeOptions](src/RazorFolio.Core/Configuration/ThemeOptions.cs)。未知配置字段会报错。
+
+## 写文章
+
+`content/notes/hello.md` 默认生成 `public/notes/hello.html`：
+
+```markdown
+---
+title: 第一篇文章
+description: 列表中的简短介绍。
+date: 2026-11-13
+tags: [C#, 工具]
+category: [开发记录]
+draft: false
+---
+
+正文从这里开始。
+
+## 安装 {#installation}
+
+这一节可通过文章地址后的 #installation 访问。
+```
+
+| 字段 | 说明 |
 | --- | --- |
-| `brand.text` / `brand.image` | 左上角文字、图标；文字留空回退到站点 `title`，图标留空省略 |
-| `hero` | 省略或 null 时使用简洁的首页标题区；配置对象后显示首屏，仅首页第一页显示 |
-| `hero.title` / `hero.description` / `hero.image` | 首屏标题、介绍、头像；前两项留空回退到站点标题/简介，头像留空省略 |
-| `hero.fullScreen` | 默认 false 为紧凑首屏；true 为全屏首屏 |
-| `hero.background.mode` | `none`（默认纯色）、`image`（固定图片）、`bing`（随机壁纸） |
-| `hero.background.image` | image 模式必填；bing 模式作为回退图片，可省略 |
-| `profile` | 省略或 null 时不显示作者卡片，文章列表使用单栏；配置时必须有非空 `name` |
-| `profile.avatar` / `description` / `bio` / `links` | 可选头像、短句、介绍和链接列表；头像留空省略 |
-| `sidebar` | 文章和普通页面侧栏的平铺链接列表，仅显示配置的条目，不自动追加首页或归档入口；省略或为空列表时隐藏桌面左栏和手机侧栏菜单，正文布局自动收拢 |
-| `footer` | 页脚纯文本；RSS 可用时仍显示订阅入口 |
+| `title` / `description` | 标题与可选摘要；不自动截取摘要 |
+| `date` | 可选，格式为 `yyyy-MM-dd`；文章按日期倒序排列 |
+| `tags` / `category` | 标签与并列分类列表 |
+| `draft: true` | 仅在开发预览中生成 |
+| `article: false` | 普通页面，不进入文章列表、归档和 RSS |
+| `url: /posts/hello.html` | 自定义站内输出地址，须以 `.html` 结尾 |
+| `aliases: [/old.html]` | 为旧地址生成静态跳转页 |
 
-图片路径与导航一样，以站点根目录为基准，支持 HTTP(S) 地址。`/images/a.png` 在这里表示站点内资源，不是域名根目录；生成到深层自定义 URL、分页或独立标签页时会自动换算相对地址。作者链接和侧栏链接沿用导航规则，支持 `.md` 跟随自定义输出地址。图片字段不自动复制文件或检查图片是否存在。未知配置字段及非法模式、链接会报错；文本由 Razor 编码，不能用这些字段注入 HTML。
+正文开头的 H1 会移到文章头部，保留格式与锚点；没有开头 H1 时使用 `title`，未填标题则使用文件名。主题自动生成 H2–H6 目录，`{#id}` 可固定标题锚点。
 
-Bing 模式通过 Hope 使用的第三方接口 `https://bing-wallpaper.vuejs.press/api/wallpaper` 获取候选列表，每次打开首页随机选择一张。图片加载成功后替换背景并显示返回的说明、版权信息；请求超时、服务不可用或禁用 JS 时，保留配置的图片或纯色。生成网站不依赖该服务联网，固定图片和纯色模式不请求壁纸接口。
+支持表格、任务列表、脚注、`[TOC]` 及 `tip` / `warning` / `details` 容器。代码围栏注明语言后提供高亮、语言标签和复制按钮；未知语言保留纯文本。
 
-配色首次跟随系统，手动切换后保存在浏览器本地；禁用 JS 时仍通过 CSS 跟随系统。`custom.css` 可覆盖 `--bg`、`--surface`、`--text`、`--muted`、`--border`、`--accent`、`--soft` 和 `--code-*` 变量。旧版对整个 `body` 设置固定最大宽度的覆盖规则可能限制新布局，迁移时应按需要调整。
+正文相对 `.md` 链接按源文件目录解析。图片和附件放在 `static/`；手写 HTML 的链接不改写。
 
-配置 `url` 后，正式构建还会输出 canonical 链接、`sitemap.xml` 和 `feed.xml`，并显示 RSS 订阅入口。RSS 提供最近 20 篇已发布文章的标题、链接和可选简介；标签归档、RSS 和相邻文章导航不受首页分页大小限制。
+## 开发与打包
 
-`dev` 不自动生成 sitemap 或 RSS，草稿也不输出 canonical。RSS 暂不提供全文或 `pubDate`，sitemap 暂不填写 `lastmod`；当前的发布日期不足以代表精确发布时间或最后修改时间。
-
-## 构建与预览约定
-
-`dev` 监听 `content/`、`static/` 和配置文件，串行全站重建，成功后整页刷新。`dev` 和 `build` 使用独立目录与清单；服务默认只监听 `127.0.0.1`。修改 C#、Razor 模板或内置 CSS 后，需要重新编译并启动工具。
-
-构建会检查输出路径冲突，成功后只清理生成清单中已登记的旧文件。未登记的手动文件不会被删除，空目录保留；构建失败时已写内容暂不回滚。同一输出目录不要并发构建。
-
-Markdown 中的原始 HTML 按可信作者内容处理，不做清洗。目前尚无增量构建、外部主题插件、资源压缩或完整的 VuePress Hope 语法兼容。
-
-## 打包为 `rf` 工具
+修改 C#、Razor 模板或内置资源后，需要重新编译并重启 `dev`。`dotnet build` 构建生成器，`rf build` 生成网站；发布时上传 `public/`。
 
 ```bash
 dotnet pack src/RazorFolio.Cli -c Release -o artifacts/packages
-dotnet tool install RazorFolio --version 0.1.0-dev.1 \
-  --source ./artifacts/packages --tool-path ./artifacts/tools
+dotnet tool install RazorFolio --version 0.1.0-dev.1 --source ./artifacts/packages --tool-path ./artifacts/tools
 ./artifacts/tools/rf --version
 ```
 
-将 `artifacts/tools` 加入 PATH 后可直接运行 `rf`。工具包包含默认主题和解析库，运行时仍需 .NET 10 与 ASP.NET Core 10；安装需要 .NET SDK，不能只复制 `rf` 入口文件。
-
-修改工具后，已安装版本不会自动更新。试验新包时可用 `-p:Version=0.1.0-dev.2` 指定新版本，再通过 `dotnet tool update` 更新，避免复用旧版本缓存。
-
-## 源码与检查
+运行工具需要 .NET 10 与 ASP.NET Core 10。更新包时递增版本，避免复用旧缓存。
 
 | 项目 | 职责 |
 | --- | --- |
-| [RazorFolio.Cli](src/RazorFolio.Cli) | 命令解析、预览服务、文件监听 |
-| [RazorFolio.Core](src/RazorFolio.Core) | 配置、文章解析、路径与生成流程 |
-| [RazorFolio.Themes.Default](src/RazorFolio.Themes.Default) | 预编译 Razor 视图和内置样式 |
+| [Cli](src/RazorFolio.Cli) | 命令、预览、监听 |
+| [Core](src/RazorFolio.Core) | 配置、解析、生成；入口为 [SiteBuilder](src/RazorFolio.Core/SiteBuilder.cs) |
+| [Themes.Default](src/RazorFolio.Themes.Default) | Razor 模板、样式和脚本 |
 
-生成流程从 [SiteBuilder.cs](src/RazorFolio.Core/SiteBuilder.cs) 看起。文章信息通过 `ArticleInfo` 传递，公共布局数据由 `PageContext` 提供。
-
-可选的 ReSharper 命令行检查：
-
-```bash
-dotnet tool install JetBrains.ReSharper.GlobalTools --tool-path ./artifacts/resharper
-./artifacts/resharper/jb inspectcode RazorFolio.slnx \
-  --build --severity=INFO --format=Text --format=Sarif \
-  --output=artifacts/resharper-report \
-  --caches-home=artifacts/resharper-cache --no-updates
-```
-
-报告在 `artifacts/resharper-report/`。`INFO` 包含 Hint 级提示；报告不会自动修改源码，反序列化等间接调用需要结合代码判断。
+构建检查输出冲突，只清理生成清单登记的旧文件；失败不回滚，勿并发构建同一输出目录。正文 HTML 按可信作者内容处理。目前不校验链接目标，也未实现搜索、公式/图表、增量构建或完整 Hope 语法兼容。
 
 ## License
 
-[MIT](LICENSE).
+[MIT](LICENSE)。高亮库来源与许可见 [vendor/README.md](src/RazorFolio.Themes.Default/Scripts/vendor/README.md)。
