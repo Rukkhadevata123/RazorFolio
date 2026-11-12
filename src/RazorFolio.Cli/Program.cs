@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using RazorFolio.Cli.Commands;
@@ -18,6 +19,7 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
           rf build --site <directory>
           rf dev --site <directory> [--port 8080]
           rf preview --site <directory> [--directory public] [--port 8080]
+          rf --version
 
         Convert content/**/*.md files to public/**/*.html, preserving subdirectories.
         Render complete HTML pages using the precompiled default Razor theme.
@@ -29,6 +31,16 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
         New creates a minimal site in a new or empty directory.
         """);
 
+    return 0;
+}
+
+if (args.Length == 1 && args[0] == "--version")
+{
+    var assembly = Assembly.GetExecutingAssembly();
+    var version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+        ?? assembly.GetName().Version?.ToString()
+        ?? "unknown";
+    Console.WriteLine($"RazorFolio {version}");
     return 0;
 }
 

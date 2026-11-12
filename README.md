@@ -54,6 +54,7 @@ dotnet pack src/RazorFolio.Cli -c Release -o artifacts/packages
 dotnet tool install RazorFolio --version 0.1.0-dev.1 \
   --source ./artifacts/packages --tool-path ./artifacts/tools
 ./artifacts/tools/rf --help
+./artifacts/tools/rf --version
 ```
 
 `dotnet pack` 编译工具并生成本地 `.nupkg`；安装命令通过 `--source` 只读取本地包目录，通过 `--tool-path` 将工具安装到指定位置。`artifacts/` 已被 Git 忽略。这里的步骤不发布到 NuGet，也不进行全局安装。
@@ -71,6 +72,8 @@ rf dev --site ~/my-new-blog
 
 修改 C# 或主题后，已安装的工具不会自动更新。日常开发继续使用下文的 `dotnet run`；验证新包时可用 `dotnet pack ... -p:Version=0.1.0-dev.2` 打出不同版本，再用 `dotnet tool update` 配合相同的 `--source`、`--tool-path` 和新的 `--version` 更新，避免反复复用同一版本的缓存。
 
+`rf --version` 显示当前程序的版本，例如 `RazorFolio 0.1.0-dev.1`，不需要指定站点。版本来自 SDK 写入程序集的 `AssemblyInformationalVersion`，保留开发版本后缀；构建时若包含 Git 提交信息，还会带上 `+提交哈希`。读取的是运行程序内的版本，与当前工作目录无关。
+
 ### 从源码运行
 
 在仓库根目录编译程序、查看帮助：
@@ -78,6 +81,7 @@ rf dev --site ~/my-new-blog
 ```bash
 dotnet build
 dotnet run --project src/RazorFolio.Cli -- --help
+dotnet run --project src/RazorFolio.Cli -- --version
 ```
 
 CLI 的 `AssemblyName` 为 `rf`，Linux 默认 Debug 构建的可执行入口为 `src/RazorFolio.Cli/bin/Debug/net10.0/rf`，Windows 对应 `rf.exe`。这是依赖框架的构建，运行时需保留同目录的依赖文件。
