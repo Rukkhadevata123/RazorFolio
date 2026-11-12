@@ -157,3 +157,7 @@ dotnet tool install JetBrains.ReSharper.GlobalTools --tool-path ./artifacts/resh
 ```
 
 报告在 `artifacts/resharper-report/`。`INFO` 包含 Hint 级提示；报告不会自动修改源码，反序列化等间接调用需要结合代码判断。
+
+## License
+
+[MIT](LICENSE).
