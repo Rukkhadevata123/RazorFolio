@@ -10,6 +10,16 @@ public static class PageUrl
         }
 
         var relativeUrl = GetRelative(Path.Combine(outputDirectory, "index.html"), pagePath);
+        return GetAbsolute(relativeUrl, siteUrl);
+    }
+
+    public static string? GetAbsolute(string relativeUrl, string? siteUrl)
+    {
+        if (siteUrl is null)
+        {
+            return null;
+        }
+
         if (relativeUrl == "./index.html")
         {
             relativeUrl = "./";

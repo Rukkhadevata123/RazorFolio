@@ -250,13 +250,19 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 
 配置后，各页面在 `<head>` 中输出 `<link rel="canonical">`：上述示例的首页为 `https://example.com/blog/`，`Linux/hello.html` 为 `https://example.com/blog/Linux/hello.html`，标签归档为 `https://example.com/blog/tags.html`。中文、空格和文件名中的特殊字符按 URL 编码。canonical 声明页面的首选正式地址，不执行跳转，也不改变输出目录、站内相对链接或本地监听地址。
 
-`dev` 中的已发布文章仍引用配置的正式地址，草稿页不输出 canonical；`preview` 继续原样提供已有 HTML。canonical 和 sitemap 的绝对地址都由 `Output/PageUrl.cs` 生成。当前尚未生成 RSS。
+`dev` 中的已发布文章仍引用配置的正式地址，草稿页不输出 canonical；`preview` 继续原样提供已有 HTML。canonical、sitemap 和 RSS 的绝对地址都由 `Output/PageUrl.cs` 生成。
 
 配置 `url` 后，正式 `build` 还会生成 `public/sitemap.xml`，包含首页、已发布文章和存在时的标签归档页。地址与各页面的 canonical 一致，支持部署子路径；不包含草稿、CSS、附件、静态目录中的手写 HTML 或标签锚点，也不计入构建报告的 HTML 页面数。`dev` 不自动生成 sitemap，检查正式产物时使用 `build` 和 `preview`。
 
 `Output/SitemapWriter.cs` 使用 .NET 的 XML API 输出 UTF-8 文件，处理命名空间和 XML 转义。第一版只写必需的 `loc`，不填写 `lastmod`、`changefreq` 或 `priority`；发布日期不能代替页面最后修改时间。格式与单文件限制参照 [Sitemaps 协议](https://www.sitemaps.org/protocol.html)：最多 50,000 条地址，每条短于 2,048 字符，文件不超过 50 MB，超限时报错，暂不拆分文件。
 
 生成 sitemap 时会检查 `sitemap.xml` 的路径冲突，并将文件登记到生成清单。删除 `url` 或设为 null 后，下次正式构建会清理此前生成的 sitemap。未启用自动生成时，可以通过 `static/sitemap.xml` 提供自己的文件。当前不自动生成 `robots.txt`，也不向搜索引擎提交。
+
+配置 `url` 后，正式 `build` 同时生成 `public/feed.xml`，可将正式站点下的 `feed.xml` 地址添加到 RSS 阅读器。第一版采用 [RSS 2.0](https://www.rssboard.org/rss-specification)，最多包含首页排序中的前 20 篇已发布文章：有日期的从新到旧，无日期的在后，同日期按 URL 排序。首页、标签归档和静态文件不作为订阅条目，没有文章时保留空频道。
+
+频道标题和简介暂时都使用站点名称。每篇文章提供标题、正式链接和以链接为值的 `guid`；改标题或简介不改变标识，改输出路径或域名会改变标识。可选的 `description` 作为纯文本摘要，先做 HTML 编码再由 XML API 转义，避免阅读器把简介中的尖括号解释为 HTML。没有简介时省略该元素，不自动截取正文，也不输出全文。
+
+当前 `date` 只有日期，没有时间和时区，因此 RSS 暂不写 `pubDate`，也不以每次构建时间填写 `lastBuildDate`。`dev` 不自动生成订阅文件；用 `build` 和 `preview` 检查 `feed.xml`。删除 `url` 后会清理此前生成的订阅文件，自动生成时同名静态资源或目录冲突会报错；未启用时可通过 `static/feed.xml` 提供自己的文件。页面中的订阅入口和自动发现链接后续再加。
 
 - `content/`：Markdown 文章。
 - `static/`：原样复制的图片、附件等资源。
@@ -270,7 +276,7 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 
 ## 生成清单与清理
 
-每次成功构建会记录本次页面、sitemap、主题样式和静态资源的相对输出路径。正式构建使用 `.razorfolio/outputs.json` 管理 `public/`，开发构建使用 `.razorfolio/dev-outputs.json` 管理 `.razorfolio/dev/`，清单放在各自的 HTTP 服务目录之外。
+每次成功构建会记录本次页面、sitemap、RSS、主题样式和静态资源的相对输出路径。正式构建使用 `.razorfolio/outputs.json` 管理 `public/`，开发构建使用 `.razorfolio/dev-outputs.json` 管理 `.razorfolio/dev/`，清单放在各自的 HTTP 服务目录之外。
 
 下一次成功生成全部页面后，只删除对应旧清单中不再出现的文件，再替换该清单。手动放在输出目录中、从未被生成器记录的文件不会被清理；如果文件路径曾经由生成器管理，之后仍按生成产物处理。开发构建的清理不会删除正式产物，正式构建也不会清理开发产物。
 

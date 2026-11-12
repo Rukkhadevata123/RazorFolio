@@ -44,10 +44,10 @@ public sealed class SiteBuilder(
         var tagsPath = Path.Combine(outputDirectory, "tags.html");
         var hasTags = sources.Any(source => source.Article.Info.Tags.Count > 0);
         string[] reservedPaths = hasTags ? [homePath, tagsPath] : [homePath];
-        var sitemapPath = configuration.Url is not null && !target.IncludeDrafts
-            ? Path.Combine(outputDirectory, "sitemap.xml")
-            : null;
-        string[] metadataPaths = sitemapPath is null ? [] : [sitemapPath];
+        var generateMetadata = configuration.Url is not null && !target.IncludeDrafts;
+        var sitemapPath = Path.Combine(outputDirectory, "sitemap.xml");
+        var feedPath = Path.Combine(outputDirectory, "feed.xml");
+        string[] metadataPaths = generateMetadata ? [sitemapPath, feedPath] : [];
         var stylesheetPath = Path.GetFullPath(stylesheet.RelativePath, outputDirectory);
         string[] protectedPaths = [.. reservedPaths, .. metadataPaths, stylesheetPath];
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
@@ -118,7 +118,7 @@ public sealed class SiteBuilder(
             await File.WriteAllTextAsync(tagsPath, tagsHtml, cancellationToken);
         }
 
-        if (sitemapPath is not null)
+        if (generateMetadata)
         {
             string[] urls =
             [
@@ -126,6 +126,7 @@ public sealed class SiteBuilder(
                     .Select(path => PageUrl.GetAbsolute(path, outputDirectory, configuration.Url)!)
             ];
             await SitemapWriter.WriteAsync(sitemapPath, urls, cancellationToken);
+            await RssWriter.WriteAsync(feedPath, configuration, orderedArticles, cancellationToken);
         }
 
         await manifest.CompleteAsync(
