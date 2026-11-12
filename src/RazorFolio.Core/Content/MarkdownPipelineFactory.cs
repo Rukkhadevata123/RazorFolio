@@ -7,13 +7,15 @@ public static class MarkdownPipelineFactory
 {
     public static MarkdownPipeline Create()
     {
-        return new MarkdownPipelineBuilder()
+        var builder = new MarkdownPipelineBuilder()
             .UseYamlFrontMatter()
             .UsePipeTables()
             .UseTaskLists()
             .UseFootnotes()
-            .UseCustomContainers()
-            .UseAutoIdentifiers()
+            .UseCustomContainers();
+        builder.Extensions.Add(new ExplicitHeadingIdsExtension());
+
+        return builder.UseAutoIdentifiers()
             .UseTableOfContents(new TableOfContentsOptions { MinLevel = 2, MaxLevel = 6 })
             .Build();
     }

@@ -19,6 +19,7 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
     public ParsedArticle Parse(string markdown, string sourcePath)
     {
         var document = Markdown.Parse(markdown, pipeline);
+        ExplicitHeadingIdsExtension.Validate(document, sourcePath);
         var metadata = new ArticleMetadata();
         using var reader = new StringReader(markdown);
 

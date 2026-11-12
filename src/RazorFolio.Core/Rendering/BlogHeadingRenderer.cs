@@ -18,8 +18,8 @@ public sealed class BlogHeadingRenderer : HeadingRenderer
         var tag = $"h{heading.Level}";
         renderer.Write('<').Write(tag).WriteAttributes(heading).Write('>');
         renderer.WriteLeafInline(heading);
-        renderer.Write(" <a class=\"heading-anchor\" href=\"#")
-            .WriteEscapeUrl(Uri.EscapeDataString(id))
+        renderer.Write(" <a class=\"heading-anchor\" href=\"")
+            .WriteEscapeUrl("#" + Uri.EscapeDataString(id))
             .Write("\" aria-label=\"链接到本节\">#</a>");
         renderer.Write("</").Write(tag).WriteLine('>');
     }
