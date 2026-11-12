@@ -1,23 +1,26 @@
 @model System.Collections.Generic.IReadOnlyList<RazorFolio.Core.Rendering.ArticleLink>
 @using System.Globalization
-
-<ul>
+<ul class="article-list">
     @foreach (var article in Model)
     {
-        <li>
-            <a href="@article.Url">@article.Info.Title</a>
-            @if (article.Info.Draft)
-            {
-                <span>（草稿）</span>
-            }
-            @if (article.Info.Date is { } date)
-            {
-                var dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-                <time class="article-date" datetime="@dateText">@dateText</time>
-            }
+        <li class="card post-card">
+            <h3><a href="@article.Url">@article.Info.Title</a></h3>
             @if (article.Info.Description is { } description)
             {
                 <p class="article-description">@description</p>
+            }
+            @if (article.Info.Draft || article.Info.Date is not null || article.Info.Tags.Count > 0 || article.Info.Categories.Count > 0)
+            {
+                <div class="meta">
+                    @if (article.Info.Draft) { <span class="draft-label">草稿</span> }
+                    @if (article.Info.Date is { } date)
+                    {
+                        var dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                        <time class="article-date" datetime="@dateText">@dateText</time>
+                    }
+                    @foreach (var category in article.Categories) { <a href="@category.Url">@category.Name</a> }
+                    @foreach (var tag in article.Tags) { <a href="@tag.Url">#@tag.Name</a> }
+                </div>
             }
         </li>
     }

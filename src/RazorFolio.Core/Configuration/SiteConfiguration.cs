@@ -8,6 +8,7 @@ public sealed record SiteConfiguration
     public string Language { get; init; } = "zh-CN";
     public int PageSize { get; init; } = 20;
     public IReadOnlyList<NavigationItem> Navigation { get; init; } = [];
+    public ThemeOptions Theme { get; init; } = new();
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Description { get; init; }

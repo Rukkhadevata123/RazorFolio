@@ -4,19 +4,20 @@ internal static class NavigationConfiguration
 {
     private static readonly Uri SiteRoot = new("https://razorfolio.invalid/");
 
-    public static NavigationItem[] Normalize(IReadOnlyList<NavigationItem>? items, string configurationPath)
+    public static NavigationItem[] Normalize(
+        IReadOnlyList<NavigationItem>? items, string configurationPath, string field = "navigation")
     {
         if (items is null)
         {
-            throw new InvalidDataException($"navigation in '{configurationPath}' must be an array.");
+            throw new InvalidDataException($"{field} in '{configurationPath}' must be an array.");
         }
 
-        return items.Select((item, index) => NormalizeItem(item, index, configurationPath)).ToArray();
+        return items.Select((item, index) => NormalizeItem(item, index, configurationPath, field)).ToArray();
     }
 
-    private static NavigationItem NormalizeItem(NavigationItem? item, int index, string configurationPath)
+    private static NavigationItem NormalizeItem(NavigationItem? item, int index, string configurationPath, string field)
     {
-        var location = $"navigation[{index}] in '{configurationPath}'";
+        var location = $"{field}[{index}] in '{configurationPath}'";
         if (item is null || string.IsNullOrWhiteSpace(item.Text) || string.IsNullOrWhiteSpace(item.Link))
         {
             throw new InvalidDataException($"{location} must have non-empty text and link values.");

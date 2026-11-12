@@ -49,7 +49,8 @@ public static class SiteConfigurationLoader
             Language = configuration.Language.Trim(),
             Description = string.IsNullOrWhiteSpace(configuration.Description) ? null : configuration.Description.Trim(),
             Url = NormalizeUrl(configuration.Url, path),
-            Navigation = NavigationConfiguration.Normalize(configuration.Navigation, path)
+            Navigation = NavigationConfiguration.Normalize(configuration.Navigation, path),
+            Theme = ThemeConfiguration.Normalize(configuration.Theme, path)
         };
     }
 

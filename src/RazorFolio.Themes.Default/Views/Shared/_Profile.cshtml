@@ -1,0 +1,25 @@
+@model RazorFolio.Core.Configuration.ProfileOptions
+<aside class="profile card" aria-label="作者介绍">
+    @if (Model.Avatar is { } avatar)
+    {
+        <img src="@avatar" width="88" height="88" alt="" loading="lazy">
+    }
+    <h2>@Model.Name</h2>
+    @if (Model.Description is { } description)
+    {
+        <p>@description</p>
+    }
+    @if (Model.Bio is { } bio)
+    {
+        <hr><p>@bio</p>
+    }
+    @if (Model.Links.Count > 0)
+    {
+        <nav aria-label="作者链接">
+            @foreach (var link in Model.Links)
+            {
+                <a href="@link.Link">@link.Text</a>
+            }
+        </nav>
+    }
+</aside>

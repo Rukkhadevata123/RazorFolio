@@ -1,6 +1,6 @@
 @model RazorFolio.Core.Rendering.ArticlePage
 
-@foreach (var scriptUrl in Model.Context.ScriptUrls)
+@foreach (var scriptUrl in Model.Context.ContentScriptUrls)
 {
     <script src="@scriptUrl" defer></script>
 }

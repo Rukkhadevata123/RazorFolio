@@ -1,0 +1,10 @@
+@model RazorFolio.Core.Rendering.PageContext
+@if (Model.BrowseLinks.Count > 0)
+{
+    <nav class="browse-links" aria-label="内容归档">
+        @foreach (var link in Model.BrowseLinks)
+        {
+            <a href="@link.Url" aria-current="@(link.Url == Model.CurrentUrl ? "page" : null)">@link.Text</a>
+        }
+    </nav>
+}

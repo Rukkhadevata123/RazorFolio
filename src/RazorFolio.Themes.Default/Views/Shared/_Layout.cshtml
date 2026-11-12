@@ -1,7 +1,7 @@
 @model RazorFolio.Core.Rendering.IPageModel
 @{
     var context = Model.Context;
-    var feed = context.Feed;
+    var brand = context.Theme.Brand;
 }
 <!doctype html>
 <html lang="@context.Site.Language">
@@ -21,7 +21,7 @@
     {
         <link rel="canonical" href="@canonicalUrl">
     }
-    @if (feed is not null)
+    @if (context.Feed is { } feed)
     {
         <link rel="alternate" type="application/rss+xml" title="RSS" href="@feed.AbsoluteUrl">
     }
@@ -29,27 +29,60 @@
     {
         <link rel="stylesheet" href="@stylesheetUrl">
     }
+    @* Apply the saved color before paint; storage may be unavailable. *@
+    <script>
+        try {
+            const mode = localStorage.getItem("razorfolio-color-mode");
+            if (mode === "light" || mode === "dark") document.documentElement.dataset.theme = mode;
+        } catch { }
+    </script>
+    @foreach (var scriptUrl in context.ScriptUrls)
+    {
+        <script src="@scriptUrl" defer></script>
+    }
 </head>
 <body>
-    @if (context.Navigation.Count > 0)
-    {
-        <nav class="site-navigation" aria-label="主导航">
-            <ul>
-                @foreach (var link in context.Navigation)
+    <a class="skip" href="#rf-main">跳至正文</a>
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="brand" href="@context.HomeUrl">
+                @if (brand.Image is { } image)
                 {
-                    <li><a href="@link.Url">@link.Text</a></li>
+                    <img src="@image" width="34" height="34" alt="">
                 }
-            </ul>
-        </nav>
-    }
-    <main>
+                <span>@brand.Text</span>
+            </a>
+            @if (context.Navigation.Count > 0)
+            {
+                <nav class="site-navigation desktop-navigation" aria-label="主导航">
+                    @await Html.PartialAsync("_NavigationItems", context)
+                </nav>
+            }
+            <button class="theme-toggle" type="button" data-theme-toggle hidden>切换配色</button>
+            @if (context.Navigation.Count > 0)
+            {
+                <details class="mobile-navigation">
+                    <summary>导航</summary>
+                    <nav class="site-navigation" aria-label="主导航">
+                        @await Html.PartialAsync("_NavigationItems", context)
+                    </nav>
+                </details>
+            }
+        </div>
+    </header>
+    <main id="rf-main" tabindex="-1" class="@(ViewData["PageClass"] ?? "archive-shell")">
         @RenderBody()
     </main>
-    @if (feed is not null)
-    {
-        <footer class="site-footer">
-            <a href="@feed.RelativeUrl">RSS 订阅</a>
-        </footer>
-    }
+    <footer class="site-footer">
+        @if (context.Theme.Footer is { } footer)
+        {
+            <span>@footer</span>
+        }
+        @if (context.Feed is { } footerFeed)
+        {
+            <a href="@footerFeed.RelativeUrl">RSS 订阅</a>
+        }
+        <span>由 RazorFolio 生成</span>
+    </footer>
 </body>
 </html>

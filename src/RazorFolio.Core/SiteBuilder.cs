@@ -125,12 +125,13 @@ public sealed class SiteBuilder(
 
         var customStylesheetPath = FindCopiedAsset("custom.css");
         var faviconPath = FindCopiedAsset("favicon.svg");
-        List<string> stylesheetPaths = [.. themeAssetPaths.Where(path => path.EndsWith(".css", StringComparison.Ordinal))];
+        List<string> stylesheetPaths = [.. GetAssetPaths(ThemeAssetKind.Stylesheet)];
         if (customStylesheetPath is not null)
         {
             stylesheetPaths.Add(customStylesheetPath);
         }
-        string[] scriptPaths = [.. themeAssetPaths.Where(path => path.EndsWith(".js", StringComparison.Ordinal))];
+        var scriptPaths = GetAssetPaths(ThemeAssetKind.Script);
+        var contentScriptPaths = GetAssetPaths(ThemeAssetKind.ContentScript);
 
         ArticleOutput[] orderedArticlePages =
         [
@@ -161,10 +162,11 @@ public sealed class SiteBuilder(
                     new CategoryLink(category, categoriesUrl + "#" + CategoryGroup.GetId(category)))
             ] : [];
             var navigation = navigations.GetValueOrDefault(outputPath) ?? new ArticleNavigation(null, null);
-            var bodyHtml = markdownRenderer.Render(article.Body,
+            var rendered = markdownRenderer.Render(article.Body,
                 link => linkResolver.Resolve(link, output.OriginalPath, outputPath));
             var page = new ArticlePage(
-                article.Info, bodyHtml, CreateContext(outputPath, article.Info.Draft), homeUrl, tags, categories, navigation);
+                article.Info, rendered.BodyHtml, rendered.TitleHtml, rendered.Headings,
+                CreateContext(outputPath, article.Info.Draft), homeUrl, tags, categories, navigation);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
@@ -173,7 +175,7 @@ public sealed class SiteBuilder(
 
         ArticleLink[] orderedArticles =
         [
-            .. orderedArticlePages.Select(output => new ArticleLink(output.Article.Info, output.Url))
+            .. orderedArticlePages.Select(output => CreateArticleLink(output.Article.Info, output.OutputPath, homePath))
         ];
         for (var index = 0; index < homePaths.Length; index++)
         {
@@ -181,7 +183,7 @@ public sealed class SiteBuilder(
             ArticleLink[] pageArticles =
             [
                 .. orderedArticlePages.Skip(index * configuration.PageSize).Take(configuration.PageSize)
-                    .Select(output => new ArticleLink(output.Article.Info, PageUrl.GetRelative(outputPath, output.OutputPath)))
+                    .Select(output => CreateArticleLink(output.Article.Info, output.OutputPath, outputPath))
             ];
             var pagination = new Pagination(
                 index + 1,
@@ -214,10 +216,7 @@ public sealed class SiteBuilder(
                 var outputPath = tagPaths[group.Name];
                 ArticleLink[] tagArticles =
                 [
-                    .. group.Articles.Select(article => article with
-                    {
-                        Url = PageUrl.GetRelative(outputPath, articlePaths[article.Url])
-                    })
+                    .. group.Articles.Select(article => CreateArticleLink(article.Info, articlePaths[article.Url], outputPath))
                 ];
                 var tagPage = new TagPage(
                     group.Name, tagArticles, CreateContext(outputPath),
@@ -273,10 +272,28 @@ public sealed class SiteBuilder(
         string? FindCopiedAsset(string relativePath) => assetPaths.FirstOrDefault(path =>
             string.Equals(path, Path.Combine(outputDirectory, relativePath), comparison));
 
+        ArticleLink CreateArticleLink(ArticleInfo info, string targetPath, string fromPath) =>
+            new(info, PageUrl.GetRelative(fromPath, targetPath))
+            {
+                Tags = [.. info.Tags.Select(tag => new TagLink(tag, PageUrl.GetRelative(fromPath, tagPaths[tag])))],
+                Categories =
+                [
+                    .. info.Categories.Select(category => new CategoryLink(
+                        category, PageUrl.GetRelative(fromPath, categoriesPath) + "#" + CategoryGroup.GetId(category)))
+                ]
+            };
+
+        string[] GetAssetPaths(ThemeAssetKind kind) =>
+        [
+            .. themeAssets.Select((asset, index) => (asset, index))
+                .Where(entry => entry.asset.Kind == kind).Select(entry => themeAssetPaths[entry.index])
+        ];
+
         PageContext CreateContext(string pagePath, bool draft = false)
         {
             string[] stylesheetUrls = [.. stylesheetPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
             string[] scriptUrls = [.. scriptPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
+            string[] contentScriptUrls = [.. contentScriptPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
             NavigationLink[] navigation =
             [
                 .. configuration.Navigation.Select(item => new NavigationLink(
@@ -285,7 +302,14 @@ public sealed class SiteBuilder(
             var canonicalUrl = draft ? null : PageUrl.GetAbsolute(pagePath, outputDirectory, configuration.Url);
             var feed = feedUrl is null ? null : new FeedLink(PageUrl.GetRelative(pagePath, feedPath), feedUrl);
             var faviconUrl = faviconPath is null ? null : PageUrl.GetRelative(pagePath, faviconPath);
-            return new PageContext(configuration, stylesheetUrls, scriptUrls, navigation, canonicalUrl, feed, faviconUrl);
+            List<NavigationLink> browseLinks = [];
+            if (hasArticles) browseLinks.Add(new NavigationLink("年份归档", PageUrl.GetRelative(pagePath, archivesPath)));
+            if (hasCategories) browseLinks.Add(new NavigationLink("分类", PageUrl.GetRelative(pagePath, categoriesPath)));
+            if (hasTags) browseLinks.Add(new NavigationLink("标签", PageUrl.GetRelative(pagePath, tagsPath)));
+            var theme = ThemeView.Create(configuration, link => linkResolver.Resolve(link, homePath, pagePath));
+            return new PageContext(configuration, stylesheetUrls, scriptUrls, contentScriptUrls, navigation,
+                browseLinks, PageUrl.GetRelative(pagePath, homePath), PageUrl.GetRelative(pagePath, pagePath),
+                theme, canonicalUrl, feed, faviconUrl);
         }
     }
 

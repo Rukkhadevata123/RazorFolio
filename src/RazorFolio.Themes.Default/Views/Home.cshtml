@@ -1,48 +1,77 @@
 @model RazorFolio.Core.Rendering.HomePage
 @{
-    ViewData["Title"] = Model.Pagination.CurrentPage == 1
-        ? Model.Context.Site.Title
-        : $"{Model.Context.Site.Title} — 第 {Model.Pagination.CurrentPage} 页";
+    var firstPage = Model.Pagination.CurrentPage == 1;
+    var theme = Model.Context.Theme;
+    ViewData["Title"] = firstPage ? Model.Context.Site.Title : $"{Model.Context.Site.Title} — 第 {Model.Pagination.CurrentPage} 页";
     ViewData["Description"] = Model.Context.Site.Description;
+    ViewData["PageClass"] = "home-page";
 }
-
-<h1>@Model.Context.Site.Title</h1>
-@if (Model.Context.Site.Description is { } description)
+@if (firstPage && theme.Hero is { } hero)
 {
-    <p class="site-description">@description</p>
-}
-@if (Model.ArchivesUrl is { } archivesUrl)
-{
-    <p><a href="@archivesUrl">按年份浏览</a></p>
-}
-@if (Model.CategoriesUrl is { } categoriesUrl)
-{
-    <p><a href="@categoriesUrl">按分类浏览</a></p>
-}
-@if (Model.TagsUrl is { } tagsUrl)
-{
-    <p><a href="@tagsUrl">按标签浏览</a></p>
-}
-@if (Model.Articles.Count == 0)
-{
-    <p>还没有文章。</p>
-}
-else
-{
-    @await Html.PartialAsync("/Views/Shared/_ArticleList.cshtml", Model.Articles)
-}
-
-@if (Model.Pagination.TotalPages > 1)
-{
-    <nav class="pagination" aria-label="文章列表分页">
-        @if (Model.Pagination.PreviousUrl is { } previousUrl)
+    <section class="hero @(hero.FullScreen ? "" : "hero-compact")" aria-label="博客介绍"
+             data-background-mode="@hero.Background.Mode">
+        @if (hero.Background.Mode != "none" && hero.Background.Image is { } background)
         {
-            <a href="@previousUrl" rel="prev">上一页</a>
+            <img class="hero-background" src="@background" alt="">
         }
-        <span aria-current="page">第 @Model.Pagination.CurrentPage 页，共 @Model.Pagination.TotalPages 页</span>
-        @if (Model.Pagination.NextUrl is { } nextUrl)
-        {
-            <a href="@nextUrl" rel="next">下一页</a>
-        }
-    </nav>
+        <div class="hero-content">
+            @if (hero.Image is { } image)
+            {
+                <img src="@image" width="136" height="136" alt="">
+            }
+            <h1>@hero.Title</h1>
+            @if (hero.Description is { } description)
+            {
+                <p>@description</p>
+            }
+            <a href="#rf-articles">向下阅读 ↓</a>
+        </div>
+        <p class="hero-credit" hidden></p>
+    </section>
 }
+<div class="home-content" id="rf-articles">
+    @if (!firstPage || theme.Hero is null)
+    {
+        <header class="page-heading">
+            <h1>@Model.Context.Site.Title</h1>
+            @if (Model.Context.Site.Description is { } description)
+            {
+                <p>@description</p>
+            }
+        </header>
+    }
+    <div class="section-heading">
+        <h2 id="rf-articles-title">文章</h2>
+        @await Html.PartialAsync("_BrowseLinks", Model.Context)
+    </div>
+    <div class="home-grid @(theme.Profile is null ? "without-profile" : "")">
+        <section aria-labelledby="rf-articles-title">
+            @if (Model.Articles.Count == 0)
+            {
+                <p class="card empty-state">还没有文章。</p>
+            }
+            else
+            {
+                @await Html.PartialAsync("_ArticleList", Model.Articles)
+            }
+            @if (Model.Pagination.TotalPages > 1)
+            {
+                <nav class="pagination" aria-label="文章列表分页">
+                    @if (Model.Pagination.PreviousUrl is { } previousUrl)
+                    {
+                        <a href="@previousUrl" rel="prev">← 上一页</a>
+                    }
+                    <span aria-current="page">第 @Model.Pagination.CurrentPage 页，共 @Model.Pagination.TotalPages 页</span>
+                    @if (Model.Pagination.NextUrl is { } nextUrl)
+                    {
+                        <a href="@nextUrl" rel="next">下一页 →</a>
+                    }
+                </nav>
+            }
+        </section>
+        @if (theme.Profile is { } profile)
+        {
+            @await Html.PartialAsync("_Profile", profile)
+        }
+    </div>
+</div>

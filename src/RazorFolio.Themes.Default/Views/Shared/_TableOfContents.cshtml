@@ -1,0 +1,7 @@
+@model System.Collections.Generic.IReadOnlyList<RazorFolio.Core.Rendering.HeadingLink>
+<nav data-toc aria-label="文章目录">
+    @foreach (var heading in Model)
+    {
+        <a class="level-@heading.Level" href="@heading.Url">@(string.IsNullOrWhiteSpace(heading.Text) ? "未命名标题" : heading.Text)</a>
+    }
+</nav>

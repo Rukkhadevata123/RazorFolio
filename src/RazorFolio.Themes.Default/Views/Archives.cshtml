@@ -9,13 +9,21 @@
 </nav>
 
 <h1>文章归档</h1>
+@await Html.PartialAsync("_BrowseLinks", Model.Context)
+<ul class="archive-index" aria-label="年份索引">
+    @foreach (var group in Model.Groups)
+    {
+        var label = group.Year?.ToString("D4", CultureInfo.InvariantCulture) ?? "未注明日期";
+        <li><a href="#@group.Id">@label <span class="count">@group.Articles.Count</span></a></li>
+    }
+</ul>
 @foreach (var group in Model.Groups)
 {
     var title = group.Year is { } year
         ? year.ToString("D4", CultureInfo.InvariantCulture) + " 年"
         : "未注明日期";
-    <section aria-labelledby="@group.Id">
-        <h2 id="@group.Id">@title</h2>
+    <section class="archive-group" aria-labelledby="@group.Id">
+        <h2 id="@group.Id">@title <span class="count">@group.Articles.Count 篇</span></h2>
         @await Html.PartialAsync("/Views/Shared/_ArticleList.cshtml", group.Articles)
     </section>
 }

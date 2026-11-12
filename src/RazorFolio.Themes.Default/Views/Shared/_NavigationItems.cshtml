@@ -1,0 +1,7 @@
+@model RazorFolio.Core.Rendering.PageContext
+<ul>
+    @foreach (var link in Model.Navigation)
+    {
+        <li><a href="@link.Url" aria-current="@(link.Url.Split('?', '#')[0] == Model.CurrentUrl ? "page" : null)">@link.Text</a></li>
+    }
+</ul>

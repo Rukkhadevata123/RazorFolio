@@ -9,4 +9,6 @@
 </nav>
 
 <h1>标签：@Model.Name</h1>
+@await Html.PartialAsync("_BrowseLinks", Model.Context)
+<h2 class="section-label">文章 <span class="count">@Model.Articles.Count 篇</span></h2>
 @await Html.PartialAsync("/Views/Shared/_ArticleList.cshtml", Model.Articles)

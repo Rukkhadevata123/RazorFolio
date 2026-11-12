@@ -3,60 +3,94 @@
 @{
     ViewData["Title"] = $"{Model.Info.Title} — {Model.Context.Site.Title}";
     ViewData["Description"] = Model.Info.Description;
+    ViewData["PageClass"] = "article-page";
+    var hasSidebar = Model.Context.Theme.Sidebar.Count > 0;
 }
-
-<nav aria-label="站点导航">
-    <a href="@Model.HomeUrl">← 返回首页</a>
-</nav>
-
-<article>
-    @if (Model.Info.Draft)
+<div class="article-grid @(Model.Headings.Count == 0 ? "without-toc" : "") @(hasSidebar ? "" : "without-sidebar")">
+    @if (hasSidebar)
     {
-        <p><strong>草稿</strong> · 仅供开发预览</p>
+        <aside class="site-sidebar">
+            <h2>浏览</h2>
+            @await Html.PartialAsync("_Sidebar", Model.Context)
+        </aside>
     }
-
-    @if (Model.Info.IsArticle && Model.Info.Date is { } date)
-    {
-        var dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        <p class="article-date"><time datetime="@dateText">@dateText</time></p>
-    }
-
-    @if (Model.Categories.Count > 0)
-    {
-        <ul class="article-categories" aria-label="文章分类">
-            @foreach (var category in Model.Categories)
+    <div class="article-surface card">
+        @if (hasSidebar)
+        {
+            <details class="mobile-sidebar">
+                <summary>浏览文章</summary>
+                @await Html.PartialAsync("_Sidebar", Model.Context)
+            </details>
+        }
+        <article>
+            <header class="article-header">
+                <nav class="breadcrumb" aria-label="站点导航"><a href="@Model.HomeUrl">← 返回首页</a></nav>
+                @if (Model.TitleHtml is { } titleHtml)
+                {
+                    @Html.Raw(titleHtml)
+                }
+                else
+                {
+                    <h1>@Model.Info.Title</h1>
+                }
+                @if (Model.Info.Draft)
+                {
+                    <p class="draft-label">草稿 · 仅供开发预览</p>
+                }
+                @if (Model.Info.IsArticle && Model.Info.Date is { } date)
+                {
+                    var dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                    <p class="article-date"><time datetime="@dateText">@dateText</time></p>
+                }
+                @if (Model.Categories.Count > 0)
+                {
+                    <ul class="article-categories" aria-label="文章分类">
+                        @foreach (var category in Model.Categories)
+                        {
+                            <li><a href="@category.Url">@category.Name</a></li>
+                        }
+                    </ul>
+                }
+                @if (Model.Tags.Count > 0)
+                {
+                    <ul class="article-tags" aria-label="文章标签">
+                        @foreach (var tag in Model.Tags)
+                        {
+                            <li><a href="@tag.Url">#@tag.Name</a></li>
+                        }
+                    </ul>
+                }
+            </header>
+            @if (Model.Headings.Count > 0)
             {
-                <li>分类：<a href="@category.Url">@category.Name</a></li>
+                <details class="mobile-toc">
+                    <summary>此页内容</summary>
+                    @await Html.PartialAsync("_TableOfContents", Model.Headings)
+                </details>
             }
-        </ul>
-    }
-
-    @if (Model.Tags.Count > 0)
+            @* The HTML is rendered from trusted author content, including the original leading H1. *@
+            <div class="article-body">@Html.Raw(Model.BodyHtml)</div>
+        </article>
+        @if (Model.Navigation.Previous is not null || Model.Navigation.Next is not null)
+        {
+            <nav class="article-navigation" aria-label="文章导航">
+                @if (Model.Navigation.Previous is { } previous)
+                {
+                    <a href="@previous.Url" rel="prev"><span>上一篇</span>@previous.Info.Title</a>
+                }
+                @if (Model.Navigation.Next is { } next)
+                {
+                    <a href="@next.Url" rel="next"><span>下一篇</span>@next.Info.Title</a>
+                }
+            </nav>
+        }
+    </div>
+    @if (Model.Headings.Count > 0)
     {
-        <ul class="article-tags" aria-label="文章标签">
-            @foreach (var tag in Model.Tags)
-            {
-                <li><a href="@tag.Url">@tag.Name</a></li>
-            }
-        </ul>
+        <aside class="page-toc">
+            <h2>此页内容</h2>
+            @await Html.PartialAsync("_TableOfContents", Model.Headings)
+        </aside>
     }
-
-    @* BodyHtml comes from the author's Markdown; ordinary text stays HTML-encoded. *@
-    @Html.Raw(Model.BodyHtml)
-</article>
-
+</div>
 @await Html.PartialAsync("_CodeBlockScripts")
-
-@if (Model.Navigation.Previous is not null || Model.Navigation.Next is not null)
-{
-    <nav class="article-navigation" aria-label="文章导航">
-        @if (Model.Navigation.Previous is { } previous)
-        {
-            <p>上一篇：<a href="@previous.Url" rel="prev">@previous.Info.Title</a></p>
-        }
-        @if (Model.Navigation.Next is { } next)
-        {
-            <p>下一篇：<a href="@next.Url" rel="next">@next.Info.Title</a></p>
-        }
-    </nav>
-}

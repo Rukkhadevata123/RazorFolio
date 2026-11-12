@@ -71,6 +71,7 @@ dotnet run --project src/RazorFolio.Cli -- preview --site ~/my-new-blog
 | `navigation` | `[]` | 按顺序显示的全站导航，每项包含非空的 `text` 和 `link` |
 | `description` | 无 | 首页简介、首页 meta description 和 RSS 频道说明 |
 | `url` | 无 | 正式部署地址，支持 `/blog/` 等子路径 |
+| `theme` | 默认主题选项 | 站点标识、首页首屏、作者卡片、文章侧栏及页脚，见下文 |
 
 未知配置字段会报错。`title`、`language` 不能为空；`description` 留空时首页省略简介，RSS 频道说明回退到站点名称。`url` 可省略或设为 null，填写时须为完整 HTTP(S) 地址，不带认证信息、查询参数或片段，末尾 `/` 会自动补齐。
 
@@ -103,7 +104,7 @@ category: [Linux Daily Use]
 :::
 ```
 
-- `title` 未填写时使用文件名；正文标题由 Markdown 自己提供。
+- `title` 未填写时使用文件名。正文开头的 Markdown H1 会作为页面标题移到文章头部，保留原文格式与 ID；没有开头 H1 时，主题使用此字段生成页面标题。
 - `description` 是文章的纯文本简介，与站点简介分开；不自动截取正文。
 - `date` 可省略，填写时必须是 `yyyy-MM-dd`。它不含时间、时区，未来日期也照常发布。
 - `draft: true` 仅在 `dev` 中生成。
@@ -137,6 +138,8 @@ article: false
 别名页带 `noindex`，正式构建配置了站点 `url` 时 canonical 指向目标页；不进入 sitemap、RSS 或文章归档。草稿的别名只在开发预览中生成。移除别名或停止发布目标内容后，清单会清理旧跳转文件；改变目标的 `url` 会更新跳转目标。站内 `.md` 链接仍直接指向当前页面，不经过别名。
 
 支持表格、任务列表、脚注，以及 `::: tip`、`::: warning`、`::: details` 容器。`[TOC]` 单独成段时列出二至六级标题；嵌套容器的外层使用更多冒号。
+
+主题也自动从 Markdown 标题生成二至六级目录：宽屏在右侧，中等屏幕和手机在正文前折叠。目录与正文共享标题 ID，无需写 `[TOC]`，禁用 JS 也可点击跳转；手写 `[TOC]` 仍保留在原位置。文章开头 H1 的格式和锚点不会因移入标题区丢失，其后的其他 H1 或手写 HTML 不会自动删除或降级。
 
 二至六级标题旁提供 `#` 锚点链接，方便分享某一节。鼠标悬停或键盘聚焦时显示，触屏设备默认显示；链接沿用目录中的标题 ID。
 
@@ -173,7 +176,62 @@ article: false
 | `static/custom.css` | 在默认样式之后加载 |
 | `static/favicon.svg` | 自动作为站点图标引用 |
 
-主题资源 `assets/razorfolio.css`、`assets/code.css`、`assets/highlight.min.js`、`assets/code-blocks.js` 和 `assets/highlight-LICENSE.txt` 由生成器管理，不能被同路径静态文件覆盖。脚本仅在文章和普通内容页加载，使用相对路径以支持子目录部署；`custom.css` 始终在内置样式之后加载。第三方库来源与许可见 [vendor/README.md](src/RazorFolio.Themes.Default/Scripts/vendor/README.md)。
+主题资源 `assets/razorfolio.css`、`assets/code.css`、`assets/theme.js`、`assets/highlight.min.js`、`assets/code-blocks.js` 和 `assets/highlight-LICENSE.txt` 由生成器管理，不能被同路径静态文件覆盖。`theme.js` 在各页面加载，代码高亮与复制脚本仅在文章和普通内容页加载。资源使用相对路径以支持子目录部署；`custom.css` 始终在内置样式之后加载。第三方库来源与许可见 [vendor/README.md](src/RazorFolio.Themes.Default/Scripts/vendor/README.md)。
+
+### 默认主题配置
+
+默认主题采用卡片式文章列表，适配首页分页、标签汇总/独立标签页、分类、年份归档和普通页面。卡片中的分类和标签可点击；归档页提供分组索引。现有顶栏 `navigation` 配置继续使用，当前页面高亮，手机上折叠显示。侧栏与目录在窄屏改为折叠菜单，无需 JS 也能打开。
+
+在 `razorfolio.json` 中添加 `theme`，可分别调整三处文字和头像：
+
+```json
+{
+  "title": "我的博客",
+  "theme": {
+    "brand": {
+      "text": "左上角名称",
+      "image": "images/logo.png"
+    },
+    "hero": {
+      "title": "首页大标题",
+      "description": "首页的一句话介绍。",
+      "image": "images/hero-avatar.png",
+      "fullScreen": true,
+      "background": { "mode": "bing", "image": "images/background.jpg" }
+    },
+    "profile": {
+      "name": "作者名",
+      "avatar": "images/author.png",
+      "description": "作者短句",
+      "bio": "较详细的自我介绍。",
+      "links": [{ "text": "关于", "link": "about.md" }]
+    },
+    "sidebar": [{ "text": "入门", "link": "hello.md" }],
+    "footer": "页脚文字"
+  }
+}
+```
+
+上面是配置结构示例，图片需要自行放进 `static/images/`；不使用的图片字段可省略。各字段行为：
+
+| 字段 | 行为 |
+| --- | --- |
+| `brand.text` / `brand.image` | 左上角文字、图标；文字留空回退到站点 `title`，图标留空省略 |
+| `hero` | 省略或 null 时使用简洁的首页标题区；配置对象后显示首屏，仅首页第一页显示 |
+| `hero.title` / `hero.description` / `hero.image` | 首屏标题、介绍、头像；前两项留空回退到站点标题/简介，头像留空省略 |
+| `hero.fullScreen` | 默认 false 为紧凑首屏；true 为全屏首屏 |
+| `hero.background.mode` | `none`（默认纯色）、`image`（固定图片）、`bing`（随机壁纸） |
+| `hero.background.image` | image 模式必填；bing 模式作为回退图片，可省略 |
+| `profile` | 省略或 null 时不显示作者卡片，文章列表使用单栏；配置时必须有非空 `name` |
+| `profile.avatar` / `description` / `bio` / `links` | 可选头像、短句、介绍和链接列表；头像留空省略 |
+| `sidebar` | 文章和普通页面侧栏的平铺链接列表，仅显示配置的条目，不自动追加首页或归档入口；省略或为空列表时隐藏桌面左栏和手机侧栏菜单，正文布局自动收拢 |
+| `footer` | 页脚纯文本；RSS 可用时仍显示订阅入口 |
+
+图片路径与导航一样，以站点根目录为基准，支持 HTTP(S) 地址。`/images/a.png` 在这里表示站点内资源，不是域名根目录；生成到深层自定义 URL、分页或独立标签页时会自动换算相对地址。作者链接和侧栏链接沿用导航规则，支持 `.md` 跟随自定义输出地址。图片字段不自动复制文件或检查图片是否存在。未知配置字段及非法模式、链接会报错；文本由 Razor 编码，不能用这些字段注入 HTML。
+
+Bing 模式通过 Hope 使用的第三方接口 `https://bing-wallpaper.vuejs.press/api/wallpaper` 获取候选列表，每次打开首页随机选择一张。图片加载成功后替换背景并显示返回的说明、版权信息；请求超时、服务不可用或禁用 JS 时，保留配置的图片或纯色。生成网站不依赖该服务联网，固定图片和纯色模式不请求壁纸接口。
+
+配色首次跟随系统，手动切换后保存在浏览器本地；禁用 JS 时仍通过 CSS 跟随系统。`custom.css` 可覆盖 `--bg`、`--surface`、`--text`、`--muted`、`--border`、`--accent`、`--soft` 和 `--code-*` 变量。旧版对整个 `body` 设置固定最大宽度的覆盖规则可能限制新布局，迁移时应按需要调整。
 
 配置 `url` 后，正式构建还会输出 canonical 链接、`sitemap.xml` 和 `feed.xml`，并显示 RSS 订阅入口。RSS 提供最近 20 篇已发布文章的标题、链接和可选简介；标签归档、RSS 和相邻文章导航不受首页分页大小限制。
 

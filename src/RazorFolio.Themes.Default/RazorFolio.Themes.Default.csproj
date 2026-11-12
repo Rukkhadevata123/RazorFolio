@@ -9,6 +9,7 @@
     <EmbeddedResource Include="Styles/theme.css" LogicalName="RazorFolio.Themes.Default.theme.css" />
     <EmbeddedResource Include="Styles/code.css" LogicalName="RazorFolio.Themes.Default.code.css" />
     <EmbeddedResource Include="Scripts/code-blocks.js" LogicalName="RazorFolio.Themes.Default.code-blocks.js" />
+    <EmbeddedResource Include="Scripts/theme.js" LogicalName="RazorFolio.Themes.Default.theme.js" />
     <EmbeddedResource Include="Scripts/vendor/highlight.min.js" LogicalName="RazorFolio.Themes.Default.highlight.min.js" />
     <EmbeddedResource Include="Scripts/vendor/highlight-LICENSE.txt" LogicalName="RazorFolio.Themes.Default.highlight-LICENSE.txt" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

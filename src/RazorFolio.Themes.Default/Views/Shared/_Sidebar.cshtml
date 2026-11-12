@@ -1,0 +1,7 @@
+@model RazorFolio.Core.Rendering.PageContext
+<nav aria-label="侧栏导航">
+    @foreach (var link in Model.Theme.Sidebar)
+    {
+        <a href="@link.Url" aria-current="@(link.Url.Split('?', '#')[0] == Model.CurrentUrl ? "page" : null)">@link.Text</a>
+    }
+</nav>

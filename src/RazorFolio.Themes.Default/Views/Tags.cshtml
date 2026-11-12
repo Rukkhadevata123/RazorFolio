@@ -8,10 +8,17 @@
 </nav>
 
 <h1>标签归档</h1>
+@await Html.PartialAsync("_BrowseLinks", Model.Context)
+<ul class="archive-index" aria-label="标签索引">
+    @foreach (var group in Model.Groups)
+    {
+        <li><a href="@group.Url">@group.Name <span class="count">@group.Articles.Count</span></a></li>
+    }
+</ul>
 @foreach (var group in Model.Groups)
 {
-    <section aria-labelledby="@group.Id">
-        <h2 id="@group.Id"><a href="@group.Url">@group.Name</a></h2>
+    <section class="archive-group" aria-labelledby="@group.Id">
+        <h2 id="@group.Id"><a href="@group.Url">@group.Name</a> <span class="count">@group.Articles.Count 篇</span></h2>
         @await Html.PartialAsync("/Views/Shared/_ArticleList.cshtml", group.Articles)
     </section>
 }
