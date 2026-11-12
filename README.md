@@ -6,7 +6,9 @@
 
 ## 快速开始
 
-在仓库根目录执行。SDK 版本约定见 [global.json](global.json)。
+开发需要 .NET 10 SDK。[global.json](global.json) 会选择本机已安装的最新稳定 .NET 10 SDK，允许更新功能带和补丁版本。其中 `10.0.100` 是 SDK 选择的最低基线，不要求单独安装这个版本。
+
+在仓库根目录执行：
 
 ```bash
 dotnet build
