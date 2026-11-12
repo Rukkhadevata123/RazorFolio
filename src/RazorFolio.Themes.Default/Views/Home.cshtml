@@ -17,6 +17,10 @@ else
         {
             <li>
                 <a href="@article.Url">@article.Title</a>
+                @if (article.Draft)
+                {
+                    <span>（草稿）</span>
+                }
                 @if (article.Date is { } date)
                 {
                     var dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);

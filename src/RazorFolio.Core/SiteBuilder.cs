@@ -12,7 +12,8 @@ public sealed class SiteBuilder(
     IPageRenderer pageRenderer,
     StaticAssetCopier assetCopier)
 {
-    public async Task<int> BuildAsync(string siteDirectory, CancellationToken cancellationToken = default)
+    public async Task<int> BuildAsync(
+        string siteDirectory, bool includeDrafts = false, CancellationToken cancellationToken = default)
     {
         var siteRoot = Path.GetFullPath(siteDirectory);
         var configuration = await SiteConfigurationLoader.LoadAsync(siteRoot, cancellationToken);
@@ -31,11 +32,12 @@ public sealed class SiteBuilder(
                 .Where(path => Path.GetExtension(path).Equals(".md", StringComparison.OrdinalIgnoreCase))
         ];
         Array.Sort(sourceFiles, StringComparer.Ordinal);
+        var sources = await LoadArticlesAsync(sourceFiles, includeDrafts, cancellationToken);
         Directory.CreateDirectory(outputDirectory);
 
         string[] pagePaths =
         [
-            .. sourceFiles.Select(source => GetOutputPath(source, contentDirectory, outputDirectory))
+            .. sources.Select(source => GetOutputPath(source.Path, contentDirectory, outputDirectory))
         ];
         var homePath = Path.Combine(outputDirectory, "index.html");
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
@@ -50,18 +52,16 @@ public sealed class SiteBuilder(
             Path.Combine(siteRoot, "static"), outputDirectory, [.. pagePaths, homePath], cancellationToken);
         var articles = new List<ArticleLink>();
 
-        foreach (var sourceFile in sourceFiles)
+        foreach (var (sourceFile, article) in sources)
         {
-            var markdown = await File.ReadAllTextAsync(sourceFile, cancellationToken);
-            var article = articleParser.Parse(markdown, sourceFile);
             var bodyHtml = markdownRenderer.Render(article.Body);
-            var page = new ArticlePage(article.Title, bodyHtml, configuration, article.Date);
+            var page = new ArticlePage(article.Title, bodyHtml, configuration, article.Date, article.Draft);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
             var outputPath = GetOutputPath(sourceFile, contentDirectory, outputDirectory);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
             await File.WriteAllTextAsync(outputPath, html, cancellationToken);
-            articles.Add(new ArticleLink(article.Title, GetPageUrl(outputPath, outputDirectory), article.Date));
+            articles.Add(new ArticleLink(article.Title, GetPageUrl(outputPath, outputDirectory), article.Date, article.Draft));
         }
 
         ArticleLink[] orderedArticles =
@@ -73,7 +73,24 @@ public sealed class SiteBuilder(
         await File.WriteAllTextAsync(homePath, homeHtml, cancellationToken);
         await manifest.CompleteAsync([.. pagePaths, homePath, .. assetPaths], cancellationToken);
 
-        return sourceFiles.Length + 1;
+        return sources.Count + 1;
+    }
+
+    private async Task<List<(string Path, ParsedArticle Article)>> LoadArticlesAsync(
+        IEnumerable<string> sourceFiles, bool includeDrafts, CancellationToken cancellationToken)
+    {
+        var sources = new List<(string Path, ParsedArticle Article)>();
+        foreach (var path in sourceFiles)
+        {
+            var markdown = await File.ReadAllTextAsync(path, cancellationToken);
+            var article = articleParser.Parse(markdown, path);
+            if (includeDrafts || !article.Draft)
+            {
+                sources.Add((path, article));
+            }
+        }
+
+        return sources;
     }
 
     private static string GetOutputPath(string sourceFile, string contentDirectory, string outputDirectory)

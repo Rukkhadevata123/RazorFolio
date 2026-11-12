@@ -69,7 +69,7 @@ try
         new MarkdownRenderer(markdownPipeline),
         pageRenderer,
         new StaticAssetCopier());
-    var pageCount = await builder.BuildAsync(command.SiteDirectory);
+    var pageCount = await builder.BuildAsync(command.SiteDirectory, includeDrafts: command.Name == "dev");
 
     Console.WriteLine($"Built {pageCount} page(s) in {Path.Combine(command.SiteDirectory, "public")}");
     if (command.Name == "dev")

@@ -48,7 +48,7 @@ internal sealed class SiteWatcher(string siteDirectory, SiteBuilder builder, Liv
 
                 try
                 {
-                    var count = await builder.BuildAsync(siteDirectory, stoppingToken);
+                    var count = await builder.BuildAsync(siteDirectory, includeDrafts: true, cancellationToken: stoppingToken);
                     liveReload.Publish();
                     Console.WriteLine($"Rebuilt {count} page(s). Notified browsers.");
                 }

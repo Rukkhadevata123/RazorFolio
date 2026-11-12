@@ -58,6 +58,6 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
             date = parsedDate;
         }
 
-        return new ParsedArticle(title, document, date);
+        return new ParsedArticle(title, document, date, metadata.Draft);
     }
 }
