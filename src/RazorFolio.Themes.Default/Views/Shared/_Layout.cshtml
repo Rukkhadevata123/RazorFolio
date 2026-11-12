@@ -1,3 +1,7 @@
+@using RazorFolio.Core.Rendering
+@{
+    var feed = ViewData["Feed"] as FeedLink;
+}
 <!doctype html>
 <html lang="@ViewData["Language"]">
 <head>
@@ -12,6 +16,10 @@
     {
         <link rel="canonical" href="@canonicalUrl">
     }
+    @if (feed is not null)
+    {
+        <link rel="alternate" type="application/rss+xml" title="RSS" href="@feed.AbsoluteUrl">
+    }
     @if (ViewData["StylesheetUrls"] is IReadOnlyList<string> stylesheetUrls)
     {
         @foreach (var stylesheetUrl in stylesheetUrls)
@@ -24,5 +32,11 @@
     <main>
         @RenderBody()
     </main>
+    @if (feed is not null)
+    {
+        <footer class="site-footer">
+            <a href="@feed.RelativeUrl">RSS 订阅</a>
+        </footer>
+    }
 </body>
 </html>

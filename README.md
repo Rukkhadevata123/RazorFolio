@@ -262,7 +262,11 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ~/razorfolio-blog
 
 频道标题和简介暂时都使用站点名称。每篇文章提供标题、正式链接和以链接为值的 `guid`；改标题或简介不改变标识，改输出路径或域名会改变标识。可选的 `description` 作为纯文本摘要，先做 HTML 编码再由 XML API 转义，避免阅读器把简介中的尖括号解释为 HTML。没有简介时省略该元素，不自动截取正文，也不输出全文。
 
-当前 `date` 只有日期，没有时间和时区，因此 RSS 暂不写 `pubDate`，也不以每次构建时间填写 `lastBuildDate`。`dev` 不自动生成订阅文件；用 `build` 和 `preview` 检查 `feed.xml`。删除 `url` 后会清理此前生成的订阅文件，自动生成时同名静态资源或目录冲突会报错；未启用时可通过 `static/feed.xml` 提供自己的文件。页面中的订阅入口和自动发现链接后续再加。
+当前 `date` 只有日期，没有时间和时区，因此 RSS 暂不写 `pubDate`，也不以每次构建时间填写 `lastBuildDate`。`dev` 不自动生成订阅文件；用 `build` 和 `preview` 检查 `feed.xml`。删除 `url` 后会清理此前生成的订阅文件，自动生成时同名静态资源或目录冲突会报错；未启用时可通过 `static/feed.xml` 提供自己的文件。
+
+正式构建生成 RSS 时，首页、文章页和标签归档的页脚都会显示“RSS 订阅”，使用相对路径访问当前站点的 `feed.xml`，本地 `preview` 也能直接查看。共享布局同时在 `<head>` 中输出 `rel="alternate"`、`type="application/rss+xml"` 的链接，并使用正式绝对地址，供支持 [RSS 自动发现](https://www.rssboard.org/rss-autodiscovery) 的阅读器识别。比如部署在 `/blog/` 下时，自动发现地址为 `https://example.com/blog/feed.xml`。
+
+构建器通过 `FeedLink` 将两种地址一起交给页面模型，布局只负责显示。本次不生成 RSS 时，模型中的 `Feed` 为 null，页脚和自动发现链接均隐藏；`dev`、未配置 `url` 或仅放置手写 `static/feed.xml` 的情况不会自动显示入口。
 
 - `content/`：Markdown 文章。
 - `static/`：原样复制的图片、附件等资源。

@@ -7,4 +7,5 @@ public sealed record HomePage(
     SiteConfiguration Site,
     string? TagsUrl,
     IReadOnlyList<string> StylesheetUrls,
-    string? CanonicalUrl);
+    string? CanonicalUrl,
+    FeedLink? Feed);

@@ -93,3 +93,10 @@ details.custom-container > summary { cursor: pointer; font-weight: bold; }
 
 .toc ul { padding-inline-start: 1.5rem; }
 h1, h2, h3, h4, h5, h6 { scroll-margin-top: 1rem; }
+
+.site-footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #888;
+    font-size: 0.9em;
+}

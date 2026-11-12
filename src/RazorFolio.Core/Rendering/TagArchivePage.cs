@@ -7,4 +7,5 @@ public sealed record TagArchivePage(
     SiteConfiguration Site,
     string HomeUrl,
     IReadOnlyList<string> StylesheetUrls,
-    string? CanonicalUrl);
+    string? CanonicalUrl,
+    FeedLink? Feed);

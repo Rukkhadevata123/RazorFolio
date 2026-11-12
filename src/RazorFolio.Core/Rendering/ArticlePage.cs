@@ -10,4 +10,5 @@ public sealed record ArticlePage(
     string HomeUrl,
     IReadOnlyList<TagLink> Tags,
     IReadOnlyList<string> StylesheetUrls,
-    string? CanonicalUrl);
+    string? CanonicalUrl,
+    FeedLink? Feed);

@@ -47,6 +47,7 @@ public sealed class SiteBuilder(
         var generateMetadata = configuration.Url is not null && !target.IncludeDrafts;
         var sitemapPath = Path.Combine(outputDirectory, "sitemap.xml");
         var feedPath = Path.Combine(outputDirectory, "feed.xml");
+        var feedUrl = generateMetadata ? PageUrl.GetAbsolute(feedPath, outputDirectory, configuration.Url) : null;
         string[] metadataPaths = generateMetadata ? [sitemapPath, feedPath] : [];
         var stylesheetPath = Path.GetFullPath(stylesheet.RelativePath, outputDirectory);
         string[] protectedPaths = [.. reservedPaths, .. metadataPaths, stylesheetPath];
@@ -87,7 +88,8 @@ public sealed class SiteBuilder(
                 : PageUrl.GetAbsolute(outputPath, outputDirectory, configuration.Url);
             var page = new ArticlePage(
                 article.Info, bodyHtml, configuration, homeUrl, tags,
-                GetStylesheetUrls(outputPath, stylesheetPaths), canonicalUrl);
+                GetStylesheetUrls(outputPath, stylesheetPaths), canonicalUrl,
+                GetFeedLink(outputPath, feedPath, feedUrl));
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
@@ -104,7 +106,8 @@ public sealed class SiteBuilder(
         var home = new HomePage(
             orderedArticles, configuration, hasTags ? PageUrl.GetRelative(homePath, tagsPath) : null,
             GetStylesheetUrls(homePath, stylesheetPaths),
-            PageUrl.GetAbsolute(homePath, outputDirectory, configuration.Url));
+            PageUrl.GetAbsolute(homePath, outputDirectory, configuration.Url),
+            GetFeedLink(homePath, feedPath, feedUrl));
         var homeHtml = await pageRenderer.RenderAsync(home, cancellationToken);
         await File.WriteAllTextAsync(homePath, homeHtml, cancellationToken);
 
@@ -113,7 +116,8 @@ public sealed class SiteBuilder(
             var archive = new TagArchivePage(
                 GroupByTag(orderedArticles), configuration, PageUrl.GetRelative(tagsPath, homePath),
                 GetStylesheetUrls(tagsPath, stylesheetPaths),
-                PageUrl.GetAbsolute(tagsPath, outputDirectory, configuration.Url));
+                PageUrl.GetAbsolute(tagsPath, outputDirectory, configuration.Url),
+                GetFeedLink(tagsPath, feedPath, feedUrl));
             var tagsHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
             await File.WriteAllTextAsync(tagsPath, tagsHtml, cancellationToken);
         }
@@ -134,6 +138,9 @@ public sealed class SiteBuilder(
 
         return sources.Count + reservedPaths.Length;
     }
+
+    private static FeedLink? GetFeedLink(string pagePath, string feedPath, string? absoluteUrl) =>
+        absoluteUrl is null ? null : new FeedLink(PageUrl.GetRelative(pagePath, feedPath), absoluteUrl);
 
     private static string[] GetStylesheetUrls(string pagePath, IReadOnlyList<string> stylesheetPaths) =>
         [.. stylesheetPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
