@@ -1,6 +1,6 @@
-@model RazorFolio.Core.Rendering.TagPage
+@inherits global::RazorFolio.Themes.Default.Rendering.PageTemplate<RazorFolio.Core.Rendering.TagPage>
 @{
-    ViewData["Title"] = $"标签：{Model.Name} — {Model.Context.Site.Title}";
+    Metadata.Title = $"标签：{Model.Name} — {Model.Context.Site.Title}";
 }
 
 <nav aria-label="站点导航">
@@ -9,6 +9,6 @@
 </nav>
 
 <h1>标签：@Model.Name</h1>
-@await Html.PartialAsync("_BrowseLinks", Model.Context)
+@await PartialAsync(new Shared__BrowseLinks { Model = Model.Context })
 <h2 class="section-label">文章 <span class="count">@Model.Articles.Count 篇</span></h2>
-@await Html.PartialAsync("/Views/Shared/_ArticleList.cshtml", Model.Articles)
+@await PartialAsync(new Shared__ArticleList { Model = Model.Articles })

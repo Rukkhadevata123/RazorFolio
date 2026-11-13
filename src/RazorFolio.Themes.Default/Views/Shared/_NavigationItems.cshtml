@@ -1,4 +1,4 @@
-@model RazorFolio.Core.Rendering.PageContext
+@inherits global::RazorFolio.Themes.Default.Rendering.RazorTemplate<RazorFolio.Core.Rendering.PageContext>
 <ul>
     @foreach (var link in Model.Navigation)
     {

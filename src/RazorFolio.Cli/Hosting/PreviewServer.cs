@@ -26,7 +26,7 @@ internal static class PreviewServer
         builder.WebHost.ConfigureKestrel(options => options.Listen(IPAddress.Loopback, port));
         if (watcher is not null)
         {
-            builder.Services.AddSingleton<IHostedService>(watcher);
+            builder.Services.AddSingleton(watcher);
         }
 
         using var files = new PhysicalFileProvider(directory);

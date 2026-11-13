@@ -1,4 +1,4 @@
-@model RazorFolio.Core.Rendering.ArticlePage
+@inherits global::RazorFolio.Themes.Default.Rendering.RazorTemplate<RazorFolio.Core.Rendering.ArticlePage>
 
 @foreach (var scriptUrl in Model.Context.ContentScriptUrls)
 {

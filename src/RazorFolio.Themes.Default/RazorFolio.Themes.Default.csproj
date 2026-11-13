@@ -1,9 +1,5 @@
-<Project Sdk="Microsoft.NET.Sdk.Razor">
-  <PropertyGroup>
-    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
-    <RazorCompileOnBuild>true</RazorCompileOnBuild>
-    <RazorCompileOnPublish>true</RazorCompileOnPublish>
-  </PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk">
+
 
   <ItemGroup>
     <EmbeddedResource Include="Styles/theme.css" LogicalName="RazorFolio.Themes.Default.theme.css" />
@@ -24,7 +20,26 @@
     <EmbeddedResource Include="Scripts/vendor/mermaid-LICENSE.txt" LogicalName="RazorFolio.Themes.Default.mermaid-LICENSE.txt" />
     <EmbeddedResource Include="Scripts/vendor/highlight.min.js" LogicalName="RazorFolio.Themes.Default.highlight.min.js" />
     <EmbeddedResource Include="Scripts/vendor/highlight-LICENSE.txt" LogicalName="RazorFolio.Themes.Default.highlight-LICENSE.txt" />
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../RazorFolio.TemplateCompiler/RazorFolio.TemplateCompiler.csproj"
+                      ReferenceOutputAssembly="false" Private="false" PrivateAssets="all"
+                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishAot;PublishTrimmed;IsAotCompatible"
+                      AdditionalProperties="PublishAot=false;PublishTrimmed=false;SelfContained=false" />
     <ProjectReference Include="../RazorFolio.Core/RazorFolio.Core.csproj" />
   </ItemGroup>
+  <Target Name="CompileRazorTemplates" BeforeTargets="CoreCompile" DependsOnTargets="ResolveProjectReferences">
+    <MSBuild Projects="../RazorFolio.TemplateCompiler/RazorFolio.TemplateCompiler.csproj"
+             Targets="GetTargetPath" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)"
+             RemoveProperties="RuntimeIdentifier;SelfContained;PublishAot;PublishTrimmed;IsAotCompatible">
+      <Output TaskParameter="TargetOutputs" ItemName="_TemplateCompilerAssembly" />
+    </MSBuild>
+    <PropertyGroup>
+      <_GeneratedRazorDirectory>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)Razor', '$(MSBuildProjectDirectory)'))</_GeneratedRazorDirectory>
+    </PropertyGroup>
+    <Exec Command="dotnet &quot;@(_TemplateCompilerAssembly)&quot; &quot;$(MSBuildProjectDirectory)/Views&quot; &quot;$(_GeneratedRazorDirectory)&quot;" />
+    <ItemGroup>
+      <Compile Remove="$(_GeneratedRazorDirectory)/*.g.cs" />
+      <Compile Include="$(_GeneratedRazorDirectory)/*.g.cs" />
+      <FileWrites Include="$(_GeneratedRazorDirectory)/*.g.cs" />
+    </ItemGroup>
+  </Target>
 </Project>

@@ -1,4 +1,4 @@
-@model RazorFolio.Core.Rendering.IPageModel
+@inherits global::RazorFolio.Themes.Default.Rendering.RazorTemplate<global::RazorFolio.Themes.Default.Rendering.LayoutModel>
 @{
     var context = Model.Context;
     var brand = context.Theme.Brand;
@@ -8,12 +8,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@ViewData["Title"]</title>
+    <title>@Model.Metadata.Title</title>
     @if (context.FaviconUrl is { } faviconUrl)
     {
         <link rel="icon" type="image/svg+xml" href="@faviconUrl">
     }
-    @if (ViewData["Description"] is string description)
+    @if (Model.Metadata.Description is string description)
     {
         <meta name="description" content="@description">
     }
@@ -55,7 +55,7 @@
             @if (context.Navigation.Count > 0)
             {
                 <nav class="site-navigation desktop-navigation" aria-label="主导航">
-                    @await Html.PartialAsync("_NavigationItems", context)
+                    @await PartialAsync(new Shared__NavigationItems { Model = context })
                 </nav>
             }
             <div class="header-actions">
@@ -67,15 +67,15 @@
                 <details class="mobile-navigation">
                     <summary>导航</summary>
                     <nav class="site-navigation" aria-label="主导航">
-                        @await Html.PartialAsync("_NavigationItems", context)
+                        @await PartialAsync(new Shared__NavigationItems { Model = context })
                     </nav>
                 </details>
             }
         </div>
     </header>
-    @await Html.PartialAsync("_Search", context)
-    <main id="rf-main" tabindex="-1" class="@(ViewData["PageClass"] ?? "archive-shell")">
-        @RenderBody()
+    @await PartialAsync(new Shared__Search { Model = context })
+    <main id="rf-main" tabindex="-1" class="@Model.Metadata.CssClass">
+        @Model.Body
     </main>
     <footer class="site-footer">
         @if (context.Theme.Footer is { } footer)

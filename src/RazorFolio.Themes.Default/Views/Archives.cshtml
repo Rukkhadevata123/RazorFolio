@@ -1,7 +1,7 @@
-@model RazorFolio.Core.Rendering.YearArchivePage
+@inherits global::RazorFolio.Themes.Default.Rendering.PageTemplate<RazorFolio.Core.Rendering.YearArchivePage>
 @using System.Globalization
 @{
-    ViewData["Title"] = $"文章归档 — {Model.Context.Site.Title}";
+    Metadata.Title = $"文章归档 — {Model.Context.Site.Title}";
 }
 
 <nav aria-label="站点导航">
@@ -9,7 +9,7 @@
 </nav>
 
 <h1>文章归档</h1>
-@await Html.PartialAsync("_BrowseLinks", Model.Context)
+@await PartialAsync(new Shared__BrowseLinks { Model = Model.Context })
 <ul class="archive-index" aria-label="年份索引">
     @foreach (var group in Model.Groups)
     {
@@ -24,6 +24,6 @@
         : "未注明日期";
     <section class="archive-group" aria-labelledby="@group.Id">
         <h2 id="@group.Id">@title <span class="count">@group.Articles.Count 篇</span></h2>
-        @await Html.PartialAsync("/Views/Shared/_ArticleList.cshtml", group.Articles)
+        @await PartialAsync(new Shared__ArticleList { Model = group.Articles })
     </section>
 }

@@ -210,10 +210,7 @@ public sealed class SiteBuilder(
                 index > 0 ? PageUrl.GetRelative(outputPath, homePaths[index - 1]) : null,
                 index + 1 < homePaths.Length ? PageUrl.GetRelative(outputPath, homePaths[index + 1]) : null);
             var home = new HomePage(
-                pageArticles, CreateContext(outputPath),
-                hasTags ? PageUrl.GetRelative(outputPath, tagsPath) : null,
-                hasCategories ? PageUrl.GetRelative(outputPath, categoriesPath) : null,
-                hasArticles ? PageUrl.GetRelative(outputPath, archivesPath) : null, pagination);
+                pageArticles, CreateContext(outputPath), pagination);
             var homeHtml = await pageRenderer.RenderAsync(home, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);

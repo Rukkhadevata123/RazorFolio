@@ -32,8 +32,8 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
         {
             try
             {
-                // YAML null documents can deserialize to null despite the return annotation.
-                metadata = deserializer.Deserialize<ArticleMetadata>(frontMatter.Lines.ToString())
+                // An empty or explicitly null YAML document has no metadata object.
+                metadata = deserializer.Deserialize<ArticleMetadata?>(frontMatter.Lines.ToString())
                     ?? new ArticleMetadata();
             }
             catch (YamlException exception)

@@ -14,23 +14,10 @@ internal sealed class SiteWatcher(SiteBuildTarget target, SiteBuilder builder, L
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var watcher = new FileSystemWatcher(target.SiteDirectory);
-        watcher.IncludeSubdirectories = true;
-        watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite;
-        watcher.Changed += OnChanged;
-        watcher.Created += OnChanged;
-        watcher.Deleted += OnChanged;
-        watcher.Renamed += (_, args) =>
-        {
-            QueueChange(args.OldFullPath);
-            QueueChange(args.FullPath);
-        };
-        watcher.Error += (_, args) =>
-        {
-            Console.Error.WriteLine($"File watcher error: {args.GetException().Message}");
-            changes.Writer.TryWrite(true);
-        };
-        watcher.EnableRaisingEvents = true;
+        // The root watcher notices configuration changes and source directories being recreated.
+        // Recursive watchers cover source trees only, never our own generated output.
+        using var rootWatcher = CreateWatcher(target.SiteDirectory, includeSubdirectories: false);
+        List<FileSystemWatcher> sourceWatchers = [];
 
         // Catch changes made between the initial build and watcher startup.
         changes.Writer.TryWrite(true);
@@ -46,6 +33,7 @@ internal sealed class SiteWatcher(SiteBuildTarget target, SiteBuilder builder, L
 
                 try
                 {
+                    RefreshSourceWatchers();
                     var count = await builder.BuildAsync(target, stoppingToken);
                     liveReload.Publish();
                     Console.WriteLine($"Rebuilt {count} page(s). Notified browsers.");
@@ -60,6 +48,64 @@ internal sealed class SiteWatcher(SiteBuildTarget target, SiteBuilder builder, L
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
             // Normal shutdown; FileSystemWatcher is disposed by the using statement.
+        }
+        finally
+        {
+            foreach (var watcher in sourceWatchers) watcher.Dispose();
+        }
+
+        void RefreshSourceWatchers()
+        {
+            List<FileSystemWatcher> replacements = [];
+            try
+            {
+                foreach (var name in new[] { "content", "static" })
+                {
+                    var path = Path.Combine(target.SiteDirectory, name);
+                    if (Directory.Exists(path)) replacements.Add(CreateWatcher(path, includeSubdirectories: true));
+                }
+            }
+            catch
+            {
+                foreach (var watcher in replacements) watcher.Dispose();
+                throw;
+            }
+
+            // Enable replacements first so edits during a rebuild aren't lost between subscriptions.
+            foreach (var watcher in sourceWatchers) watcher.Dispose();
+            sourceWatchers = replacements;
+        }
+    }
+
+    private FileSystemWatcher CreateWatcher(string directory, bool includeSubdirectories)
+    {
+        var watcher = new FileSystemWatcher(directory)
+        {
+            IncludeSubdirectories = includeSubdirectories,
+            NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
+        };
+        watcher.Changed += OnChanged;
+        watcher.Created += OnChanged;
+        watcher.Deleted += OnChanged;
+        watcher.Renamed += (_, args) =>
+        {
+            QueueChange(args.OldFullPath);
+            QueueChange(args.FullPath);
+        };
+        watcher.Error += (_, args) =>
+        {
+            Console.Error.WriteLine($"File watcher error: {args.GetException().Message}");
+            changes.Writer.TryWrite(true);
+        };
+        try
+        {
+            watcher.EnableRaisingEvents = true;
+            return watcher;
+        }
+        catch
+        {
+            watcher.Dispose();
+            throw;
         }
     }
 

@@ -1,4 +1,4 @@
-@model RazorFolio.Core.Configuration.ProfileOptions
+@inherits global::RazorFolio.Themes.Default.Rendering.RazorTemplate<RazorFolio.Core.Configuration.ProfileOptions>
 <aside class="profile card" aria-label="作者介绍">
     @if (Model.Avatar is { } avatar)
     {

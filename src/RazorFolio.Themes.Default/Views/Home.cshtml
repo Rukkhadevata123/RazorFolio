@@ -1,10 +1,10 @@
-@model RazorFolio.Core.Rendering.HomePage
+@inherits global::RazorFolio.Themes.Default.Rendering.PageTemplate<RazorFolio.Core.Rendering.HomePage>
 @{
     var firstPage = Model.Pagination.CurrentPage == 1;
     var theme = Model.Context.Theme;
-    ViewData["Title"] = firstPage ? Model.Context.Site.Title : $"{Model.Context.Site.Title} — 第 {Model.Pagination.CurrentPage} 页";
-    ViewData["Description"] = Model.Context.Site.Description;
-    ViewData["PageClass"] = "home-page";
+    Metadata.Title = firstPage ? Model.Context.Site.Title : $"{Model.Context.Site.Title} — 第 {Model.Pagination.CurrentPage} 页";
+    Metadata.Description = Model.Context.Site.Description;
+    Metadata.CssClass = "home-page";
 }
 @if (firstPage && theme.Hero is { } hero)
 {
@@ -42,7 +42,7 @@
     }
     <div class="section-heading">
         <h2 id="rf-articles-title">文章</h2>
-        @await Html.PartialAsync("_BrowseLinks", Model.Context)
+        @await PartialAsync(new Shared__BrowseLinks { Model = Model.Context })
     </div>
     <div class="home-grid @(theme.Profile is null ? "without-profile" : "")">
         <section aria-labelledby="rf-articles-title">
@@ -52,7 +52,7 @@
             }
             else
             {
-                @await Html.PartialAsync("_ArticleList", Model.Articles)
+                @await PartialAsync(new Shared__ArticleList { Model = Model.Articles })
             }
             @if (Model.Pagination.TotalPages > 1)
             {
@@ -71,7 +71,7 @@
         </section>
         @if (theme.Profile is { } profile)
         {
-            @await Html.PartialAsync("_Profile", profile)
+            @await PartialAsync(new Shared__Profile { Model = profile })
         }
     </div>
 </div>

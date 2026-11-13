@@ -1,9 +1,9 @@
-@model RazorFolio.Core.Rendering.ArticlePage
+@inherits global::RazorFolio.Themes.Default.Rendering.PageTemplate<RazorFolio.Core.Rendering.ArticlePage>
 @using System.Globalization
 @{
-    ViewData["Title"] = $"{Model.Info.Title} — {Model.Context.Site.Title}";
-    ViewData["Description"] = Model.Info.Description;
-    ViewData["PageClass"] = "article-page";
+    Metadata.Title = $"{Model.Info.Title} — {Model.Context.Site.Title}";
+    Metadata.Description = Model.Info.Description;
+    Metadata.CssClass = "article-page";
     var hasSidebar = Model.Context.Theme.Sidebar.Count > 0;
 }
 <div class="article-grid @(Model.Headings.Count == 0 ? "without-toc" : "") @(hasSidebar ? "" : "without-sidebar")">
@@ -11,7 +11,7 @@
     {
         <aside class="site-sidebar">
             <h2>浏览</h2>
-            @await Html.PartialAsync("_Sidebar", Model.Context)
+            @await PartialAsync(new Shared__Sidebar { Model = Model.Context })
         </aside>
     }
     <div class="article-surface card">
@@ -19,7 +19,7 @@
         {
             <details class="mobile-sidebar">
                 <summary>浏览文章</summary>
-                @await Html.PartialAsync("_Sidebar", Model.Context)
+                @await PartialAsync(new Shared__Sidebar { Model = Model.Context })
             </details>
         }
         <article>
@@ -27,7 +27,7 @@
                 <nav class="breadcrumb" aria-label="站点导航"><a href="@Model.HomeUrl">← 返回首页</a></nav>
                 @if (Model.TitleHtml is { } titleHtml)
                 {
-                    @Html.Raw(titleHtml)
+                    @Raw(titleHtml)
                 }
                 else
                 {
@@ -65,11 +65,11 @@
             {
                 <details class="mobile-toc">
                     <summary>此页内容</summary>
-                    @await Html.PartialAsync("_TableOfContents", Model.Headings)
+                    @await PartialAsync(new Shared__TableOfContents { Model = Model.Headings })
                 </details>
             }
             @* The HTML is rendered from trusted author content, including the original leading H1. *@
-            <div class="article-body">@Html.Raw(Model.BodyHtml)</div>
+            <div class="article-body">@Raw(Model.BodyHtml)</div>
         </article>
         @if (Model.Navigation.Previous is not null || Model.Navigation.Next is not null)
         {
@@ -89,8 +89,8 @@
     {
         <aside class="page-toc">
             <h2>此页内容</h2>
-            @await Html.PartialAsync("_TableOfContents", Model.Headings)
+            @await PartialAsync(new Shared__TableOfContents { Model = Model.Headings })
         </aside>
     }
 </div>
-@await Html.PartialAsync("_CodeBlockScripts")
+@await PartialAsync(new Shared__CodeBlockScripts { Model = Model })

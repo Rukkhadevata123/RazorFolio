@@ -1,12 +1,12 @@
 # RazorFolio
 
-C# / .NET 11 静态博客生成器，命令名为 `rf`。使用 Markdig、YamlDotNet 和预编译 Razor 模板。
+C# / .NET 11 静态博客生成器，命令名为 `rf`。使用 Markdig、YamlDotNet 和构建时编译的 Razor 模板。
 
 支持卡片主题、明暗配色、站内搜索、代码高亮与复制、Mermaid 图表、数学公式、文章目录、分页、分类/标签/年份归档、草稿预览、RSS 和 sitemap。仍在开发中。
 
 ## 快速开始
 
-安装 .NET 11 SDK，在仓库根目录运行：
+安装 .NET SDK 11.0.100 或同一 11.0.1xx 功能带的更新补丁（见 `global.json`），在仓库根目录运行：
 
 ```bash
 dotnet build
@@ -132,6 +132,8 @@ draft: false
 
 修改 C#、Razor 模板或内置资源后，需要重新编译并重启 `dev`。`dotnet build` 构建生成器，`rf build` 生成网站；发布时上传 `public/`。
 
+`.cshtml` 在构建时生成强类型 C#，运行时直接组合页面、布局和局部模板，无需 MVC 视图引擎。模板编译器只用于源码构建，不进入工具包；SDK 编译器接口与模板约定见 [TemplateCompiler](src/RazorFolio.TemplateCompiler/README.md)。模板层已通过 NativeAOT 验证，完整 CLI 的 JSON/YAML 等适配仍待完成。
+
 ```bash
 dotnet pack src/RazorFolio.Cli -c Release -o artifacts/packages
 dotnet tool install RazorFolio --version 0.1.0-dev.1 --source ./artifacts/packages --tool-path ./artifacts/tools
@@ -145,6 +147,7 @@ dotnet tool install RazorFolio --version 0.1.0-dev.1 --source ./artifacts/packag
 | [Cli](src/RazorFolio.Cli) | 命令、预览、监听 |
 | [Core](src/RazorFolio.Core) | 配置、解析、生成；入口为 [SiteBuilder](src/RazorFolio.Core/SiteBuilder.cs) |
 | [Themes.Default](src/RazorFolio.Themes.Default) | Razor 模板、样式和脚本 |
+| [TemplateCompiler](src/RazorFolio.TemplateCompiler) | 仅构建时使用的 Razor → C# 编译工具 |
 
 顶栏搜索覆盖标题、标签和正文，多个关键词用空格分隔，结果需全部匹配。构建输出 `search-index.json`，收录文章和普通页，正式排除草稿；原始 HTML 块暂不索引。搜索需要 JavaScript，并通过 `dev`、`preview` 或网站服务器访问。
 

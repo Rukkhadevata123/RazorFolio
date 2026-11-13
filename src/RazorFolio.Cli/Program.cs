@@ -1,6 +1,4 @@
 using System.Reflection;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 using RazorFolio.Cli.Commands;
 using RazorFolio.Cli.Hosting;
 using RazorFolio.Core;
@@ -9,7 +7,7 @@ using RazorFolio.Core.Content;
 using RazorFolio.Core.Rendering;
 using RazorFolio.Themes.Default;
 
-if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
+if (args is [] or ["--help" or "-h"])
 {
     Console.WriteLine("""
         RazorFolio (rf)
@@ -36,7 +34,7 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
     return 0;
 }
 
-if (args.Length == 1 && args[0] == "--version")
+if (args is ["--version"])
 {
     var assembly = Assembly.GetExecutingAssembly();
     var version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
@@ -64,19 +62,7 @@ try
     }
 
     var command = SiteCommand.Parse(args);
-    var hostBuilder = WebApplication.CreateBuilder(new WebApplicationOptions
-    {
-        Args = [],
-        ContentRootPath = AppContext.BaseDirectory
-    });
-    hostBuilder.Services.AddControllersWithViews()
-        .AddApplicationPart(typeof(RazorPageRenderer).Assembly);
-    hostBuilder.Services.AddScoped<IPageRenderer, RazorPageRenderer>();
-
-    // Build the service container without starting an HTTP listener.
-    await using var host = hostBuilder.Build();
-    await using var scope = host.Services.CreateAsyncScope();
-    var pageRenderer = scope.ServiceProvider.GetRequiredService<IPageRenderer>();
+    var pageRenderer = new RazorPageRenderer();
     var markdownPipeline = MarkdownPipelineFactory.Create();
     var builder = new SiteBuilder(
         new ArticleParser(markdownPipeline),

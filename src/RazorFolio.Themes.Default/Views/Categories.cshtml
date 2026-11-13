@@ -1,6 +1,6 @@
-@model RazorFolio.Core.Rendering.CategoryArchivePage
+@inherits global::RazorFolio.Themes.Default.Rendering.PageTemplate<RazorFolio.Core.Rendering.CategoryArchivePage>
 @{
-    ViewData["Title"] = $"分类归档 — {Model.Context.Site.Title}";
+    Metadata.Title = $"分类归档 — {Model.Context.Site.Title}";
 }
 
 <nav aria-label="站点导航">
@@ -8,7 +8,7 @@
 </nav>
 
 <h1>分类归档</h1>
-@await Html.PartialAsync("_BrowseLinks", Model.Context)
+@await PartialAsync(new Shared__BrowseLinks { Model = Model.Context })
 <ul class="archive-index" aria-label="分类索引">
     @foreach (var group in Model.Groups)
     {
@@ -19,6 +19,6 @@
 {
     <section class="archive-group" aria-labelledby="@group.Id">
         <h2 id="@group.Id">@group.Name <span class="count">@group.Articles.Count 篇</span></h2>
-        @await Html.PartialAsync("/Views/Shared/_ArticleList.cshtml", group.Articles)
+        @await PartialAsync(new Shared__ArticleList { Model = group.Articles })
     </section>
 }

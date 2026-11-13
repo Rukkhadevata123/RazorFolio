@@ -1,87 +1,37 @@
-using System.Globalization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Abstractions;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.AspNetCore.Mvc.Razor;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.AspNetCore.Routing;
 using RazorFolio.Core.Rendering;
+using RazorFolio.Themes.Default.Generated;
+using RazorFolio.Themes.Default.Rendering;
 
 namespace RazorFolio.Themes.Default;
 
-public sealed class RazorPageRenderer(
-    IRazorViewEngine viewEngine,
-    ITempDataProvider tempDataProvider,
-    IServiceProvider services) : IPageRenderer
+public sealed class RazorPageRenderer : IPageRenderer
 {
-    public Task<string> RenderAsync(ArticlePage page, CancellationToken cancellationToken = default)
-    {
-        return RenderViewAsync("/Views/Article.cshtml", page, cancellationToken);
-    }
+    public Task<string> RenderAsync(ArticlePage page, CancellationToken cancellationToken = default) =>
+        RenderPageAsync(new Article { Model = page }, cancellationToken);
 
-    public Task<string> RenderAsync(HomePage page, CancellationToken cancellationToken = default)
-    {
-        return RenderViewAsync("/Views/Home.cshtml", page, cancellationToken);
-    }
+    public Task<string> RenderAsync(HomePage page, CancellationToken cancellationToken = default) =>
+        RenderPageAsync(new Home { Model = page }, cancellationToken);
 
-    public Task<string> RenderAsync(TagArchivePage page, CancellationToken cancellationToken = default)
-    {
-        return RenderViewAsync("/Views/Tags.cshtml", page, cancellationToken);
-    }
+    public Task<string> RenderAsync(TagArchivePage page, CancellationToken cancellationToken = default) =>
+        RenderPageAsync(new Tags { Model = page }, cancellationToken);
 
-    public Task<string> RenderAsync(TagPage page, CancellationToken cancellationToken = default)
-    {
-        return RenderViewAsync("/Views/Tag.cshtml", page, cancellationToken);
-    }
+    public Task<string> RenderAsync(TagPage page, CancellationToken cancellationToken = default) =>
+        RenderPageAsync(new Tag { Model = page }, cancellationToken);
 
-    public Task<string> RenderAsync(CategoryArchivePage page, CancellationToken cancellationToken = default)
-    {
-        return RenderViewAsync("/Views/Categories.cshtml", page, cancellationToken);
-    }
+    public Task<string> RenderAsync(CategoryArchivePage page, CancellationToken cancellationToken = default) =>
+        RenderPageAsync(new Categories { Model = page }, cancellationToken);
 
-    public Task<string> RenderAsync(YearArchivePage page, CancellationToken cancellationToken = default)
-    {
-        return RenderViewAsync("/Views/Archives.cshtml", page, cancellationToken);
-    }
+    public Task<string> RenderAsync(YearArchivePage page, CancellationToken cancellationToken = default) =>
+        RenderPageAsync(new Archives { Model = page }, cancellationToken);
 
-    private async Task<string> RenderViewAsync<TModel>(
-        string viewPath,
-        TModel page,
-        CancellationToken cancellationToken) where TModel : IPageModel
+    private static async Task<string> RenderPageAsync<TModel>(
+        PageTemplate<TModel> template, CancellationToken cancellationToken) where TModel : IPageModel
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var result = viewEngine.GetView(null, viewPath, isMainPage: true);
-
-        if (!result.Success)
+        var body = await template.RenderAsync(cancellationToken);
+        var layout = new Shared__Layout
         {
-            throw new InvalidOperationException($"Precompiled theme view not found: {viewPath}");
-        }
-
-        // MVC views need a request context even when rendering without an HTTP server.
-        var httpContext = new DefaultHttpContext
-        {
-            RequestServices = services,
-            RequestAborted = cancellationToken
+            Model = new LayoutModel(template.Model.Context, template.Metadata, body)
         };
-        var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
-        var viewData = new ViewDataDictionary<TModel>(new EmptyModelMetadataProvider(), new ModelStateDictionary())
-        {
-            Model = page
-        };
-
-        using var writer = new StringWriter(CultureInfo.InvariantCulture);
-        var viewContext = new ViewContext(
-            actionContext,
-            result.View,
-            viewData,
-            new TempDataDictionary(httpContext, tempDataProvider),
-            writer,
-            new HtmlHelperOptions());
-
-        await result.View.RenderAsync(viewContext);
-        cancellationToken.ThrowIfCancellationRequested();
-        return writer.ToString();
+        return (await layout.RenderAsync(cancellationToken)).Value;
     }
 }

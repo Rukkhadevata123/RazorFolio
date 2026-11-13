@@ -1,4 +1,4 @@
-@model System.Collections.Generic.IReadOnlyList<RazorFolio.Core.Rendering.HeadingLink>
+@inherits global::RazorFolio.Themes.Default.Rendering.RazorTemplate<System.Collections.Generic.IReadOnlyList<RazorFolio.Core.Rendering.HeadingLink>>
 <nav data-toc aria-label="文章目录">
     @foreach (var heading in Model)
     {

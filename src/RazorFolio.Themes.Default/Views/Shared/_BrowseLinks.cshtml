@@ -1,4 +1,4 @@
-@model RazorFolio.Core.Rendering.PageContext
+@inherits global::RazorFolio.Themes.Default.Rendering.RazorTemplate<RazorFolio.Core.Rendering.PageContext>
 @if (Model.BrowseLinks.Count > 0)
 {
     <nav class="browse-links" aria-label="内容归档">
