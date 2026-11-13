@@ -2,6 +2,7 @@ using System.Globalization;
 using RazorFolio.Core.Assets;
 using RazorFolio.Core.Configuration;
 using RazorFolio.Core.Content;
+using RazorFolio.Core.Diagnostics;
 using RazorFolio.Core.Output;
 using RazorFolio.Core.Rendering;
 
@@ -12,7 +13,8 @@ public sealed class SiteBuilder(
     MarkdownRenderer markdownRenderer,
     IPageRenderer pageRenderer,
     StaticAssetCopier assetCopier,
-    IReadOnlyList<IThemeAsset> themeAssets)
+    IReadOnlyList<IThemeAsset> themeAssets,
+    Action<ContentLinkDiagnostic>? reportDiagnostic = null)
 {
     public async Task<int> BuildAsync(
         SiteBuildTarget target, CancellationToken cancellationToken = default)
@@ -54,7 +56,8 @@ public sealed class SiteBuilder(
                 var outputPath = source.Article.OutputUrl is { } customUrl
                     ? Path.Combine(outputDirectory, customUrl.Replace('/', Path.DirectorySeparatorChar))
                     : Path.ChangeExtension(originalPath, ".html");
-                return new ArticleOutput(source.Article, outputPath, PageUrl.GetRelative(homePath, outputPath), originalPath);
+                return new ArticleOutput(
+                    source.Article, outputPath, PageUrl.GetRelative(homePath, outputPath), originalPath, source.Path);
             })
         ];
         ArticleOutput[] outputs = [.. allOutputs.Where(output => target.IncludeDrafts || !output.Article.Info.Draft)];
@@ -122,6 +125,21 @@ public sealed class SiteBuilder(
         for (var index = 0; index < themeAssets.Count; index++)
         {
             await CopyThemeAssetAsync(themeAssets[index], themeAssetPaths[index], cancellationToken);
+        }
+
+        if (reportDiagnostic is not null)
+        {
+            var checker = new ContentLinkChecker(outputDirectory,
+                [.. contentPaths, .. protectedPaths, .. assetPaths], configuration.Url);
+            foreach (var output in outputs)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                foreach (var diagnostic in checker.Check(output.Article.Body, output.SourcePath,
+                    output.OriginalPath, output.OutputPath, linkResolver))
+                {
+                    reportDiagnostic(diagnostic);
+                }
+            }
         }
 
         var customStylesheetPath = FindCopiedAsset("custom.css");
@@ -385,7 +403,8 @@ public sealed class SiteBuilder(
         return sources;
     }
 
-    private sealed record ArticleOutput(ParsedArticle Article, string OutputPath, string Url, string OriginalPath);
+    private sealed record ArticleOutput(
+        ParsedArticle Article, string OutputPath, string Url, string OriginalPath, string SourcePath);
 
     private sealed record AliasOutput(string OutputPath, string TargetPath);
 }

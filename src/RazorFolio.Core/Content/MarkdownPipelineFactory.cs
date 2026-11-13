@@ -8,6 +8,7 @@ public static class MarkdownPipelineFactory
     public static MarkdownPipeline Create()
     {
         var builder = new MarkdownPipelineBuilder()
+            .UsePreciseSourceLocation()
             .UseYamlFrontMatter()
             .UsePipeTables()
             .UseTaskLists()

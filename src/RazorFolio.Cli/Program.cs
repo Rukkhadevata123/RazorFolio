@@ -28,6 +28,8 @@ if (args.Length == 0 || (args.Length == 1 && args[0] is "--help" or "-h"))
 
         Dev builds into .razorfolio/dev/ with drafts and reloads browsers on source changes.
 
+        Build and dev warn about missing local Markdown link targets without failing the build.
+
         New creates a minimal site in a new or empty directory.
         """);
 
@@ -81,7 +83,10 @@ try
         new MarkdownRenderer(markdownPipeline),
         pageRenderer,
         new StaticAssetCopier(),
-        DefaultThemeAssets.All);
+        DefaultThemeAssets.All,
+        diagnostic => Console.Error.WriteLine(
+            $"{diagnostic.SourcePath}({diagnostic.Line},{diagnostic.Column}): warning {diagnostic.Code}: "
+            + $"{diagnostic.Message} Link: {diagnostic.Link}"));
     var target = command.Name == "dev"
         ? SiteBuildTarget.Development(command.SiteDirectory)
         : SiteBuildTarget.Production(command.SiteDirectory);
