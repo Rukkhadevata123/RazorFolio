@@ -58,7 +58,10 @@
                     @await Html.PartialAsync("_NavigationItems", context)
                 </nav>
             }
-            <button class="theme-toggle" type="button" data-theme-toggle hidden>切换配色</button>
+            <div class="header-actions">
+                <button type="button" data-search-open aria-haspopup="dialog" aria-controls="rf-search" hidden>搜索</button>
+                <button class="theme-toggle" type="button" data-theme-toggle hidden>切换配色</button>
+            </div>
             @if (context.Navigation.Count > 0)
             {
                 <details class="mobile-navigation">
@@ -70,6 +73,7 @@
             }
         </div>
     </header>
+    @await Html.PartialAsync("_Search", context)
     <main id="rf-main" tabindex="-1" class="@(ViewData["PageClass"] ?? "archive-shell")">
         @RenderBody()
     </main>

@@ -11,6 +11,7 @@ public sealed record PageContext(
     IReadOnlyList<NavigationLink> BrowseLinks,
     string HomeUrl,
     string CurrentUrl,
+    string SearchIndexUrl,
     ThemeView Theme,
     string? CanonicalUrl,
     FeedLink? Feed,

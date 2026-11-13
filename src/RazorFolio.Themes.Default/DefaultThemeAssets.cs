@@ -8,7 +8,9 @@ public static class DefaultThemeAssets
     [
         new EmbeddedAsset("assets/razorfolio.css", "theme.css", ThemeAssetKind.Stylesheet),
         new EmbeddedAsset("assets/code.css", "code.css", ThemeAssetKind.Stylesheet),
+        new EmbeddedAsset("assets/search.css", "search.css", ThemeAssetKind.Stylesheet),
         new EmbeddedAsset("assets/theme.js", "theme.js", ThemeAssetKind.Script),
+        new EmbeddedAsset("assets/search.js", "search.js", ThemeAssetKind.Script),
         new EmbeddedAsset("assets/highlight.min.js", "highlight.min.js", ThemeAssetKind.ContentScript),
         new EmbeddedAsset("assets/code-blocks.js", "code-blocks.js", ThemeAssetKind.ContentScript),
         new EmbeddedAsset("assets/highlight-LICENSE.txt", "highlight-LICENSE.txt", ThemeAssetKind.Other)

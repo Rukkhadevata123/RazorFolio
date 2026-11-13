@@ -321,7 +321,7 @@ public sealed class SiteBuilder(
             var theme = ThemeView.Create(configuration, link => linkResolver.Resolve(link, homePath, pagePath));
             return new PageContext(configuration, stylesheetUrls, scriptUrls, contentScriptUrls, navigation,
                 browseLinks, PageUrl.GetRelative(pagePath, homePath), PageUrl.GetRelative(pagePath, pagePath),
-                theme, canonicalUrl, feed, faviconUrl);
+                PageUrl.GetRelative(pagePath, searchIndexPath), theme, canonicalUrl, feed, faviconUrl);
         }
     }
 
