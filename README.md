@@ -109,7 +109,7 @@ draft: false
 | 字段 | 说明 |
 | --- | --- |
 | `title` / `description` | 标题与可选摘要；不自动截取摘要 |
-| `date` | 可选，格式为 `yyyy-MM-dd`；文章按日期倒序排列 |
+| `date` | 可选，支持 `yyyy-MM-dd` 和旧站的 `yyyy-MM-dd HH:mm:ss`；按日期倒序排列，时间校验后仅取日期，不作时区转换 |
 | `tags` / `category` | 标签与并列分类列表 |
 | `draft: true` | 仅在开发预览中生成 |
 | `article: false` | 普通页面，不进入文章列表、归档和 RSS |
