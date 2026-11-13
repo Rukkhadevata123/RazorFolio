@@ -1,12 +1,12 @@
 # RazorFolio
 
-C# / .NET 10 静态博客生成器，命令名为 `rf`。使用 Markdig、YamlDotNet 和预编译 Razor 模板。
+C# / .NET 11 静态博客生成器，命令名为 `rf`。使用 Markdig、YamlDotNet 和预编译 Razor 模板。
 
 支持卡片主题、明暗配色、代码高亮与复制、文章目录、分页、分类/标签/年份归档、草稿预览、RSS 和 sitemap。仍在开发中。
 
 ## 快速开始
 
-安装 .NET 10 SDK，在仓库根目录运行：
+安装 .NET 11 SDK，在仓库根目录运行：
 
 ```bash
 dotnet build
@@ -132,7 +132,7 @@ dotnet tool install RazorFolio --version 0.1.0-dev.1 --source ./artifacts/packag
 ./artifacts/tools/rf --version
 ```
 
-运行工具需要 .NET 10 与 ASP.NET Core 10。更新包时递增版本，避免复用旧缓存。
+运行工具需要 .NET 11 与 ASP.NET Core 11。更新包时递增版本，避免复用旧缓存。
 
 | 项目 | 职责 |
 | --- | --- |
