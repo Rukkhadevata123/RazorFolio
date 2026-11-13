@@ -2,7 +2,7 @@
 
 C# / .NET 11 静态博客生成器，命令名为 `rf`。使用 Markdig、YamlDotNet 和预编译 Razor 模板。
 
-支持卡片主题、明暗配色、站内搜索、代码高亮与复制、文章目录、分页、分类/标签/年份归档、草稿预览、RSS 和 sitemap。仍在开发中。
+支持卡片主题、明暗配色、站内搜索、代码高亮与复制、Mermaid 图表、文章目录、分页、分类/标签/年份归档、草稿预览、RSS 和 sitemap。仍在开发中。
 
 ## 快速开始
 
@@ -120,6 +120,8 @@ draft: false
 
 支持表格、任务列表、脚注、`[TOC]` 及 `tip` / `warning` / `details` 容器。代码围栏注明语言后提供高亮、语言标签和复制按钮；未知语言保留纯文本。
 
+`mermaid` 代码围栏在浏览器中绘制图表，随明暗模式切换；宽图可横向滚动，源码可展开复制。使用本地 Mermaid Tiny，仅含图表的页面加载运行库。禁用 JavaScript 或渲染失败时保留源码；当前不支持 mindmap、architecture、KaTeX 和 ELK 布局。
+
 正文相对 `.md` 链接按源文件目录解析。图片和附件放在 `static/`；手写 HTML 的链接不改写。
 
 ## 开发与打包
@@ -142,8 +144,8 @@ dotnet tool install RazorFolio --version 0.1.0-dev.1 --source ./artifacts/packag
 
 顶栏搜索覆盖标题、标签和正文，多个关键词用空格分隔，结果需全部匹配。构建输出 `search-index.json`，收录文章和普通页，正式排除草稿；原始 HTML 块暂不索引。搜索需要 JavaScript，并通过 `dev`、`preview` 或网站服务器访问。
 
-构建检查输出冲突，只清理生成清单登记的旧文件；失败不回滚，勿并发构建同一输出目录。正文 HTML 按可信作者内容处理。目前不校验链接目标，也未实现公式/图表、增量构建或完整 Hope 语法兼容。
+构建检查输出冲突，只清理生成清单登记的旧文件；失败不回滚，勿并发构建同一输出目录。正文 HTML 按可信作者内容处理。目前不校验链接目标，也未实现数学公式、增量构建或完整 Hope 语法兼容。
 
 ## License
 
-[MIT](LICENSE)。高亮库来源与许可见 [vendor/README.md](src/RazorFolio.Themes.Default/Scripts/vendor/README.md)。
+[MIT](LICENSE)。浏览器依赖的来源与许可见 [vendor/README.md](src/RazorFolio.Themes.Default/Scripts/vendor/README.md)。

@@ -1,0 +1,50 @@
+.mermaid-diagram {
+    min-width: 0;
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+.mermaid-viewport {
+    padding: 1rem;
+    overflow: auto;
+    overscroll-behavior-x: contain;
+    border-radius: 8px 8px 0 0;
+}
+.mermaid-viewport svg {
+    display: block;
+    max-width: none;
+    height: auto;
+    margin-inline: auto;
+}
+.mermaid-viewport:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: -3px;
+}
+.mermaid-source {
+    padding: .65rem 1rem;
+    font-size: .85rem;
+}
+.mermaid-diagram[data-rendered="true"] .mermaid-source {
+    border-top: 1px solid var(--border);
+}
+.mermaid-source > .code-block {
+    margin: .75rem 0 0;
+}
+.mermaid-status {
+    padding: 0 1rem;
+    color: var(--muted);
+    font-size: .85rem;
+}
+@media print {
+    .mermaid-viewport {
+        print-color-adjust: exact;
+        overflow: visible;
+    }
+    .mermaid-viewport svg {
+        max-width: 100%;
+    }
+    .mermaid-diagram[data-rendered="true"] .mermaid-source {
+        display: none;
+    }
+}

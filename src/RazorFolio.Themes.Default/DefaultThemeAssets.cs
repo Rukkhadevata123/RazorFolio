@@ -9,10 +9,14 @@ public static class DefaultThemeAssets
         new EmbeddedAsset("assets/razorfolio.css", "theme.css", ThemeAssetKind.Stylesheet),
         new EmbeddedAsset("assets/code.css", "code.css", ThemeAssetKind.Stylesheet),
         new EmbeddedAsset("assets/search.css", "search.css", ThemeAssetKind.Stylesheet),
+        new EmbeddedAsset("assets/mermaid.css", "mermaid.css", ThemeAssetKind.Stylesheet),
         new EmbeddedAsset("assets/theme.js", "theme.js", ThemeAssetKind.Script),
         new EmbeddedAsset("assets/search.js", "search.js", ThemeAssetKind.Script),
         new EmbeddedAsset("assets/highlight.min.js", "highlight.min.js", ThemeAssetKind.ContentScript),
         new EmbeddedAsset("assets/code-blocks.js", "code-blocks.js", ThemeAssetKind.ContentScript),
+        new EmbeddedAsset("assets/mermaid.js", "mermaid.js", ThemeAssetKind.ContentScript),
+        new EmbeddedAsset("assets/mermaid.tiny.js", "mermaid.tiny.js", ThemeAssetKind.Other),
+        new EmbeddedAsset("assets/mermaid-LICENSE.txt", "mermaid-LICENSE.txt", ThemeAssetKind.Other),
         new EmbeddedAsset("assets/highlight-LICENSE.txt", "highlight-LICENSE.txt", ThemeAssetKind.Other)
     ]);
 

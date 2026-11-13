@@ -9,9 +9,13 @@
     <EmbeddedResource Include="Styles/theme.css" LogicalName="RazorFolio.Themes.Default.theme.css" />
     <EmbeddedResource Include="Styles/code.css" LogicalName="RazorFolio.Themes.Default.code.css" />
     <EmbeddedResource Include="Styles/search.css" LogicalName="RazorFolio.Themes.Default.search.css" />
+    <EmbeddedResource Include="Styles/mermaid.css" LogicalName="RazorFolio.Themes.Default.mermaid.css" />
     <EmbeddedResource Include="Scripts/code-blocks.js" LogicalName="RazorFolio.Themes.Default.code-blocks.js" />
     <EmbeddedResource Include="Scripts/theme.js" LogicalName="RazorFolio.Themes.Default.theme.js" />
     <EmbeddedResource Include="Scripts/search.js" LogicalName="RazorFolio.Themes.Default.search.js" />
+    <EmbeddedResource Include="Scripts/mermaid.js" LogicalName="RazorFolio.Themes.Default.mermaid.js" />
+    <EmbeddedResource Include="Scripts/vendor/mermaid.tiny.js" LogicalName="RazorFolio.Themes.Default.mermaid.tiny.js" />
+    <EmbeddedResource Include="Scripts/vendor/mermaid-LICENSE.txt" LogicalName="RazorFolio.Themes.Default.mermaid-LICENSE.txt" />
     <EmbeddedResource Include="Scripts/vendor/highlight.min.js" LogicalName="RazorFolio.Themes.Default.highlight.min.js" />
     <EmbeddedResource Include="Scripts/vendor/highlight-LICENSE.txt" LogicalName="RazorFolio.Themes.Default.highlight-LICENSE.txt" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
