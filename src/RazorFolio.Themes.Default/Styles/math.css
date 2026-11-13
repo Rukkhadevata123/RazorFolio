@@ -1,0 +1,26 @@
+article div.math {
+    min-width: 0;
+    margin: 1.25rem 0;
+    padding: .5rem;
+    overflow-x: auto;
+    white-space: pre-wrap;
+}
+article div.math[data-rendered="true"] {
+    white-space: normal;
+}
+article div.math > .katex-display {
+    width: max-content;
+    min-width: 100%;
+    margin: 0;
+}
+article div.math:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+article span.math:not([data-rendered="true"]) {
+    overflow-wrap: anywhere;
+}
+.math-message {
+    color: var(--muted);
+    font-size: .85em;
+}

@@ -1,4 +1,5 @@
 using System.Text;
+using Markdig.Extensions.Mathematics;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 
@@ -46,6 +47,9 @@ public static class MarkdownTextExtractor
                 break;
             case CodeInline code:
                 text.Append(code.Content);
+                break;
+            case MathInline math:
+                text.Append(math.Content);
                 break;
             case HtmlEntityInline entity:
                 text.Append(entity.Transcoded);

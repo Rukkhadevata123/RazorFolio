@@ -44,3 +44,23 @@ fence is present. Readers and site builds do not require npm, a CDN or a diagram
 
 Keep this file byte-for-byte intact (`.gitattributes` disables newline conversion). Updating
 the version requires checking the archive integrity, license, script hash and diagram regressions.
+
+## KaTeX
+
+Vendored **KaTeX 0.19.1**, MIT license (see `katex/LICENSE.txt`).
+
+- Package: https://registry.npmjs.org/katex/-/katex-0.19.1.tgz
+- Upstream: https://github.com/KaTeX/KaTeX
+- Browser API: https://katex.org/docs/browser
+- `katex/katex.min.js`, `katex/katex.min.css` and all 60 files in `katex/fonts/` are unmodified files from the archive's `package/dist/`; the license is `package/LICENSE`.
+- Archive SHA-512 (base64): `jG8uKntjSEcm2EpQOh0XturpPuuC9r3Sq5HLHdsFdWZT27E672SF19QEi+of0/YeOy15lDgRhKvr5614uRrEfA==`.
+- Script SHA-256: `fa140498b8cfc8302cbe5e7cb1bdbc1f952bc38b3fa258ede09e73edbf9a74bc`.
+- Stylesheet SHA-256: `00e0b094171b07f58422075f469b4feac2b2f7bce1aeec943c08da4d697f4dcf`.
+
+All resources are embedded and copied to `assets/katex/`, preserving the stylesheet's relative font URLs.
+`Scripts/math.js` loads the runtime and stylesheet only on pages with Markdig math nodes;
+it does not use auto-render or scan arbitrary page text for delimiters. Rendering produces HTML
+and MathML, uses `trust: false`, and gives each formula an independent macro scope.
+Errors retain the encoded TeX source. No CDN, npm or external renderer is required to build/read a site.
+Keep upstream bytes intact (`.gitattributes` disables text conversion), and verify archive integrity,
+font references, package output and real-article regressions when updating.

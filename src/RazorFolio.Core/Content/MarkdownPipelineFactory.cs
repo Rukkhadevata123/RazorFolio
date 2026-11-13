@@ -12,6 +12,7 @@ public static class MarkdownPipelineFactory
             .UsePipeTables()
             .UseTaskLists()
             .UseFootnotes()
+            .UseMathematics()
             .UseCustomContainers();
         builder.Extensions.Add(new ExplicitHeadingIdsExtension());
 

@@ -10,6 +10,12 @@
     <EmbeddedResource Include="Styles/code.css" LogicalName="RazorFolio.Themes.Default.code.css" />
     <EmbeddedResource Include="Styles/search.css" LogicalName="RazorFolio.Themes.Default.search.css" />
     <EmbeddedResource Include="Styles/mermaid.css" LogicalName="RazorFolio.Themes.Default.mermaid.css" />
+    <EmbeddedResource Include="Styles/math.css" LogicalName="RazorFolio.Themes.Default.math.css" />
+    <EmbeddedResource Include="Scripts/math.js" LogicalName="RazorFolio.Themes.Default.math.js" />
+    <EmbeddedResource Include="Scripts/vendor/katex/katex.min.js" LogicalName="RazorFolio.Themes.Default.katex.min.js" />
+    <EmbeddedResource Include="Scripts/vendor/katex/katex.min.css" LogicalName="RazorFolio.Themes.Default.katex.min.css" />
+    <EmbeddedResource Include="Scripts/vendor/katex/LICENSE.txt" LogicalName="RazorFolio.Themes.Default.katex-LICENSE.txt" />
+    <EmbeddedResource Include="Scripts/vendor/katex/fonts/*" LogicalName="RazorFolio.Themes.Default.katex.fonts.%(Filename)%(Extension)" />
     <EmbeddedResource Include="Scripts/code-blocks.js" LogicalName="RazorFolio.Themes.Default.code-blocks.js" />
     <EmbeddedResource Include="Scripts/theme.js" LogicalName="RazorFolio.Themes.Default.theme.js" />
     <EmbeddedResource Include="Scripts/search.js" LogicalName="RazorFolio.Themes.Default.search.js" />

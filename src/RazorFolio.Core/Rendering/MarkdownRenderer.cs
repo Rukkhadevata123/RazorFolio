@@ -1,5 +1,6 @@
 using Markdig;
 using Markdig.Extensions.CustomContainers;
+using Markdig.Extensions.Mathematics;
 using Markdig.Renderers;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
@@ -24,6 +25,12 @@ public sealed class MarkdownRenderer(MarkdownPipeline pipeline)
         renderer.ObjectRenderers.Insert(0, new BlogContainerRenderer());
         renderer.ObjectRenderers.Insert(0, new BlogHeadingRenderer());
         renderer.ObjectRenderers.Insert(0, new BlogCodeBlockRenderer());
+        // MathBlock inherits CodeBlock, so its renderer must precede the code toolbar renderer.
+        if (renderer.ObjectRenderers.FindExact<HtmlMathBlockRenderer>() is { } mathRenderer)
+        {
+            renderer.ObjectRenderers.Remove(mathRenderer);
+            renderer.ObjectRenderers.Insert(0, mathRenderer);
+        }
         var title = document.FirstOrDefault() as HeadingBlock;
         string? titleHtml = null;
         if (title?.Level == 1)

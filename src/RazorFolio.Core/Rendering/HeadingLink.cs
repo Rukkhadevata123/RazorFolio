@@ -1,4 +1,5 @@
 using System.Text;
+using Markdig.Extensions.Mathematics;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
@@ -22,6 +23,9 @@ public sealed record HeadingLink(int Level, string Text, string Url)
                     break;
                 case CodeInline code:
                     text.Append(code.Content);
+                    break;
+                case MathInline math:
+                    text.Append(math.Content);
                     break;
                 case HtmlEntityInline entity:
                     text.Append(entity.Transcoded);

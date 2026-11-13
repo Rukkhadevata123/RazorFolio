@@ -1,1 +1,2 @@
 src/RazorFolio.Themes.Default/Scripts/vendor/mermaid.tiny.js -text
+src/RazorFolio.Themes.Default/Scripts/vendor/katex/** -text
