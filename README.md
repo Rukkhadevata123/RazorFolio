@@ -140,7 +140,9 @@ dotnet tool install RazorFolio --version 0.1.0-dev.1 --source ./artifacts/packag
 | [Core](src/RazorFolio.Core) | 配置、解析、生成；入口为 [SiteBuilder](src/RazorFolio.Core/SiteBuilder.cs) |
 | [Themes.Default](src/RazorFolio.Themes.Default) | Razor 模板、样式和脚本 |
 
-构建检查输出冲突，只清理生成清单登记的旧文件；失败不回滚，勿并发构建同一输出目录。正文 HTML 按可信作者内容处理。目前不校验链接目标，也未实现搜索、公式/图表、增量构建或完整 Hope 语法兼容。
+构建同时输出 `search-index.json`，收录文章和普通页，正式构建排除草稿；原始 HTML 块暂不索引，搜索界面尚未实现。
+
+构建检查输出冲突，只清理生成清单登记的旧文件；失败不回滚，勿并发构建同一输出目录。正文 HTML 按可信作者内容处理。目前不校验链接目标，也未实现公式/图表、增量构建或完整 Hope 语法兼容。
 
 ## License
 

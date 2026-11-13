@@ -95,13 +95,14 @@ public sealed class SiteBuilder(
         var generateMetadata = configuration.Url is not null && !target.IncludeDrafts;
         var sitemapPath = Path.Combine(outputDirectory, "sitemap.xml");
         var feedPath = Path.Combine(outputDirectory, "feed.xml");
+        var searchIndexPath = Path.Combine(outputDirectory, "search-index.json");
         var feedUrl = generateMetadata ? PageUrl.GetAbsolute(feedPath, outputDirectory, configuration.Url) : null;
         string[] metadataPaths = generateMetadata ? [sitemapPath, feedPath] : [];
         string[] themeAssetPaths =
         [
             .. themeAssets.Select(asset => Path.GetFullPath(asset.RelativePath, outputDirectory))
         ];
-        string[] protectedPaths = [.. reservedPaths, .. metadataPaths, .. themeAssetPaths];
+        string[] protectedPaths = [.. reservedPaths, .. metadataPaths, .. themeAssetPaths, searchIndexPath];
         OutputPathValidator.Validate(protectedPaths);
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
@@ -264,8 +265,19 @@ public sealed class SiteBuilder(
                 alias.OutputPath, targetUrl, canonicalUrl, configuration.Language, cancellationToken);
         }
 
+        SearchDocument[] searchDocuments =
+        [
+            .. outputs.Select(output => new SearchDocument(
+                output.Article.Info.Title,
+                output.Article.Info.Tags,
+                MarkdownTextExtractor.Extract(output.Article.Body),
+                PageUrl.GetRelative(searchIndexPath, output.OutputPath)))
+        ];
+        await SearchIndexWriter.WriteAsync(searchIndexPath, searchDocuments, cancellationToken);
+
         await manifest.CompleteAsync(
-            [.. contentPaths, .. reservedPaths, .. metadataPaths, .. themeAssetPaths, .. assetPaths], cancellationToken);
+            [.. contentPaths, .. reservedPaths, .. metadataPaths, .. themeAssetPaths, .. assetPaths, searchIndexPath],
+            cancellationToken);
 
         return sources.Count + reservedPaths.Count + aliases.Length;
 
