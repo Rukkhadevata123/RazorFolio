@@ -151,6 +151,7 @@ public sealed class SiteBuilder(
                 GetAdjacentArticle(orderedArticlePages, index + 1, output.OutputPath))))
             .ToDictionary();
 
+        var starredArticles = orderedArticlePages.Where(output => output.Article.Info.Star).ToArray();
         var sidebarGroups = orderedArticlePages
             .SelectMany(output => output.Article.Info.Categories.Count == 0
                 ? [(Category: null, Output: output)]
@@ -366,6 +367,10 @@ public sealed class SiteBuilder(
                 browseLinks, GetUrl(homePath), GetUrl(pagePath), GetUrl(searchIndexPath),
                 theme, canonicalUrl, feed, faviconUrl)
             {
+                StarredArticles =
+                [
+                    .. starredArticles.Select(output => new ArticleLink(output.Article.Info, GetUrl(output.OutputPath)))
+                ],
                 SidebarCategories =
                 [
                     .. sidebarGroups.Select(group => new CategoryGroup(group.Key ?? "未分类",

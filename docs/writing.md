@@ -27,11 +27,14 @@ draft: false
 | `date` | 可选，格式为 `yyyy-MM-dd`；文章按日期倒序排列，无日期排在最后 |
 | `tags` / `category` | 标签与并列分类列表 |
 | `draft: true` | 仅在开发预览中生成 |
+| `star: true` | 加入阅读页侧栏的“精选文章”，仍保留在分类列表中；默认 `false` |
 | `article: false` | 普通页面，不进入文章列表、归档和 RSS |
 | `url: /posts/hello.html` | 自定义站内输出地址，须以 `.html` 结尾 |
 | `aliases: [/old.html]` | 为旧地址生成静态跳转页 |
 
-`content/` 中的 `.md` 文件会参与构建，包括子目录。未来日期的文章照常发布；暂不发布的内容使用 `draft: true`。YAML 中未识别的字段会忽略；目前 `updated`、`cover`、`star` 没有对应展示。
+`content/` 中的 `.md` 文件会参与构建，包括子目录。未来日期的文章照常发布；暂不发布的内容使用 `draft: true`。YAML 中未识别的字段会忽略；目前 `updated`、`cover` 没有对应展示。
+
+精选文章沿用文章排序：日期从新到旧，同日按输出路径排序，无日期排在最后。普通页（`article: false`）不进入精选；精选草稿仅在 `dev` 中显示。
 
 ## 文章许可
 

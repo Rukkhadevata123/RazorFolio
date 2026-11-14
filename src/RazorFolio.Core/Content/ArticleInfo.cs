@@ -11,5 +11,6 @@ public sealed record ArticleInfo(
     IReadOnlyList<string> Categories,
     bool IsArticle)
 {
+    public bool Star { get; init; }
     public LicenseOptions? License { get; init; }
 }

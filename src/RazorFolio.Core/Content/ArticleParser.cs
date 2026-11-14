@@ -64,6 +64,7 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
             title, date, metadata.Draft, description,
             NormalizeNames(metadata.Tags), NormalizeNames(metadata.Category), metadata.Article)
         {
+            Star = metadata.Star,
             License = LicenseConfiguration.Normalize(metadata.License, sourcePath)
         };
         return new ParsedArticle(

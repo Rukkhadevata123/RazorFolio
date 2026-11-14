@@ -106,7 +106,7 @@
     });
 
     function revealSidebarArticle(container) {
-        const current = container?.querySelector('.sidebar-category a[aria-current="page"]');
+        const current = container?.querySelector('.sidebar-starred a[aria-current="page"], .sidebar-category a[aria-current="page"]');
         if (!current || !container.clientHeight) return;
         const bounds = container.getBoundingClientRect();
         const item = current.getBoundingClientRect();

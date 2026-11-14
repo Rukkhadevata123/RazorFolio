@@ -1,5 +1,25 @@
 @inherits global::RazorFolio.Themes.Default.Rendering.RazorTemplate<RazorFolio.Core.Rendering.PageContext>
-<nav class="sidebar-navigation" aria-label="文章分类浏览">
+<nav class="sidebar-navigation" aria-label="文章浏览">
+    @if (Model.StarredArticles.Count > 0)
+    {
+        <section class="sidebar-starred" aria-label="精选文章">
+            <h3>精选文章 <span class="sidebar-count" aria-label="@($"{Model.StarredArticles.Count} 篇文章")">@Model.StarredArticles.Count</span></h3>
+            <ul>
+                @foreach (var article in Model.StarredArticles)
+                {
+                    <li>
+                        <a href="@article.Url" aria-current="@(article.Url == Model.CurrentUrl ? "page" : null)">
+                            @article.Info.Title
+                            @if (article.Info.Draft)
+                            {
+                                <span class="sidebar-draft">草稿</span>
+                            }
+                        </a>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
     @foreach (var group in Model.SidebarCategories)
     {
         var isCurrentGroup = group.Articles.Any(article => article.Url == Model.CurrentUrl);

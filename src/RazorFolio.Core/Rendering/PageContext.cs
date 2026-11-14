@@ -17,5 +17,6 @@ public sealed record PageContext(
     FeedLink? Feed,
     string? FaviconUrl)
 {
+    public IReadOnlyList<ArticleLink> StarredArticles { get; init; } = [];
     public IReadOnlyList<CategoryGroup> SidebarCategories { get; init; } = [];
 }

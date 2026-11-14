@@ -476,6 +476,24 @@ h1 {
 .sidebar-navigation {
     overflow-wrap: anywhere;
 }
+.sidebar-starred {
+    margin-bottom: .75rem;
+    padding-bottom: .75rem;
+    border-bottom: 1px solid var(--border);
+}
+.sidebar-starred h3 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    margin: .5rem .6rem;
+    font-size: .85rem;
+}
+.sidebar-starred ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
 .sidebar-category summary {
     display: flex;
     align-items: center;
