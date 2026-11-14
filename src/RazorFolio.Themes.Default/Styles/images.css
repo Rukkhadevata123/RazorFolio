@@ -101,4 +101,17 @@
     .image-dialog[open] {
         animation: rf-disclose .18s ease-out;
     }
+    .image-dialog[open]::backdrop {
+        animation: rf-fade-in .18s ease-out;
+    }
+    .image-dialog[open].is-closing {
+        animation: rf-image-close .16s ease-in forwards;
+    }
+    .image-dialog[open].is-closing::backdrop {
+        animation: rf-fade-out .16s ease-in forwards;
+    }
+}
+@keyframes rf-image-close {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-4px); }
 }

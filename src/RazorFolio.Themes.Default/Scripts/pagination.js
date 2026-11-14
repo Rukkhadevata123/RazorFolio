@@ -51,6 +51,13 @@
         if (!existing) document.head.append(canonical);
     }
 
+    function updateOpenGraph(nextDocument) {
+        for (const meta of document.head.querySelectorAll('meta[property^="og:"]')) meta.remove();
+        for (const meta of nextDocument.head.querySelectorAll('meta[property^="og:"]')) {
+            document.head.append(meta.cloneNode(true));
+        }
+    }
+
     function showError(url) {
         status.dataset.error = 'true';
         status.textContent = '文章暂时加载失败。';
@@ -94,6 +101,7 @@
                 }, '');
                 history.pushState({ rfPaginationScroll: null, rfPaginationPage: Number(nextContent.dataset.page) }, '', url.href);
             }
+            const restoreFocus = content.contains(document.activeElement);
             content.replaceChildren(...nextContent.childNodes);
             content.dataset.page = nextContent.dataset.page;
             animation?.cancel();
@@ -103,9 +111,10 @@
             document.title = nextDocument.title;
             const canonical = nextDocument.querySelector('link[rel="canonical"]')?.getAttribute('href');
             updateCanonical(canonical ? new URL(canonical, response.url).href : null);
+            updateOpenGraph(nextDocument);
             renderedUrl = url;
             status.textContent = `已显示第 ${content.dataset.page} 页。`;
-            if (!fromHistory) feed.focus({ preventScroll: true });
+            if (!fromHistory || restoreFocus) feed.focus({ preventScroll: true });
 
             if (fromHistory && Number.isFinite(savedScroll)) {
                 scrollTo({ top: savedScroll, behavior: 'instant' });

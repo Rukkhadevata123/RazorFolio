@@ -1088,7 +1088,7 @@ blockquote {
     color: var(--muted);
     font-size: .85rem;
 }
-@media (max-width: 1199px) {
+@media (width < 1200px) {
     .article-grid, .article-grid.without-sidebar {
         grid-template-columns: minmax(0, 780px) 200px;
         max-width: 1052px;
@@ -1110,6 +1110,10 @@ blockquote {
         overflow: auto;
         overscroll-behavior: contain;
         padding-top: .5rem;
+    }
+    .mobile-sidebar > summary {
+        min-height: 44px;
+        padding-block: .55rem;
     }
     .mobile-sidebar a {
         min-height: 44px;
@@ -1211,8 +1215,9 @@ blockquote {
         width: 100%;
     }
     .mobile-navigation > summary {
+        min-height: 44px;
         text-align: right;
-        padding: .25rem 0;
+        padding: .5rem 0;
     }
     .mobile-navigation nav {
         padding: .5rem 0;

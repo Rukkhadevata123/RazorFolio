@@ -6,6 +6,37 @@
     let opener;
     let zoomed = false;
     let originalWidth = 0;
+    let closing = false;
+    let closeTimer;
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+    function resetClosing() {
+        clearTimeout(closeTimer);
+        closing = false;
+        dialog.classList.remove('is-closing');
+    }
+
+    function finishClose() {
+        if (!closing) return;
+        resetClosing();
+        dialog.close();
+    }
+
+    function requestClose() {
+        if (!dialog.open || closing) return;
+        closing = true;
+        if (reducedMotion.matches) {
+            finishClose();
+            return;
+        }
+
+        dialog.classList.add('is-closing');
+        closeTimer = setTimeout(finishClose, 250);
+    }
+
+    reducedMotion.addEventListener('change', () => {
+        if (reducedMotion.matches) finishClose();
+    });
 
     function setZoom(value) {
         zoomed = value;
@@ -38,9 +69,20 @@
                 <img alt="" draggable="false">
             </div>
             <p class="image-caption"></p>`;
-        element.querySelector('[data-image-close]').addEventListener('click', () => element.close());
+        element.querySelector('[data-image-close]').addEventListener('click', requestClose);
         element.querySelector('[data-image-zoom]').addEventListener('click', () => setZoom(!zoomed));
-        element.addEventListener('close', () => opener?.focus({ preventScroll: true }));
+        element.addEventListener('animationend', event => {
+            if (event.target === element && event.animationName === 'rf-image-close') finishClose();
+        });
+        element.addEventListener('cancel', event => {
+            event.preventDefault();
+            requestClose();
+        });
+        element.addEventListener('close', () => {
+            if (element.open) return;
+            resetClosing();
+            opener?.focus({ preventScroll: true });
+        });
 
         let startedOutside = false;
         const outside = event => {
@@ -50,7 +92,7 @@
         };
         element.addEventListener('pointerdown', event => { startedOutside = outside(event); });
         element.addEventListener('click', event => {
-            if (startedOutside && outside(event)) element.close();
+            if (startedOutside && outside(event)) requestClose();
         });
         document.body.append(element);
         return element;
@@ -58,6 +100,7 @@
 
     function openImage(image, button) {
         dialog ||= createDialog();
+        resetClosing();
         opener = button;
         const preview = dialog.querySelector('img');
         const status = dialog.querySelector('.image-status');
@@ -82,7 +125,7 @@
         };
         setZoom(false);
         preview.src = source;
-        dialog.showModal();
+        if (!dialog.open) dialog.showModal();
     }
 
     for (const image of article.querySelectorAll('img')) {
