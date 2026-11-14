@@ -132,7 +132,7 @@ draft: false
 
 修改 C#、Razor 模板或内置资源后，需要重新编译并重启 `dev`。`dotnet build` 构建生成器，`rf build` 生成网站；发布时上传 `public/`。
 
-`.cshtml` 在构建时生成强类型 C#，运行时直接组合页面、布局和局部模板，无需 MVC 视图引擎。模板编译器只用于源码构建，不进入工具包；SDK 编译器接口与模板约定见 [TemplateCompiler](src/RazorFolio.TemplateCompiler/README.md)。模板层与 JSON 路径已通过 NativeAOT 验证，完整 CLI 的 YAML 等适配仍待完成。
+`.cshtml` 在构建时生成强类型 C#，运行时直接组合页面、布局和局部模板，无需 MVC 视图引擎。模板编译器只用于源码构建，不进入工具包；SDK 编译器接口与模板约定见 [TemplateCompiler](src/RazorFolio.TemplateCompiler/README.md)。模板层、JSON 和 YAML 路径已通过 NativeAOT 验证，Core 已启用 AOT 兼容性分析；完整 CLI 的原生发布与预览服务仍待验收。
 
 ```bash
 dotnet pack src/RazorFolio.Cli -c Release -o artifacts/packages

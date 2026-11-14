@@ -2,19 +2,15 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Markdig;
 using Markdig.Extensions.Yaml;
+using RazorFolio.Core.Serialization;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace RazorFolio.Core.Content;
 
 public sealed class ArticleParser(MarkdownPipeline pipeline)
 {
-    private readonly IDeserializer deserializer = new DeserializerBuilder()
-        .WithNamingConvention(CamelCaseNamingConvention.Instance)
-        .IgnoreUnmatchedProperties()
-        .WithDuplicateKeyChecking()
-        .Build();
+    private readonly IDeserializer deserializer = FrontMatterValueDeserializer.Create();
 
     public ParsedArticle Parse(string markdown, string sourcePath)
     {

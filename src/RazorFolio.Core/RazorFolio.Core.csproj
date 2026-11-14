@@ -1,6 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Markdig" Version="1.6.0" />
     <PackageReference Include="YamlDotNet" Version="18.1.0" />
+    <PackageReference Include="Vecc.YamlDotNet.Analyzers.StaticGenerator" Version="18.1.0" PrivateAssets="all" />
   </ItemGroup>
 </Project>
