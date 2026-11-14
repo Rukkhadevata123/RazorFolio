@@ -151,6 +151,15 @@ public sealed class SiteBuilder(
                 GetAdjacentArticle(orderedArticlePages, index + 1, output.OutputPath))))
             .ToDictionary();
 
+        var sidebarGroups = orderedArticlePages
+            .SelectMany(output => output.Article.Info.Categories.Count == 0
+                ? [(Category: null, Output: output)]
+                : output.Article.Info.Categories.Select(category => (Category: (string?)category, Output: output)))
+            .GroupBy(entry => entry.Category, StringComparer.Ordinal)
+            .OrderBy(group => group.Key is null)
+            .ThenBy(group => group.Key, StringComparer.Ordinal)
+            .ToArray();
+
         var pageAnchors = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         foreach (var output in outputs)
         {
@@ -355,7 +364,14 @@ public sealed class SiteBuilder(
             var theme = ThemeView.Create(configuration, ResolveConfiguredLink);
             return new PageContext(configuration, stylesheetUrls, scriptUrls, contentScriptUrls, navigation,
                 browseLinks, GetUrl(homePath), GetUrl(pagePath), GetUrl(searchIndexPath),
-                theme, canonicalUrl, feed, faviconUrl);
+                theme, canonicalUrl, feed, faviconUrl)
+            {
+                SidebarCategories =
+                [
+                    .. sidebarGroups.Select(group => new CategoryGroup(group.Key ?? "未分类",
+                        [.. group.Select(entry => new ArticleLink(entry.Output.Article.Info, GetUrl(entry.Output.OutputPath)))]))
+                ]
+            };
 
             string GetUrl(string path) => ResolveUrl(PageUrl.GetRelative(pagePath, path));
 

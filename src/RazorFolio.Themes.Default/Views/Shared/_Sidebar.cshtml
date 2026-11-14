@@ -1,7 +1,37 @@
 @inherits global::RazorFolio.Themes.Default.Rendering.RazorTemplate<RazorFolio.Core.Rendering.PageContext>
-<nav aria-label="侧栏导航">
-    @foreach (var link in Model.Theme.Sidebar)
+<nav class="sidebar-navigation" aria-label="文章分类浏览">
+    @foreach (var group in Model.SidebarCategories)
     {
-        <a href="@link.Url" aria-current="@(link.Url.Split('?', '#')[0] == Model.CurrentUrl ? "page" : null)">@link.Text</a>
+        var isCurrentGroup = group.Articles.Any(article => article.Url == Model.CurrentUrl);
+        <details class="sidebar-category" open="@isCurrentGroup">
+            <summary class="@(isCurrentGroup ? "is-current" : null)">
+                <span class="sidebar-category-name">@group.Name</span>
+                <span class="sidebar-count" aria-label="@($"{group.Articles.Count} 篇文章")">@group.Articles.Count</span>
+            </summary>
+            <ul>
+                @foreach (var article in group.Articles)
+                {
+                    <li>
+                        <a href="@article.Url" aria-current="@(article.Url == Model.CurrentUrl ? "page" : null)">
+                            @article.Info.Title
+                            @if (article.Info.Draft)
+                            {
+                                <span class="sidebar-draft">草稿</span>
+                            }
+                        </a>
+                    </li>
+                }
+            </ul>
+        </details>
+    }
+    @if (Model.Theme.Sidebar.Count > 0)
+    {
+        <div class="sidebar-shortcuts">
+            <p>快捷链接</p>
+            @foreach (var link in Model.Theme.Sidebar)
+            {
+                <a href="@link.Url" aria-current="@(link.Url.Split('?', '#')[0] == Model.CurrentUrl ? "page" : null)">@link.Text</a>
+            }
+        </div>
     }
 </nav>

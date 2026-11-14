@@ -68,9 +68,9 @@ internal static partial class HtmlAnchorReader
 
     // Consume comments and raw-text contents as single tokens. Only opening tags expose attributes.
     [GeneratedRegex(@"<!--[\s\S]*?(?:-->|$)|<![^>]*>|<\?[^>]*>|"
-        + @"<(?<tag>script|style|textarea|title|xmp|iframe|noembed|noframes)" + Attributes
+        + "<(?<tag>script|style|textarea|title|xmp|iframe|noembed|noframes)" + Attributes
         + @">[\s\S]*?(?:</\k<tag>\s*>|$)|"
-        + @"<(?<closing>/)?(?<tag>[a-zA-Z][a-zA-Z0-9:-]*)" + Attributes + @"/?>",
+        + "<(?<closing>/)?(?<tag>[a-zA-Z][a-zA-Z0-9:-]*)" + Attributes + "/?>",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex HtmlToken();
 

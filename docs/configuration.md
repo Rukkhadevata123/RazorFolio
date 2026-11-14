@@ -53,7 +53,8 @@
 - `brand`、`hero`、`profile` 分别控制左上角标识、首页首屏和作者卡片，文字与头像互相独立。
 - 省略 `hero` 显示简洁标题区；`hero.image` 是首屏插图，`hero.background` 是背景，`fullScreen` 让首屏占满视口高度。省略 `profile` 隐藏作者卡片，配置时须填写 `name`。
 - `background.mode` 支持 `none`、`image`、`bing`。固定图片模式须填写 `image`；Bing 使用第三方壁纸服务，失败时保留指定图片或纯色。
-- 顶栏读取 `navigation`；文章侧栏只显示 `theme.sidebar`，未配置时隐藏。
+- 顶栏读取 `navigation`；阅读页侧栏按 `category` 自动分组全部文章，分类按名称排序，组内按日期从新到旧排列，同日按输出路径排序。多分类文章出现在各自分类中，没有分类的文章放在末尾的“未分类”组；普通页不进入分类列表，草稿仅在开发预览中显示。
+- 当前文章所属分类默认展开，其他分类可点击展开或收起；手机上通过“浏览文章”打开列表。`theme.sidebar` 是分类列表下方的快捷链接，可放普通页或常用入口。
 - 配置中的站内链接和图片按站点根目录解析，也支持 HTTP(S) 地址；`.md` 链接跟随文章的自定义 URL。
 - `static/custom.css` 覆盖默认样式，`static/favicon.svg` 设置图标。`footer` 为页脚文字。
 

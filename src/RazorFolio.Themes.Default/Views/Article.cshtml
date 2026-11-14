@@ -4,7 +4,7 @@
     Metadata.Title = $"{Model.Info.Title} — {Model.Context.Site.Title}";
     Metadata.Description = Model.Info.Description;
     Metadata.CssClass = "article-page";
-    var hasSidebar = Model.Context.Theme.Sidebar.Count > 0;
+    var hasSidebar = Model.Context.SidebarCategories.Count > 0 || Model.Context.Theme.Sidebar.Count > 0;
 }
 <div class="article-grid @(Model.Headings.Count == 0 ? "without-toc" : "") @(hasSidebar ? "" : "without-sidebar")">
     @if (hasSidebar)

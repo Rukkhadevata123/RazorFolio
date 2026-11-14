@@ -460,20 +460,82 @@ h1 {
 .site-sidebar {
     padding-right: .8rem;
 }
-.site-sidebar strong {
-    display: block;
-    margin: .5rem 0 1rem;
-}
-.site-sidebar a {
+.sidebar-navigation a {
     display: block;
     padding: .5rem .8rem;
     border-radius: 5px;
     text-decoration: none;
     color: var(--muted);
 }
-.site-sidebar a[aria-current="page"] {
+.sidebar-navigation a[aria-current="page"] {
     color: var(--accent);
     background: var(--soft);
+    font-weight: 650;
+    box-shadow: inset 3px 0 var(--accent);
+}
+.sidebar-navigation {
+    overflow-wrap: anywhere;
+}
+.sidebar-category summary {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    min-height: 44px;
+    padding: .5rem .6rem;
+    border-radius: 5px;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 650;
+}
+.sidebar-category summary::-webkit-details-marker {
+    display: none;
+}
+.sidebar-category summary::after {
+    content: "";
+    width: .4rem;
+    height: .4rem;
+    flex-shrink: 0;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg);
+}
+.sidebar-category[open] > summary::after {
+    transform: rotate(45deg);
+}
+.sidebar-category-name {
+    flex: 1;
+    min-width: 0;
+}
+.sidebar-count, .sidebar-draft {
+    color: var(--muted);
+    font-size: .75rem;
+    font-weight: 400;
+}
+.sidebar-draft {
+    margin-left: .4rem;
+}
+.sidebar-category summary.is-current {
+    color: var(--accent);
+}
+.sidebar-navigation a:hover, .sidebar-category summary:hover {
+    color: var(--accent);
+    background: var(--soft);
+}
+.sidebar-category ul {
+    margin: .2rem 0 .6rem .7rem;
+    padding: 0 0 0 .4rem;
+    border-left: 1px solid var(--border);
+    list-style: none;
+}
+.sidebar-shortcuts {
+    margin-top: 1rem;
+    padding-top: .5rem;
+    border-top: 1px solid var(--border);
+}
+.sidebar-shortcuts p {
+    margin: .5rem .6rem;
+    color: var(--muted);
+    font-size: .8rem;
 }
 .article-surface {
     min-width: 0;
@@ -1014,10 +1076,13 @@ blockquote {
         font-size: .9rem;
     }
     .mobile-sidebar nav {
-        display: flex;
-        flex-wrap: wrap;
-        gap: .5rem 1rem;
+        max-height: 60svh;
+        overflow: auto;
+        overscroll-behavior: contain;
         padding-top: .5rem;
+    }
+    .mobile-sidebar a {
+        min-height: 44px;
     }
 }
 @media (max-width: 1023px) {
@@ -1177,6 +1242,12 @@ blockquote {
     }
 }
 @media (prefers-reduced-motion: no-preference) {
+    .sidebar-category summary::after {
+        transition: transform .16s ease;
+    }
+    .sidebar-category[open] > ul {
+        animation: rf-disclose .16s ease-out;
+    }
     html {
         scroll-behavior: smooth;
     }

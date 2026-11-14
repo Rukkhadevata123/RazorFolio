@@ -105,6 +105,22 @@
         updateToggle();
     });
 
+    function revealSidebarArticle(container) {
+        const current = container?.querySelector('.sidebar-category a[aria-current="page"]');
+        if (!current || !container.clientHeight) return;
+        const bounds = container.getBoundingClientRect();
+        const item = current.getBoundingClientRect();
+        if (item.top < bounds.top || item.bottom > bounds.bottom) {
+            container.scrollTop += item.top - bounds.top - container.clientHeight / 2 + item.height / 2;
+        }
+    }
+
+    const desktopSidebar = document.querySelector('.site-sidebar');
+    requestAnimationFrame(() => revealSidebarArticle(desktopSidebar));
+    matchMedia('(min-width: 1200px)').addEventListener('change', () => {
+        revealSidebarArticle(desktopSidebar);
+    });
+
     const menus = [...document.querySelectorAll('.mobile-navigation, .mobile-sidebar')];
     for (const menu of menus) {
         menu.addEventListener('keydown', event => {
@@ -115,6 +131,7 @@
         });
         menu.addEventListener('toggle', () => {
             if (!menu.open) return;
+            if (menu.matches('.mobile-sidebar')) revealSidebarArticle(menu.querySelector('nav'));
             for (const other of document.querySelectorAll('.mobile-navigation, .mobile-sidebar, .mobile-toc')) {
                 if (other !== menu) other.open = false;
             }

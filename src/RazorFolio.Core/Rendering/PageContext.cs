@@ -15,4 +15,7 @@ public sealed record PageContext(
     ThemeView Theme,
     string? CanonicalUrl,
     FeedLink? Feed,
-    string? FaviconUrl);
+    string? FaviconUrl)
+{
+    public IReadOnlyList<CategoryGroup> SidebarCategories { get; init; } = [];
+}
