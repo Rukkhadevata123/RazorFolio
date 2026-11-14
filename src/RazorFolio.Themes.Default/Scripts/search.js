@@ -15,6 +15,9 @@
     let timer;
     let requestId = 0;
     let composing = false;
+    let closing = false;
+    let closeTimer;
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
     const normalize = value => value.normalize('NFKC').toLowerCase();
 
@@ -136,6 +139,7 @@
     }
 
     function queueSearch(delay = 120) {
+        if (closing || !dialog.open) return;
         const currentRequest = ++requestId;
         clearTimeout(timer);
         retry.hidden = true;
@@ -151,13 +155,49 @@
         timer = setTimeout(() => search(query, currentRequest), delay);
     }
 
+    function resetClosing() {
+        clearTimeout(closeTimer);
+        closing = false;
+        dialog.classList.remove('is-closing');
+    }
+
+    function finishClose() {
+        if (!closing) return;
+        resetClosing();
+        dialog.close();
+    }
+
+    function requestClose() {
+        if (!dialog.open || closing) return;
+        closing = true;
+        ++requestId;
+        clearTimeout(timer);
+        results.setAttribute('aria-busy', 'false');
+        if (reducedMotion.matches) {
+            finishClose();
+            return;
+        }
+
+        dialog.classList.add('is-closing');
+        // Custom styles or interrupted animations must not leave the modal locked open.
+        closeTimer = setTimeout(finishClose, 250);
+    }
+
+    dialog.addEventListener('animationend', event => {
+        if (event.target === dialog && event.animationName === 'rf-search-close') finishClose();
+    });
+    reducedMotion.addEventListener('change', () => {
+        if (reducedMotion.matches) finishClose();
+    });
+
     opener.hidden = false;
     opener.addEventListener('click', () => {
-        dialog.showModal();
+        resetClosing();
+        if (!dialog.open) dialog.showModal();
         input.focus();
         queueSearch();
     });
-    dialog.querySelector('[data-search-close]').addEventListener('click', () => dialog.close());
+    dialog.querySelector('[data-search-close]').addEventListener('click', requestClose);
     let startedOutside = false;
     const outside = event => {
         const bounds = dialog.getBoundingClientRect();
@@ -166,13 +206,13 @@
     };
     dialog.addEventListener('pointerdown', event => { startedOutside = outside(event); });
     dialog.addEventListener('click', event => {
-        if (startedOutside && outside(event)) dialog.close();
+        if (startedOutside && outside(event)) requestClose();
     });
     dialog.addEventListener('keydown', event => {
         // Search inputs otherwise consume Escape to clear their value before closing the dialog.
         if (event.key === 'Escape' && !composing && !event.isComposing) {
             event.preventDefault();
-            dialog.close();
+            requestClose();
         } else if (event.key === 'Tab') {
             const controls = [...dialog.querySelectorAll('button, input, a[href]')]
                 .filter(control => !control.hidden && !control.disabled);
@@ -188,9 +228,13 @@
         }
     });
     dialog.addEventListener('cancel', event => {
-        if (composing) event.preventDefault();
+        event.preventDefault();
+        if (!composing) requestClose();
     });
     dialog.addEventListener('close', () => {
+        // A queued close event can arrive after a new opening.
+        if (dialog.open) return;
+        resetClosing();
         ++requestId;
         clearTimeout(timer);
         composing = false;

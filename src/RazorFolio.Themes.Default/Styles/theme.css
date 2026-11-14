@@ -1294,6 +1294,12 @@ blockquote {
     .search-dialog[open]::backdrop {
         animation: rf-fade-in .18s ease-out;
     }
+    .search-dialog[open].is-closing {
+        animation: rf-search-close .16s ease-in forwards;
+    }
+    .search-dialog[open].is-closing::backdrop {
+        animation: rf-fade-in .16s ease-in reverse forwards;
+    }
     @media (hover: hover) and (pointer: fine) {
         .post-card:hover {
             transform: translateY(-2px);
@@ -1308,6 +1314,10 @@ blockquote {
 @keyframes rf-disclose {
     from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
+}
+@keyframes rf-search-close {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-4px); }
 }
 .hero.hero-compact {
     min-height: 420px;
