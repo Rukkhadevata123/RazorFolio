@@ -37,10 +37,16 @@ internal sealed class LiveReload
                 return;
             }
 
-            var pageRevision = Volatile.Read(ref revision);
-            using var reader = new StreamReader(file.CreateReadStream());
-            var html = await reader.ReadToEndAsync(context.RequestAborted);
-            var script = $$"""
+            await WritePageAsync(context, file);
+        });
+    }
+
+    public async Task WritePageAsync(HttpContext context, IFileInfo file)
+    {
+        var pageRevision = Volatile.Read(ref revision);
+        using var reader = new StreamReader(file.CreateReadStream());
+        var html = await reader.ReadToEndAsync(context.RequestAborted);
+        var script = $$"""
                 <script>
                 (() => {
                     const revision = "{{pageRevision}}";
@@ -54,13 +60,12 @@ internal sealed class LiveReload
                 })();
                 </script>
                 """;
-            var bodyEnd = html.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
-            html = bodyEnd >= 0 ? html.Insert(bodyEnd, script) : html + script;
+        var bodyEnd = html.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
+        html = bodyEnd >= 0 ? html.Insert(bodyEnd, script) : html + script;
 
-            context.Response.ContentType = "text/html; charset=utf-8";
-            context.Response.Headers.CacheControl = "no-store";
-            await context.Response.WriteAsync(html, context.RequestAborted);
-        });
+        context.Response.ContentType = "text/html; charset=utf-8";
+        context.Response.Headers.CacheControl = "no-store";
+        await context.Response.WriteAsync(html, context.RequestAborted);
     }
 
     private async Task SendEventsAsync(HttpContext context, CancellationToken cancellationToken)

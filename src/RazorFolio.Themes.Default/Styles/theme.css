@@ -587,6 +587,35 @@ blockquote {
 .empty-state {
     padding: 2rem;
 }
+.not-found-shell {
+    width: min(100% - 2rem, 760px);
+    margin: clamp(2rem, 8vh, 6rem) auto;
+}
+.not-found-card {
+    padding: clamp(1.5rem, 5vw, 4rem);
+    text-align: center;
+}
+.not-found-code {
+    margin: 0;
+    color: var(--accent);
+    font-size: clamp(4rem, 16vw, 7rem);
+    font-weight: 700;
+    line-height: 1.2;
+}
+.not-found-card > p:not(.not-found-code) {
+    color: var(--muted);
+}
+.not-found-home {
+    display: inline-block;
+    margin: 1rem 0;
+    padding: .5rem 1.4rem;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: var(--soft);
+}
+.not-found-card .browse-links {
+    justify-content: center;
+}
 .archive-shell {
     width: 100%;
     max-width: 980px;

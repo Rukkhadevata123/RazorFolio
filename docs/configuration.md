@@ -46,3 +46,11 @@
 
 完整字段见 [SiteConfiguration](../src/RazorFolio.Core/Configuration/SiteConfiguration.cs) 和 [ThemeOptions](../src/RazorFolio.Core/Configuration/ThemeOptions.cs)。未知配置字段会报错。
 
+## 部署路径与 404
+
+部署到域名根目录时，`url` 填写 `https://example.com/`；部署到子目录时，填写完整入口，例如 `https://example.com/blog/`。
+
+构建会生成带主题的 `404.html`，提供返回首页、归档和搜索入口。它的资源和站内链接从配置的站点根路径定位，访问深层错误地址时也能加载样式。省略 `url` 时按域名根目录生成。`404.html` 是生成器保留路径，发布时随 `public/` 一起上传；GitHub Pages 会将它用作[自定义 404 页面](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-custom-404-page-for-your-github-pages-site)，其他静态服务器可将错误页指向此文件。
+
+`rf preview` 在本地根路径和配置的子路径提供已有产物，终端会打印子路径入口；例如上述配置对应 `http://127.0.0.1:8080/blog/`。`rf dev` 使用本地根路径，生成的开发版 404 也使用根路径链接。两种模式访问缺失页面时均返回 HTTP 404，开发模式支持自动刷新。404 页面带 `noindex`，文章列表、搜索索引、RSS 和 sitemap 只收录正常内容。
+

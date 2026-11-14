@@ -1,6 +1,6 @@
 namespace RazorFolio.Cli.Commands;
 
-internal sealed record PreviewCommand(string Directory, int Port)
+internal sealed record PreviewCommand(string SiteDirectory, string Directory, int Port)
 {
     public static PreviewCommand Parse(string[] args)
     {
@@ -47,6 +47,7 @@ internal sealed record PreviewCommand(string Directory, int Port)
             throw new ArgumentException(usage);
         }
 
-        return new PreviewCommand(Path.GetFullPath(directory, Path.GetFullPath(site)), port);
+        var siteDirectory = Path.GetFullPath(site);
+        return new PreviewCommand(siteDirectory, Path.GetFullPath(directory, siteDirectory), port);
     }
 }

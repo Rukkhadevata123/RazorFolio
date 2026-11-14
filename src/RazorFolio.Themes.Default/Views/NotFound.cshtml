@@ -1,0 +1,14 @@
+@inherits global::RazorFolio.Themes.Default.Rendering.PageTemplate<RazorFolio.Core.Rendering.NotFoundPage>
+@{
+    Metadata.Title = $"404 · 页面未找到 — {Model.Context.Site.Title}";
+    Metadata.CssClass = "not-found-shell";
+    Metadata.NoIndex = true;
+}
+
+<section class="card not-found-card" aria-labelledby="not-found-title">
+    <p class="not-found-code" aria-hidden="true">404</p>
+    <h1 id="not-found-title">页面未找到</h1>
+    <p>这个地址可能已更改，或页面已经移走。</p>
+    <a class="not-found-home" href="@Model.Context.HomeUrl">返回首页</a>
+    @await PartialAsync(new Shared__BrowseLinks { Model = Model.Context })
+</section>

@@ -6,6 +6,9 @@ namespace RazorFolio.Themes.Default;
 
 public sealed class RazorPageRenderer : IPageRenderer
 {
+    public Task<string> RenderAsync(NotFoundPage page, CancellationToken cancellationToken = default) =>
+        RenderPageAsync(new NotFound { Model = page }, cancellationToken);
+
     public Task<string> RenderAsync(ArticlePage page, CancellationToken cancellationToken = default) =>
         RenderPageAsync(new Article { Model = page }, cancellationToken);
 

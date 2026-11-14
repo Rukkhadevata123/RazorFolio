@@ -40,6 +40,7 @@ public sealed class SiteBuilder(
         var sources = allSources.Where(source => target.IncludeDrafts || !source.Article.Info.Draft).ToList();
 
         var homePath = Path.Combine(outputDirectory, "index.html");
+        var notFoundPath = Path.Combine(outputDirectory, "404.html");
         var articleCount = sources.Count(source => source.Article.Info.IsArticle);
         var homePageCount = articleCount == 0 ? 1 : 1 + (articleCount - 1) / configuration.PageSize;
         string[] homePaths =
@@ -105,7 +106,7 @@ public sealed class SiteBuilder(
         [
             .. themeAssets.Select(asset => Path.GetFullPath(asset.RelativePath, outputDirectory))
         ];
-        string[] protectedPaths = [.. reservedPaths, .. metadataPaths, .. themeAssetPaths, searchIndexPath];
+        string[] protectedPaths = [.. reservedPaths, .. metadataPaths, .. themeAssetPaths, searchIndexPath, notFoundPath];
         OutputPathValidator.Validate(protectedPaths);
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
@@ -249,6 +250,10 @@ public sealed class SiteBuilder(
             await File.WriteAllTextAsync(archivesPath, archivesHtml, cancellationToken);
         }
 
+        var notFoundPage = new NotFoundPage(CreateContext(notFoundPath, rootRelative: true));
+        var notFoundHtml = await pageRenderer.RenderAsync(notFoundPage, cancellationToken);
+        await File.WriteAllTextAsync(notFoundPath, notFoundHtml, cancellationToken);
+
         if (generateMetadata)
         {
             string[] urls =
@@ -302,10 +307,10 @@ public sealed class SiteBuilder(
         }
 
         await manifest.CompleteAsync(
-            [.. contentPaths, .. reservedPaths, .. metadataPaths, .. themeAssetPaths, .. assetPaths, searchIndexPath],
+            [.. contentPaths, .. reservedPaths, .. metadataPaths, .. themeAssetPaths, .. assetPaths, searchIndexPath, notFoundPath],
             cancellationToken);
 
-        return sources.Count + reservedPaths.Count + aliases.Length;
+        return sources.Count + reservedPaths.Count + aliases.Length + 1;
 
         string GetRelativeOutputPath(string path) =>
             Path.GetRelativePath(outputDirectory, path).Replace(Path.DirectorySeparatorChar, '/');
@@ -330,27 +335,44 @@ public sealed class SiteBuilder(
                 .Where(entry => entry.asset.Kind == kind).Select(entry => themeAssetPaths[entry.index])
         ];
 
-        PageContext CreateContext(string pagePath, bool draft = false)
+        PageContext CreateContext(string pagePath, bool draft = false, bool rootRelative = false)
         {
-            string[] stylesheetUrls = [.. stylesheetPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
-            string[] scriptUrls = [.. scriptPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
-            string[] contentScriptUrls = [.. contentScriptPaths.Select(path => PageUrl.GetRelative(pagePath, path))];
+            string[] stylesheetUrls = [.. stylesheetPaths.Select(GetUrl)];
+            string[] scriptUrls = [.. scriptPaths.Select(GetUrl)];
+            string[] contentScriptUrls = [.. contentScriptPaths.Select(GetUrl)];
             NavigationLink[] navigation =
             [
                 .. configuration.Navigation.Select(item => new NavigationLink(
-                    item.Text, linkResolver.Resolve(item.Link, homePath, pagePath)))
+                    item.Text, ResolveConfiguredLink(item.Link)))
             ];
-            var canonicalUrl = draft ? null : PageUrl.GetAbsolute(pagePath, outputDirectory, configuration.Url);
-            var feed = feedUrl is null ? null : new FeedLink(PageUrl.GetRelative(pagePath, feedPath), feedUrl);
-            var faviconUrl = faviconPath is null ? null : PageUrl.GetRelative(pagePath, faviconPath);
+            var canonicalUrl = draft || rootRelative ? null : PageUrl.GetAbsolute(pagePath, outputDirectory, configuration.Url);
+            var feed = feedUrl is null ? null : new FeedLink(GetUrl(feedPath), feedUrl);
+            var faviconUrl = faviconPath is null ? null : GetUrl(faviconPath);
             List<NavigationLink> browseLinks = [];
-            if (hasArticles) browseLinks.Add(new NavigationLink("年份归档", PageUrl.GetRelative(pagePath, archivesPath)));
-            if (hasCategories) browseLinks.Add(new NavigationLink("分类", PageUrl.GetRelative(pagePath, categoriesPath)));
-            if (hasTags) browseLinks.Add(new NavigationLink("标签", PageUrl.GetRelative(pagePath, tagsPath)));
-            var theme = ThemeView.Create(configuration, link => linkResolver.Resolve(link, homePath, pagePath));
+            if (hasArticles) browseLinks.Add(new NavigationLink("年份归档", GetUrl(archivesPath)));
+            if (hasCategories) browseLinks.Add(new NavigationLink("分类", GetUrl(categoriesPath)));
+            if (hasTags) browseLinks.Add(new NavigationLink("标签", GetUrl(tagsPath)));
+            var theme = ThemeView.Create(configuration, ResolveConfiguredLink);
             return new PageContext(configuration, stylesheetUrls, scriptUrls, contentScriptUrls, navigation,
-                browseLinks, PageUrl.GetRelative(pagePath, homePath), PageUrl.GetRelative(pagePath, pagePath),
-                PageUrl.GetRelative(pagePath, searchIndexPath), theme, canonicalUrl, feed, faviconUrl);
+                browseLinks, GetUrl(homePath), GetUrl(pagePath), GetUrl(searchIndexPath),
+                theme, canonicalUrl, feed, faviconUrl);
+
+            string GetUrl(string path) => ResolveUrl(PageUrl.GetRelative(pagePath, path));
+
+            string ResolveConfiguredLink(string link) => ResolveUrl(linkResolver.Resolve(link, homePath, pagePath));
+
+            string ResolveUrl(string url)
+            {
+                if (!rootRelative || url.StartsWith('/') || Uri.TryCreate(url, UriKind.Absolute, out _))
+                {
+                    return url;
+                }
+
+                // A 404 is served at the missing URL, so relative paths would depend on that URL's depth.
+                var siteUrl = target.IncludeDrafts ? null : configuration.Url;
+                var resolved = new Uri(new Uri(siteUrl ?? "https://razorfolio.invalid/"), url);
+                return resolved.PathAndQuery + resolved.Fragment;
+            }
         }
     }
 

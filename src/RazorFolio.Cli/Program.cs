@@ -3,6 +3,7 @@ using RazorFolio.Cli.Commands;
 using RazorFolio.Cli.Hosting;
 using RazorFolio.Core;
 using RazorFolio.Core.Assets;
+using RazorFolio.Core.Configuration;
 using RazorFolio.Core.Content;
 using RazorFolio.Core.Rendering;
 using RazorFolio.Themes.Default;
@@ -57,7 +58,9 @@ try
     if (args[0] == "preview")
     {
         var preview = PreviewCommand.Parse(args);
-        await PreviewServer.RunAsync(preview.Directory, preview.Port);
+        var site = await SiteConfigurationLoader.LoadAsync(preview.SiteDirectory);
+        var pathBase = site.Url is null ? "" : new Uri(site.Url).AbsolutePath.TrimEnd('/');
+        await PreviewServer.RunAsync(preview.Directory, preview.Port, pathBase: pathBase);
         return 0;
     }
 

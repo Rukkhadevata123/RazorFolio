@@ -9,7 +9,7 @@
 ./rf preview --site ../my-blog
 ```
 
-Windows 将 `./rf` 换成 `.\rf.exe`。`new` 的目标须不存在或为空。预览地址为 `http://127.0.0.1:8080/`，可用 `--port` 指定端口，Ctrl+C 退出。
+Windows 将 `./rf` 换成 `.\rf.exe`。`new` 的目标须不存在或为空。`dev` 地址为 `http://127.0.0.1:8080/`；`preview` 会同时提供配置 `url` 中的子路径，访问入口见终端输出。可用 `--port` 指定端口，Ctrl+C 退出。
 
 文章放在站点 `content/`，资源放在 `static/`，配置文件为 `razorfolio.json`。`dev` 包含草稿并监听修改；`build` 生成正式 `public/`，部署时上传该目录。
 

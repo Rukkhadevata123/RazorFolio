@@ -9,6 +9,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@Model.Metadata.Title</title>
+    @if (Model.Metadata.NoIndex)
+    {
+        <meta name="robots" content="noindex">
+    }
     @if (context.FaviconUrl is { } faviconUrl)
     {
         <link rel="icon" type="image/svg+xml" href="@faviconUrl">
@@ -86,7 +90,7 @@
         {
             <a href="@footerFeed.RelativeUrl">RSS 订阅</a>
         }
-        <span>由 RazorFolio 生成</span>
+        <span>由 <a href="https://github.com/Rukkhadevata123/RazorFolio">RazorFolio</a> 生成</span>
     </footer>
 </body>
 </html>
