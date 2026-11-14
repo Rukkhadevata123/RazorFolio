@@ -24,6 +24,22 @@
     @if (context.CanonicalUrl is { } canonicalUrl)
     {
         <link rel="canonical" href="@canonicalUrl">
+        @if (!Model.Metadata.NoIndex)
+        {
+            <meta property="og:title" content="@(Model.Metadata.ShareTitle ?? Model.Metadata.Title)">
+            <meta property="og:type" content="@Model.Metadata.ShareType">
+            <meta property="og:url" content="@canonicalUrl">
+            <meta property="og:site_name" content="@context.Site.Title">
+            @if ((Model.Metadata.Description ?? context.Site.Description) is { } shareDescription)
+            {
+                <meta property="og:description" content="@shareDescription">
+            }
+            @if ((Model.Metadata.ShareImage ?? context.Site.ShareImage) is { } shareImage)
+            {
+                var imageUrl = new Uri(new Uri(context.Site.Url!), shareImage).AbsoluteUri;
+                <meta property="og:image" content="@imageUrl">
+            }
+        }
     }
     @if (context.Feed is { } feed)
     {

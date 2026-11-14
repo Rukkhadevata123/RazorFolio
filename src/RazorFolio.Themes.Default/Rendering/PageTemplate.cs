@@ -11,6 +11,9 @@ internal sealed class PageMetadata
 {
     public string Title { get; set; } = "";
     public string? Description { get; set; }
+    public string? ShareTitle { get; set; }
+    public string? ShareImage { get; set; }
+    public string ShareType { get; set; } = "website";
     public bool NoIndex { get; set; }
     public string CssClass { get; set; } = "archive-shell";
 }

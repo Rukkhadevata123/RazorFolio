@@ -11,6 +11,7 @@ public sealed record ArticleInfo(
     IReadOnlyList<string> Categories,
     bool IsArticle)
 {
+    public string? ShareImage { get; init; }
     public DateOnly? Updated { get; init; }
     public bool Star { get; init; }
     public LicenseOptions? License { get; init; }

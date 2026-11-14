@@ -59,6 +59,7 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
             NormalizeNames(metadata.Tags), NormalizeNames(metadata.Category), metadata.Article)
         {
             Updated = updated,
+            ShareImage = ShareImageConfiguration.Normalize(metadata.ShareImage, sourcePath),
             Star = metadata.Star,
             License = LicenseConfiguration.Normalize(metadata.License, sourcePath)
         };

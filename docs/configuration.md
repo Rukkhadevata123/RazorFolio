@@ -46,6 +46,7 @@
 | `url` | 正式网站的完整入口，含部署子路径，见下节 |
 | `navigation` | 顶栏链接，按配置顺序显示 |
 | `license` | 文章默认许可，含 `name`、可选 `url` 和 `enabled`（默认 `true`）；省略时不显示 |
+| `shareImage` | 默认分享图，填写站点相对路径或完整 HTTP(S) 图片地址 |
 
 例如，在 `razorfolio.json` 顶层设置所有文章的默认协议：
 
@@ -57,6 +58,20 @@
 ```
 
 许可显示在正文末尾右下角，打印时保留名称并附上链接地址。启用时 `name` 必填，`url` 可省略或填写完整 HTTP(S) 地址。单篇覆盖和隐藏见[文章许可](writing.md#文章许可)。
+
+## 分享预览
+
+设置站点 `url` 后，页面会输出 Open Graph 标题、类型、规范地址和站点名称，供分享平台读取。摘要优先使用单篇 `description`，否则使用站点 `description`；没有摘要时省略，不自动截取正文。
+
+例如将图片放在 `static/images/share.png`，在 `razorfolio.json` 顶层设置：
+
+```json
+"shareImage": "images/share.png"
+```
+
+图片路径从站点根目录解析，开头的 `/` 也表示站点根目录；配置 `url: https://example.com/blog/` 时，上例输出 `https://example.com/blog/images/share.png`。也可使用完整 HTTP(S) 图片地址。路径不接受 `..`，图片地址不能包含凭据或片段。
+
+文章及普通页可用 YAML `shareImage` 覆盖默认图，省略、空值或 `null` 时继承。未设置图片则省略 `og:image`。文章类型为 `article`，普通页、首页与归档为 `website`；草稿和 404 不输出分享信息。图片须随站点部署并能公开访问，分享平台的最终样式和缓存由平台决定。协议见 [Open Graph](https://ogp.me/)。
 
 ## 默认主题
 

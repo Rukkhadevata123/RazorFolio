@@ -3,6 +3,9 @@
 @{
     Metadata.Title = $"{Model.Info.Title} — {Model.Context.Site.Title}";
     Metadata.Description = Model.Info.Description;
+    Metadata.ShareTitle = Model.Info.Title;
+    Metadata.ShareImage = Model.Info.ShareImage;
+    Metadata.ShareType = Model.Info.IsArticle ? "article" : "website";
     Metadata.CssClass = "article-page";
     var hasSidebar = Model.Context.SidebarCategories.Count > 0 || Model.Context.Theme.Sidebar.Count > 0;
 }

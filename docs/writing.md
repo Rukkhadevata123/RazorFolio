@@ -27,6 +27,7 @@ draft: false
 | `title` / `description` | 标题与可选摘要；不自动截取摘要 |
 | `date` | 可选，格式为 `yyyy-MM-dd`；文章按日期倒序排列，无日期排在最后 |
 | `updated` | 可选更新日期，格式为 `yyyy-MM-dd`，不能早于 `date`；在正文头部显示，不改变文章排序 |
+| `shareImage` | 单篇分享图，覆盖站点默认图；站点相对路径或完整 HTTP(S) 图片地址 |
 | `tags` / `category` | 标签与并列分类列表 |
 | `draft: true` | 仅在开发预览中生成 |
 | `star: true` | 加入阅读页侧栏的“精选文章”，仍保留在分类列表中；默认 `false` |
@@ -39,6 +40,18 @@ draft: false
 `updated` 由作者在内容更新时填写，普通页也可设置；省略或 `null` 时不显示更新时间。RSS 发布时间使用 `date`（UTC 零点），没有 `date` 时省略；sitemap 的最后更新时间优先使用 `updated`，其次使用 `date`，两者均未填写时省略。日期不从文件修改时间或构建时间推断。
 
 精选文章沿用文章排序：日期从新到旧，同日按输出路径排序，无日期排在最后。普通页（`article: false`）不进入精选；精选草稿仅在 `dev` 中显示。
+
+## 分享预览
+
+分享标题取 `title`，摘要取 `description`，图片默认继承站点 `shareImage`。单篇覆盖示例：
+
+```yaml
+title: 一篇技术文章
+description: 简要介绍文章讨论的问题和结论。
+shareImage: images/article-share.png
+```
+
+图片放在 `static/images/article-share.png`。这里的路径相对站点根目录，与文章所在目录及自定义 `url` 无关；普通页也支持覆盖。站点需配置完整 `url`，详见[分享预览配置](configuration.md#分享预览)。
 
 ## 文章许可
 
