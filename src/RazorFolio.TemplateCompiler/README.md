@@ -17,6 +17,6 @@
 
 每次构建重新核对模板集合，只写入内容发生变化的生成文件，并删除属于本编译器的失效文件。这样模板删除也能被识别；这不是站点内容的增量构建。生成保留 `.cshtml` 源位置，Razor 语法错误和生成后的 C# 类型错误均应阻止构建。
 
-生成源码只使用构建期 Razor 编译器，不依赖 `Microsoft.AspNetCore.App`。JSON 和 YAML 路径也已接入静态类型信息并通过 NativeAOT 验证。完整 CLI 使用精简 ASP.NET Core 主机提供预览和监听，已另行通过本机 win-x64 原生发布及 new/build/dev/preview 验证；干净环境及 Linux 验收仍待完成，记录保存在 `artifacts/cli-aot/`。
+生成源码只使用构建期 Razor 编译器，不依赖 `Microsoft.AspNetCore.App`。JSON 和 YAML 路径也已接入静态类型信息并通过 NativeAOT 验证。完整 CLI 使用精简 ASP.NET Core 主机提供预览和监听，已通过本机 win-x64、Arch Linux WSL2 linux-x64 的原生发布及 new/build/dev/preview 验证；WSL 还验证了删除临时 SDK 后运行。Windows 无 .NET 干净环境及其他 Linux 发行版仍待验收，记录位于 `artifacts/cli-aot/` 和 `artifacts/wsl-aot/`。
 
 本机对照输入、原 MVC 快照、NativeAOT 验证程序和构建生命周期检查保存在被忽略的 `artifacts/template-migration/`，不作为工具包内容。

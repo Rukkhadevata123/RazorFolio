@@ -141,7 +141,7 @@ dotnet publish src/RazorFolio.Cli -c Release -r win-x64 -p:PublishProfile=Native
 ./artifacts/native/win-x64/rf.exe --version
 ```
 
-原生版运行不需要 .NET，Windows 运行文件为 `rf.exe`，PDB 可留作调试。完整 CLI 的 `new/build/dev/preview` 已通过本机 win-x64 原生验证；未安装 .NET 的干净环境及 Linux 验收仍待完成。配置继续使用 JSON。
+原生版运行不需要 .NET，Windows 运行文件为 `rf.exe`，PDB 可留作调试。完整 CLI 的 `new/build/dev/preview` 已通过本机 win-x64 和 Arch Linux WSL2 的 linux-x64 验证，后者还验证了移除临时 SDK 后运行；Windows 无 .NET 干净环境及其他 Linux 发行版仍待验收。配置继续使用 JSON。
 
 也可打包为 .NET 工具：
 
