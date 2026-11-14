@@ -1316,7 +1316,7 @@ blockquote {
         animation: rf-search-close .16s ease-in forwards;
     }
     .search-dialog[open].is-closing::backdrop {
-        animation: rf-fade-in .16s ease-in reverse forwards;
+        animation: rf-fade-out .16s ease-in forwards;
     }
     @media (hover: hover) and (pointer: fine) {
         .post-card:hover {
@@ -1328,6 +1328,10 @@ blockquote {
 @keyframes rf-fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
+}
+@keyframes rf-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
 }
 @keyframes rf-disclose {
     from { opacity: 0; transform: translateY(-4px); }
