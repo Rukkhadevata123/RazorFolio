@@ -1,6 +1,6 @@
 # 发布与分发
 
-原生包由 [NativeAot 配置](../src/RazorFolio.Cli/Properties/PublishProfiles/NativeAot.pubxml)发布，[NativePackage.targets](../build/NativePackage.targets)负责组包和解包验证。Windows、Linux 和 CI 使用同一入口；当前仓库不自动创建 GitHub Release 或推送 NuGet 包。
+原生包由 [NativeAot 配置](../src/RazorFolio.Cli/Properties/PublishProfiles/NativeAot.pubxml)发布，[NativePackage.targets](../build/NativePackage.targets)负责组包和解包验证。Windows、Linux 和 CI 使用同一入口。
 
 ## 构建环境
 
@@ -11,7 +11,7 @@ SDK 基线为 global.json 中的 .NET 11.0.100，允许同功能带补丁。构�
 | win-x64 | Windows x64 | Visual Studio C++ 工具与 Windows SDK |
 | linux-x64 | Linux x64，glibc | Clang 或 GCC、链接器、zlib 开发文件、GNU tar |
 
-按目标系统分别构建，不从 Windows 交叉发布 Linux。Linux 的 libc 等系统依赖不会被消除；需要覆盖较老系统时，应选择对应构建基线并实际运行验证，不能仅凭 `linux-x64` 文件名宣称兼容。
+Windows 包在 Windows 上构建，Linux 包在 Linux 上构建。Linux 包使用系统提供的 glibc 等原生库，CI 构建基线为 Ubuntu 24.04；面向较老系统发布时，选择相应的构建环境并验证运行结果。
 
 ## 生成原生分发包
 
@@ -36,15 +36,15 @@ razorfolio-0.1.0-preview.1-linux-x64.tar.gz
 razorfolio-0.1.0-preview.1-linux-x64.tar.gz.sha256
 ```
 
-压缩包包含程序、独立使用说明、项目许可证、依赖许可证与 `build-info.txt`；不含 SDK、编译器、源码、样例、验证脚本或调试符号。原生程序的 PDB/DBG 保留在 publish 目录，按需单独保存。
+压缩包包含程序、独立使用说明、项目许可证、依赖许可证与 `build-info.txt`。原生程序的 PDB/DBG 保留在 publish 目录，按需单独保存。
 
 打包后会解开压缩包，校验实际报告的版本并执行 `new`、`build`，确认生成页面与搜索索引。Linux 的执行权限也通过这一步验证。只有检查成功才写出 SHA-256 文件；同名包或工作目录存在时会拒绝覆盖，失败后可使用新的 `NativePackageRoot` 重试。
 
-`-p:NativePackageRoot=<绝对路径>` 可改变包与临时组包目录，WSL 临时验证时可指向 `/tmp`。构建自源码归档而非 Git checkout 时，需显式传入 `-p:SourceRevisionId=<对应提交>`；实际改动尚未提交的本地包只用于验证，不作为正式发布来源。
+`-p:NativePackageRoot=<绝对路径>` 可改变包与临时组包目录，WSL 临时验证时可指向 `/tmp`。从源码归档构建时，需显式传入 `-p:SourceRevisionId=<对应提交>`。
 
 ## 版本与核验
 
-`Version` 同时控制程序版本和包名。`build-info.txt` 记录源码提交、实际 SDK/运行时版本和指定的构建基线；基线标签用于追踪来源，不能代替环境验收。
+`Version` 同时控制程序版本和包名。`build-info.txt` 记录源码提交、实际 SDK/运行时版本和指定的构建基线，便于追踪包的来源。
 
 Linux 校验下载：
 
@@ -52,15 +52,17 @@ Linux 校验下载：
 sha256sum --check razorfolio-0.1.0-preview.1-linux-x64.tar.gz.sha256
 ```
 
-Windows 用 `Get-FileHash <压缩包> -Algorithm SHA256` 与对应 `.sha256` 比较。校验和用于发现下载损坏，不提供签名认证。
+Windows 用 `Get-FileHash <压缩包> -Algorithm SHA256` 与对应 `.sha256` 比较，确认下载完整。
 
-这里的“可重复”指明确的构建、打包和验证流程。编译工具链、SDK 补丁及归档时间戳都可能影响字节结果，当前不承诺两次构建的压缩包哈希完全相同。
+重建时使用相同的源码提交、版本和构建环境。编译工具链、SDK 补丁及归档时间戳会影响最终压缩包的哈希。
 
 ## CI
 
-[Native packages 工作流](../.github/workflows/native-packages.yml)只手动触发，输入包版本，分别使用 `windows-2025` 和 `ubuntu-24.04`。Action 引用固定提交；SDK 来自 global.json，实际版本进入包内记录。成功后上传压缩包和校验文件为 workflow artifacts，保留 14 天，不自动对外发布。
+[Native packages 工作流](../.github/workflows/native-packages.yml)手动触发，分别使用 `windows-2025` 和 `ubuntu-24.04`。Action 引用固定提交；SDK 来自 global.json，实际版本进入包内记录。
 
-当前 CI 定义尚未在 GitHub 上实际运行；Ubuntu 24.04 是所选 CI 构建基线，不是已完成的本机发行版兼容性结论。源码推送后应先运行一次工作流、检查上传包，再决定是否正式分发。
+在 GitHub 的 **Actions → Native packages → Run workflow** 中选择分支、填写版本并运行。成功后从运行页面下载 `razorfolio-win-x64` 和 `razorfolio-linux-x64` artifacts，其中包含分发包和校验文件，保留 14 天。正式发布时，将选定的包和校验文件附到 GitHub Release；NuGet 包按下节单独构建和发布。
+
+[首次 CI 运行](https://github.com/Rukkhadevata123/RazorFolio/actions/runs/43572950363)已通过两个平台的发布、组包、解包运行与上传检查（源码提交 `66b77ec`）。
 
 ## .NET 工具版
 
@@ -71,10 +73,10 @@ dotnet pack src/RazorFolio.Cli -c Release -p:Version=0.1.0-preview.1 -o artifact
 dotnet tool install RazorFolio --version 0.1.0-preview.1 --source ./artifacts/packages --tool-path ./artifacts/tools
 ```
 
-更新包时递增版本，避免使用旧缓存。不要把 NativeAot 发布配置传给 `dotnet pack`。
+工具包使用默认构建配置。更新时递增版本，避免使用旧缓存。
 
 ## 已有验证
 
-完整 CLI 已通过 Windows Sandbox（无现代 .NET 安装）和 Arch Linux WSL2（实际删除临时 SDK 后）的 new/build/dev/preview、HTTP、SSE、监听与正常退出检查。新分发包的解包冒烟检查不代替这些完整回归；修改模板、序列化或主机逻辑后应重跑对应检查。
+完整 CLI 已通过 Windows Sandbox（无现代 .NET 安装）和 Arch Linux WSL2（删除临时 SDK 后）的 new/build/dev/preview、HTTP、SSE、监听与正常退出检查。每次打包会执行解包冒烟检查；修改模板、序列化或主机逻辑后，重跑对应功能回归。
 
-本机详细记录在 `artifacts/windows-sandbox/`、`artifacts/wsl-aot/`、`artifacts/release-check/`；不随源码或分发包发布。其他系统版本和发行版、正式 CI 与发布签名仍需按交付目标验收。
+本机详细记录在 `artifacts/windows-sandbox/`、`artifacts/wsl-aot/`、`artifacts/release-check/`，CI 记录见工作流运行页面。

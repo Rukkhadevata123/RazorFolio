@@ -127,21 +127,6 @@ public sealed class SiteBuilder(
             await CopyThemeAssetAsync(themeAssets[index], themeAssetPaths[index], cancellationToken);
         }
 
-        if (reportDiagnostic is not null)
-        {
-            var checker = new ContentLinkChecker(outputDirectory,
-                [.. contentPaths, .. protectedPaths, .. assetPaths], configuration.Url);
-            foreach (var output in outputs)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                foreach (var diagnostic in checker.Check(output.Article.Body, output.SourcePath,
-                    output.OriginalPath, output.OutputPath, linkResolver))
-                {
-                    reportDiagnostic(diagnostic);
-                }
-            }
-        }
-
         var customStylesheetPath = FindCopiedAsset("custom.css");
         var faviconPath = FindCopiedAsset("favicon.svg");
         List<string> stylesheetPaths = [.. GetAssetPaths(ThemeAssetKind.Stylesheet)];
@@ -165,6 +150,7 @@ public sealed class SiteBuilder(
                 GetAdjacentArticle(orderedArticlePages, index + 1, output.OutputPath))))
             .ToDictionary();
 
+        var pageAnchors = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         foreach (var output in outputs)
         {
             var article = output.Article;
@@ -187,6 +173,10 @@ public sealed class SiteBuilder(
                 article.Info, rendered.BodyHtml, rendered.TitleHtml, rendered.Headings,
                 CreateContext(outputPath, article.Info.Draft), homeUrl, tags, categories, navigation);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
+            if (reportDiagnostic is not null)
+            {
+                pageAnchors.Add(GetRelativeOutputPath(outputPath), HtmlAnchorReader.Read(html));
+            }
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
             await File.WriteAllTextAsync(outputPath, html, cancellationToken);
@@ -290,11 +280,35 @@ public sealed class SiteBuilder(
         ];
         await SearchIndexWriter.WriteAsync(searchIndexPath, searchDocuments, cancellationToken);
 
+        if (reportDiagnostic is not null)
+        {
+            foreach (var alias in aliases)
+            {
+                pageAnchors.Add(GetRelativeOutputPath(alias.OutputPath),
+                    pageAnchors[GetRelativeOutputPath(alias.TargetPath)]);
+            }
+
+            var checker = new ContentLinkChecker(outputDirectory,
+                [.. contentPaths, .. protectedPaths, .. assetPaths], configuration.Url, pageAnchors);
+            foreach (var output in outputs)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                foreach (var diagnostic in checker.Check(output.Article.Body, output.SourcePath,
+                    output.OriginalPath, output.OutputPath, linkResolver))
+                {
+                    reportDiagnostic(diagnostic);
+                }
+            }
+        }
+
         await manifest.CompleteAsync(
             [.. contentPaths, .. reservedPaths, .. metadataPaths, .. themeAssetPaths, .. assetPaths, searchIndexPath],
             cancellationToken);
 
         return sources.Count + reservedPaths.Count + aliases.Length;
+
+        string GetRelativeOutputPath(string path) =>
+            Path.GetRelativePath(outputDirectory, path).Replace(Path.DirectorySeparatorChar, '/');
 
         string? FindCopiedAsset(string relativePath) => assetPaths.FirstOrDefault(path =>
             string.Equals(path, Path.Combine(outputDirectory, relativePath), comparison));
