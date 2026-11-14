@@ -158,6 +158,16 @@
         queueSearch();
     });
     dialog.querySelector('[data-search-close]').addEventListener('click', () => dialog.close());
+    let startedOutside = false;
+    const outside = event => {
+        const bounds = dialog.getBoundingClientRect();
+        return event.clientX < bounds.left || event.clientX > bounds.right
+            || event.clientY < bounds.top || event.clientY > bounds.bottom;
+    };
+    dialog.addEventListener('pointerdown', event => { startedOutside = outside(event); });
+    dialog.addEventListener('click', event => {
+        if (startedOutside && outside(event)) dialog.close();
+    });
     dialog.addEventListener('keydown', event => {
         // Search inputs otherwise consume Escape to clear their value before closing the dialog.
         if (event.key === 'Escape' && !composing && !event.isComposing) {
@@ -185,7 +195,7 @@
         clearTimeout(timer);
         composing = false;
         results.setAttribute('aria-busy', 'false');
-        opener.focus();
+        opener.focus({ preventScroll: true });
     });
     input.addEventListener('compositionstart', () => {
         composing = true;

@@ -9,6 +9,7 @@
         return [{ element, source: text.slice(2, -2).trim(), display }];
     });
     if (!formulas.length) return;
+    for (const { element } of formulas) element.dataset.rendered = 'pending';
 
     const assetUrl = new URL('katex/', document.currentScript.src);
 
@@ -42,6 +43,7 @@
             await Promise.all([loadResource(stylesheet), loadResource(script)]);
             if (typeof window.katex?.render !== 'function') throw new Error('KaTeX runtime unavailable');
         } catch {
+            for (const { element } of formulas) element.dataset.rendered = 'false';
             const notice = document.createElement('span');
             notice.className = 'math-message';
             notice.setAttribute('role', 'status');

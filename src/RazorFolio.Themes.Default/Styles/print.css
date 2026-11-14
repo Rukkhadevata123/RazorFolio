@@ -1,0 +1,139 @@
+@page {
+    margin: 16mm;
+}
+@media print {
+    :root, :root[data-theme] {
+        color-scheme: light;
+        --text: #000;
+        --bg: #fff;
+        --surface: #fff;
+        --muted: #333;
+        --accent: #222;
+        --soft: #fff;
+        --border: #bbb;
+        --shadow: none;
+    }
+    html, html:has(dialog[open]) {
+        overflow: visible;
+        scrollbar-gutter: auto;
+        scroll-behavior: auto;
+    }
+    body {
+        display: block;
+        min-height: 0;
+    }
+    *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+    .site-header, .site-sidebar, .page-toc, .mobile-toc, .mobile-sidebar,
+    .code-copy-controls, .heading-anchor, .skip, .profile, .browse-links,
+    .pagination, .pagination-status, .article-tools, .print-status,
+    .article-navigation, .article-tags, .article-categories, .site-footer,
+    .image-hint, .search-dialog, .search-dialog[open], .image-dialog, .image-dialog[open] {
+        display: none !important;
+    }
+    .article-grid, .article-grid[class], .home-content, .archive-shell {
+        display: block;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+    }
+    .article-surface, .card {
+        background: white;
+        box-shadow: none;
+        border: 0;
+        padding: 0;
+        transform: none !important;
+    }
+    .home-grid, .home-grid.without-profile {
+        display: block;
+    }
+    .hero, .hero.hero-compact, .hero:has(> .hero-background) {
+        display: block;
+        min-height: 0;
+        padding: 0;
+        color: black;
+        background: white;
+    }
+    .hero > .hero-background, .hero::before, .hero-content > img,
+    .hero-content > a, .hero .hero-credit {
+        display: none;
+    }
+    .hero:has(> .hero-background) p {
+        color: #333;
+    }
+    .article-body {
+        font-size: 11pt;
+        line-height: 1.65;
+    }
+    .article-header h1 {
+        font-size: 20pt;
+    }
+    .article-body :is(h2, h3, h4, h5, h6) {
+        break-after: avoid;
+    }
+    .article-body p {
+        orphans: 3;
+        widows: 3;
+    }
+    .article-body :is(pre, pre code) {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        overflow: visible;
+    }
+    .code-block {
+        --code-background: #fff;
+        --code-foreground: #000;
+        --code-border: #bbb;
+        --code-muted: #333;
+        background: white;
+        color: black;
+        break-inside: auto;
+    }
+    .code-block .hljs span {
+        color: inherit;
+    }
+    .article-body table {
+        display: table;
+        table-layout: fixed;
+        width: 100%;
+        overflow: visible;
+        font-size: 9pt;
+    }
+    .article-body table :is(th, td) {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+    .article-body tr {
+        break-inside: avoid;
+    }
+    .article-body thead {
+        display: table-header-group;
+    }
+    .article-body img {
+        max-height: 220mm;
+        object-fit: contain;
+        break-inside: avoid;
+    }
+    .article-body .image-open {
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    .article-body div.math {
+        overflow: visible;
+        padding: 0;
+    }
+    .mermaid-viewport {
+        print-color-adjust: exact;
+        overflow: visible;
+    }
+    .mermaid-viewport svg {
+        max-width: 100%;
+        height: auto;
+    }
+    .mermaid-diagram[data-rendered="true"] .mermaid-source {
+        display: none;
+    }
+}

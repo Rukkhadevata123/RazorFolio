@@ -9,6 +9,10 @@
 
 <h1>标签归档</h1>
 @await PartialAsync(new Shared__BrowseLinks { Model = Model.Context })
+@if (Model.Groups.Count == 0)
+{
+    <p class="empty-state">还没有标签。</p>
+}
 <ul class="archive-index" aria-label="标签索引">
     @foreach (var group in Model.Groups)
     {
@@ -19,6 +23,6 @@
 {
     <section class="archive-group" aria-labelledby="@group.Id">
         <h2 id="@group.Id"><a href="@group.Url">@group.Name</a> <span class="count">@group.Articles.Count 篇</span></h2>
-        @await PartialAsync(new Shared__ArticleList { Model = group.Articles })
+        @await PartialAsync(new Shared__ArchiveEntries { Model = group.Articles })
     </section>
 }

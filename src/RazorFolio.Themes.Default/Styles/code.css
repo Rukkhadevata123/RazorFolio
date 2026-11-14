@@ -90,9 +90,3 @@
 .hljs-name, .hljs-deletion { color: var(--code-keyword); }
 .hljs-emphasis { font-style: italic; }
 .hljs-strong { font-weight: bold; }
-
-@media print {
-    .code-copy-controls { display: none; }
-    .code-block { background: white; color: black; }
-    .code-block .hljs span { color: inherit; }
-}

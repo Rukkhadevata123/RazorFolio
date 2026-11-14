@@ -1,0 +1,23 @@
+@inherits global::RazorFolio.Themes.Default.Rendering.RazorTemplate<System.Collections.Generic.IReadOnlyList<RazorFolio.Core.Rendering.ArticleLink>>
+@using System.Globalization
+<ul class="archive-entries">
+    @foreach (var article in Model)
+    {
+        <li>
+            @if (article.Info.Date is { } date)
+            {
+                var dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                <time datetime="@dateText">@dateText</time>
+            }
+            else
+            {
+                <span class="archive-date">未注明日期</span>
+            }
+            <a href="@article.Url">@article.Info.Title</a>
+            @if (article.Info.Draft)
+            {
+                <span class="draft-label">草稿</span>
+            }
+        </li>
+    }
+</ul>

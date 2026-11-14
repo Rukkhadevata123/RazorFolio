@@ -13,6 +13,7 @@
         const source = block.querySelector('pre > code').textContent;
         const figure = document.createElement('figure');
         figure.className = 'mermaid-diagram';
+        figure.dataset.rendered = 'pending';
         const viewport = document.createElement('div');
         viewport.className = 'mermaid-viewport';
         viewport.hidden = true;

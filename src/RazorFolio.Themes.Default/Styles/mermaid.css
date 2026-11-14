@@ -36,15 +36,3 @@
     color: var(--muted);
     font-size: .85rem;
 }
-@media print {
-    .mermaid-viewport {
-        print-color-adjust: exact;
-        overflow: visible;
-    }
-    .mermaid-viewport svg {
-        max-width: 100%;
-    }
-    .mermaid-diagram[data-rendered="true"] .mermaid-source {
-        display: none;
-    }
-}

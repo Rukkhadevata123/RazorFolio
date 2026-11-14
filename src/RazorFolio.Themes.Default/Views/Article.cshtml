@@ -24,7 +24,11 @@
         }
         <article>
             <header class="article-header">
-                <nav class="breadcrumb" aria-label="站点导航"><a href="@Model.HomeUrl">← 返回首页</a></nav>
+                <div class="article-tools">
+                    <nav class="breadcrumb" aria-label="站点导航"><a href="@Model.HomeUrl">← 返回首页</a></nav>
+                    <button type="button" data-print-article hidden>打印文章</button>
+                </div>
+                <p class="print-status" data-print-status role="status" hidden></p>
                 @if (Model.TitleHtml is { } titleHtml)
                 {
                     @Raw(titleHtml)
@@ -64,7 +68,7 @@
             @if (Model.Headings.Count > 0)
             {
                 <details class="mobile-toc">
-                    <summary>此页内容</summary>
+                    <summary><span>此页内容</span><span class="toc-current" aria-hidden="true"></span></summary>
                     @await PartialAsync(new Shared__TableOfContents { Model = Model.Headings })
                 </details>
             }

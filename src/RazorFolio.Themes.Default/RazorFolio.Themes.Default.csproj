@@ -2,6 +2,11 @@
 
 
   <ItemGroup>
+    <EmbeddedResource Include="Styles/images.css" LogicalName="RazorFolio.Themes.Default.images.css" />
+    <EmbeddedResource Include="Styles/print.css" LogicalName="RazorFolio.Themes.Default.print.css" />
+    <EmbeddedResource Include="Scripts/images.js" LogicalName="RazorFolio.Themes.Default.images.js" />
+    <EmbeddedResource Include="Scripts/print.js" LogicalName="RazorFolio.Themes.Default.print.js" />
+    <EmbeddedResource Include="Scripts/pagination.js" LogicalName="RazorFolio.Themes.Default.pagination.js" />
     <EmbeddedResource Include="Styles/theme.css" LogicalName="RazorFolio.Themes.Default.theme.css" />
     <EmbeddedResource Include="Styles/code.css" LogicalName="RazorFolio.Themes.Default.code.css" />
     <EmbeddedResource Include="Styles/search.css" LogicalName="RazorFolio.Themes.Default.search.css" />

@@ -2,6 +2,7 @@
 @using System.Globalization
 @{
     Metadata.Title = $"文章归档 — {Model.Context.Site.Title}";
+    Metadata.CssClass = "archive-shell year-archive";
 }
 
 <nav aria-label="站点导航">
@@ -10,6 +11,10 @@
 
 <h1>文章归档</h1>
 @await PartialAsync(new Shared__BrowseLinks { Model = Model.Context })
+@if (Model.Groups.Count == 0)
+{
+    <p class="empty-state">还没有文章。</p>
+}
 <ul class="archive-index" aria-label="年份索引">
     @foreach (var group in Model.Groups)
     {
@@ -24,6 +29,6 @@
         : "未注明日期";
     <section class="archive-group" aria-labelledby="@group.Id">
         <h2 id="@group.Id">@title <span class="count">@group.Articles.Count 篇</span></h2>
-        @await PartialAsync(new Shared__ArticleList { Model = group.Articles })
+        @await PartialAsync(new Shared__ArchiveEntries { Model = group.Articles })
     </section>
 }

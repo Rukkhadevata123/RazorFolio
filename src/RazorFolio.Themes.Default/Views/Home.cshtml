@@ -6,7 +6,7 @@
     Metadata.Description = Model.Context.Site.Description;
     Metadata.CssClass = "home-page";
 }
-@if (firstPage && theme.Hero is { } hero)
+@if (theme.Hero is { } hero)
 {
     <section class="hero @(hero.FullScreen ? "" : "hero-compact")" aria-label="博客介绍"
              data-background-mode="@hero.Background.Mode">
@@ -30,7 +30,7 @@
     </section>
 }
 <div class="home-content" id="rf-articles">
-    @if (!firstPage || theme.Hero is null)
+    @if (theme.Hero is null)
     {
         <header class="page-heading">
             <h1>@Model.Context.Site.Title</h1>
@@ -45,29 +45,32 @@
         @await PartialAsync(new Shared__BrowseLinks { Model = Model.Context })
     </div>
     <div class="home-grid @(theme.Profile is null ? "without-profile" : "")">
-        <section aria-labelledby="rf-articles-title">
-            @if (Model.Articles.Count == 0)
-            {
-                <p class="card empty-state">还没有文章。</p>
-            }
-            else
-            {
-                @await PartialAsync(new Shared__ArticleList { Model = Model.Articles })
-            }
-            @if (Model.Pagination.TotalPages > 1)
-            {
-                <nav class="pagination" aria-label="文章列表分页">
-                    @if (Model.Pagination.PreviousUrl is { } previousUrl)
-                    {
-                        <a href="@previousUrl" rel="prev">← 上一页</a>
-                    }
-                    <span aria-current="page">第 @Model.Pagination.CurrentPage 页，共 @Model.Pagination.TotalPages 页</span>
-                    @if (Model.Pagination.NextUrl is { } nextUrl)
-                    {
-                        <a href="@nextUrl" rel="next">下一页 →</a>
-                    }
-                </nav>
-            }
+        <section class="home-feed" data-home-feed aria-labelledby="rf-articles-title" tabindex="-1">
+            <div data-page-content data-page="@Model.Pagination.CurrentPage" aria-busy="false">
+                @if (Model.Articles.Count == 0)
+                {
+                    <p class="card empty-state">还没有文章。</p>
+                }
+                else
+                {
+                    @await PartialAsync(new Shared__ArticleList { Model = Model.Articles })
+                }
+                @if (Model.Pagination.TotalPages > 1)
+                {
+                    <nav class="pagination" aria-label="文章列表分页">
+                        @if (Model.Pagination.PreviousUrl is { } previousUrl)
+                        {
+                            <a href="@(previousUrl + "#rf-articles")" rel="prev" data-page="@(Model.Pagination.CurrentPage - 1)">← 上一页</a>
+                        }
+                        <span aria-current="page">第 @Model.Pagination.CurrentPage 页，共 @Model.Pagination.TotalPages 页</span>
+                        @if (Model.Pagination.NextUrl is { } nextUrl)
+                        {
+                            <a href="@(nextUrl + "#rf-articles")" rel="next" data-page="@(Model.Pagination.CurrentPage + 1)">下一页 →</a>
+                        }
+                    </nav>
+                }
+            </div>
+            <p class="pagination-status" data-pagination-status role="status" aria-live="polite"></p>
         </section>
         @if (theme.Profile is { } profile)
         {
