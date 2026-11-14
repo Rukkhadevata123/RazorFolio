@@ -1,0 +1,112 @@
+<Project>
+  <PropertyGroup>
+    <_NativeRepositoryRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</_NativeRepositoryRoot>
+  </PropertyGroup>
+
+  <Target Name="PrepareNativePackage" BeforeTargets="PrepareForPublish"
+          Condition="'$(CreateNativePackage)' == 'true'">
+    <Error Condition="'$(PublishAot)' != 'true' or '$(PackAsTool)' == 'true'"
+           Text="Native packaging requires the NativeAot publish profile." />
+    <Error Condition="'$(RuntimeIdentifier)' != 'win-x64' and '$(RuntimeIdentifier)' != 'linux-x64'"
+           Text="Native packages currently support win-x64 and linux-x64 only." />
+    <Error Condition="('$(RuntimeIdentifier)' == 'win-x64' and !$([MSBuild]::IsOSPlatform('Windows'))) or ('$(RuntimeIdentifier)' == 'linux-x64' and !$([MSBuild]::IsOSPlatform('Linux')))"
+           Text="Build each native package on its target operating system." />
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(Version)', '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$'))"
+           Text="Use a version such as 0.1.0 or 0.1.0-preview.1, without path characters or build metadata." />
+    <PropertyGroup>
+      <NativePackageRoot Condition="'$(NativePackageRoot)' == ''">$(_NativeRepositoryRoot)/artifacts/releases</NativePackageRoot>
+      <NativePackageRoot>$([System.IO.Path]::GetFullPath('$(NativePackageRoot)'))</NativePackageRoot>
+      <NativeBuildBaseline Condition="'$(NativeBuildBaseline)' == ''">local</NativeBuildBaseline>
+      <_NativePackageName>razorfolio-$(Version)-$(RuntimeIdentifier)</_NativePackageName>
+      <_NativeWork>$(NativePackageRoot)/.work/$(_NativePackageName)</_NativeWork>
+      <_NativeStage>$(_NativeWork)/package</_NativeStage>
+      <_NativeExtracted>$(_NativeWork)/extracted</_NativeExtracted>
+      <_NativeExtension Condition="'$(RuntimeIdentifier)' == 'win-x64'">zip</_NativeExtension>
+      <_NativeExtension Condition="'$(RuntimeIdentifier)' == 'linux-x64'">tar.gz</_NativeExtension>
+      <_NativeExecutable Condition="'$(RuntimeIdentifier)' == 'win-x64'">rf.exe</_NativeExecutable>
+      <_NativeExecutable Condition="'$(RuntimeIdentifier)' == 'linux-x64'">rf</_NativeExecutable>
+      <_NativeArchive>$(NativePackageRoot)/$(_NativePackageName).$(_NativeExtension)</_NativeArchive>
+    </PropertyGroup>
+    <Error Condition="Exists('$(_NativeWork)') or Exists('$(_NativeArchive)') or Exists('$(_NativeArchive).sha256')"
+           Text="Package output already exists. Use a new version or an empty NativePackageRoot; existing packages are never overwritten." />
+  </Target>
+
+  <Target Name="PackageNative" AfterTargets="Publish" Condition="'$(CreateNativePackage)' == 'true'">
+    <Error Condition="'$(SourceRevisionId)' == ''"
+           Text="SourceRevisionId is required. Build from a Git checkout, or pass the revision when building a source snapshot." />
+    <ItemGroup>
+      <_NativeRuntime Include="@(ResolvedRuntimePack)" Condition="'%(FrameworkName)' == 'Microsoft.NETCore.App'" />
+      <_NativeAspNet Include="@(ResolvedRuntimePack)" Condition="'%(FrameworkName)' == 'Microsoft.AspNetCore.App'" />
+      <_NativeNotices Include="@(_NativeRuntime->'%(PackageDirectory)/LICENSE.TXT')">
+        <Destination>dotnet-LICENSE.txt</Destination>
+      </_NativeNotices>
+      <_NativeNotices Include="@(_NativeRuntime->'%(PackageDirectory)/THIRD-PARTY-NOTICES.TXT')">
+        <Destination>dotnet-THIRD-PARTY-NOTICES.txt</Destination>
+      </_NativeNotices>
+      <_NativeNotices Include="@(_NativeAspNet->'%(PackageDirectory)/LICENSE.txt')">
+        <Destination>aspnetcore-LICENSE.txt</Destination>
+      </_NativeNotices>
+      <_NativeNotices Include="@(_NativeAspNet->'%(PackageDirectory)/THIRD-PARTY-NOTICES.TXT')">
+        <Destination>aspnetcore-THIRD-PARTY-NOTICES.txt</Destination>
+      </_NativeNotices>
+      <_NativeNotices Include="$(_NativeRepositoryRoot)/licenses/Markdig.txt">
+        <Destination>Markdig.txt</Destination>
+      </_NativeNotices>
+      <_NativeNotices Include="$(_NativeRepositoryRoot)/licenses/YamlDotNet.txt">
+        <Destination>YamlDotNet.txt</Destination>
+      </_NativeNotices>
+      <_NativeNotices Include="$(_NativeRepositoryRoot)/src/RazorFolio.Themes.Default/Scripts/vendor/highlight-LICENSE.txt">
+        <Destination>highlight-LICENSE.txt</Destination>
+      </_NativeNotices>
+      <_NativeNotices Include="$(_NativeRepositoryRoot)/src/RazorFolio.Themes.Default/Scripts/vendor/mermaid-LICENSE.txt">
+        <Destination>mermaid-LICENSE.txt</Destination>
+      </_NativeNotices>
+      <_NativeNotices Include="$(_NativeRepositoryRoot)/src/RazorFolio.Themes.Default/Scripts/vendor/katex/LICENSE.txt">
+        <Destination>katex-LICENSE.txt</Destination>
+      </_NativeNotices>
+    </ItemGroup>
+    <Error Condition="'@(_NativeRuntime)' == '' or '@(_NativeAspNet)' == ''" Text="Runtime pack license sources were not resolved." />
+    <PropertyGroup>
+      <_NativeRuntimeVersion>@(_NativeRuntime->'%(NuGetPackageVersion)')</_NativeRuntimeVersion>
+      <_NativeAspNetVersion>@(_NativeAspNet->'%(NuGetPackageVersion)')</_NativeAspNetVersion>
+    </PropertyGroup>
+    <MakeDir Directories="$(_NativeStage)/licenses;$(_NativeExtracted)" />
+    <!-- Copy only distribution files, never the whole publish directory or its debug symbols. -->
+    <Copy SourceFiles="$(PublishDir)$(_NativeExecutable)" DestinationFolder="$(_NativeStage)" />
+    <Copy SourceFiles="$(_NativeRepositoryRoot)/LICENSE" DestinationFolder="$(_NativeStage)" />
+    <Copy SourceFiles="$(_NativeRepositoryRoot)/docs/native-package.md" DestinationFiles="$(_NativeStage)/README.md" />
+    <Copy SourceFiles="@(_NativeNotices)" DestinationFiles="@(_NativeNotices->'$(_NativeStage)/licenses/%(Destination)')" />
+    <Error Condition="!Exists('$(_NativeStage)/licenses/Markdig.txt') or !Exists('$(_NativeStage)/licenses/YamlDotNet.txt')"
+           Text="Managed dependency licenses are missing from the staged package." />
+    <WriteLinesToFile File="$(_NativeStage)/build-info.txt" Overwrite="false"
+                      Lines="version=$(Version);rid=$(RuntimeIdentifier);source=$(SourceRevisionId);sdk=$(NETCoreSdkVersion);configuration=$(Configuration);baseline=$(NativeBuildBaseline);dotnet-runtime=$(_NativeRuntimeVersion);aspnetcore-runtime=$(_NativeAspNetVersion)" />
+
+    <ZipDirectory Condition="'$(RuntimeIdentifier)' == 'win-x64'" SourceDirectory="$(_NativeStage)"
+                  DestinationFile="$(_NativeArchive)" Overwrite="false" />
+    <Exec Condition="'$(RuntimeIdentifier)' == 'linux-x64'"
+          Command="chmod 644 &quot;$(_NativeStage)/LICENSE&quot; &quot;$(_NativeStage)/README.md&quot; &quot;$(_NativeStage)/build-info.txt&quot; &quot;$(_NativeStage)/licenses/&quot;*" />
+    <Exec Condition="'$(RuntimeIdentifier)' == 'linux-x64'" Command="chmod 755 &quot;$(_NativeStage)/rf&quot;" />
+    <Exec Condition="'$(RuntimeIdentifier)' == 'linux-x64'"
+          Command="tar --sort=name --owner=0 --group=0 --numeric-owner --mode=u+rwX,go+rX -czf &quot;$(_NativeArchive)&quot; -C &quot;$(_NativeStage)&quot; ." />
+
+    <!-- Exercise the archive's executable, including Linux permissions, before writing its checksum. -->
+    <Unzip Condition="'$(RuntimeIdentifier)' == 'win-x64'" SourceFiles="$(_NativeArchive)" DestinationFolder="$(_NativeExtracted)" />
+    <Exec Condition="'$(RuntimeIdentifier)' == 'linux-x64'"
+          Command="tar -xzf &quot;$(_NativeArchive)&quot; -C &quot;$(_NativeExtracted)&quot;" />
+    <Exec Command="&quot;$(_NativeExtracted)/$(_NativeExecutable)&quot; --version" ConsoleToMSBuild="true">
+      <Output TaskParameter="ConsoleOutput" ItemName="_NativeReportedVersion" />
+    </Exec>
+    <Error Condition="'@(_NativeReportedVersion)' != 'RazorFolio $(InformationalVersion)'"
+           Text="The packaged executable reports an unexpected version: @(_NativeReportedVersion)." />
+    <Exec Command="&quot;$(_NativeExtracted)/$(_NativeExecutable)&quot; new &quot;$(_NativeWork)/smoke-site&quot;" />
+    <Exec Command="&quot;$(_NativeExtracted)/$(_NativeExecutable)&quot; build --site &quot;$(_NativeWork)/smoke-site&quot;" />
+    <Error Condition="!Exists('$(_NativeWork)/smoke-site/public/hello.html') or !Exists('$(_NativeWork)/smoke-site/public/search-index.json')"
+           Text="The unpacked native CLI did not produce the expected smoke site." />
+    <GetFileHash Files="$(_NativeArchive)" Algorithm="SHA256">
+      <Output TaskParameter="Items" ItemName="_NativeArchiveHash" />
+    </GetFileHash>
+    <WriteLinesToFile File="$(_NativeArchive).sha256" Overwrite="false"
+                      Lines="@(_NativeArchiveHash->'%(FileHash)  $(_NativePackageName).$(_NativeExtension)')" />
+    <Message Importance="high" Text="Verified native package: $(_NativeArchive)" />
+  </Target>
+</Project>

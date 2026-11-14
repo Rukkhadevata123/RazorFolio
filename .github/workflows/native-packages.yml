@@ -1,0 +1,59 @@
+name: Native packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Package version (for example 0.1.0-preview.1)
+        required: true
+        default: 0.1.0-dev.1
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            rid: win-x64
+          - os: ubuntu-24.04
+            rid: linux-x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+      - name: Install Linux native prerequisites
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y clang zlib1g-dev
+      - name: Publish, package and verify extraction
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_RID: ${{ matrix.rid }}
+          RELEASE_BASELINE: ${{ matrix.os }}
+        run: |
+          dotnet publish src/RazorFolio.Cli -c Release -r $env:RELEASE_RID `
+            -p:PublishProfile=NativeAot -p:CreateNativePackage=true `
+            "-p:Version=$env:RELEASE_VERSION" "-p:NativeBuildBaseline=$env:RELEASE_BASELINE" `
+            -p:ContinuousIntegrationBuild=true -o "artifacts/publish/$env:RELEASE_RID"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload verified packages
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: razorfolio-${{ matrix.rid }}
+          path: |
+            artifacts/releases/*.zip
+            artifacts/releases/*.tar.gz
+            artifacts/releases/*.sha256
+          if-no-files-found: error
+          retention-days: 14
