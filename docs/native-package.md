@@ -1,17 +1,28 @@
 # RazorFolio 原生版
 
-将整个压缩包解压到独立目录，无需安装 .NET。Windows 使用 `rf.exe`，Linux 使用 `rf`；以下以当前目录运行示例：
+从 [Releases](https://github.com/Rukkhadevata123/RazorFolio/releases) 下载 Windows x64 的 `.zip` 或 Linux x64 的 `.tar.gz`，将整个压缩包解压到独立目录，无需安装 .NET。Windows 使用 `rf.exe`，Linux 使用 `rf`。
+
+## 创建与预览
+
+以下命令在解压目录中运行：
 
 ```text
 ./rf new ../my-blog
 ./rf dev --site ../my-blog
-./rf build --site ../my-blog
-./rf preview --site ../my-blog
 ```
 
 Windows 将 `./rf` 换成 `.\rf.exe`。`new` 的目标须不存在或为空。`dev` 地址为 `http://127.0.0.1:8080/`；`preview` 会同时提供配置 `url` 中的子路径，访问入口见终端输出。可用 `--port` 指定端口，Ctrl+C 退出。
 
 文章放在站点 `content/`，资源放在 `static/`，配置文件为 `razorfolio.json`。`dev` 包含草稿并监听修改；`build` 生成正式 `public/`，部署时上传该目录。
+
+结束开发预览后按 Ctrl+C，再构建和检查正式站点：
+
+```text
+./rf build --site ../my-blog
+./rf preview --site ../my-blog
+```
+
+## 校验与升级
 
 运行 `./rf --version` 查看版本。包内 `build-info.txt` 记录版本、源码提交、SDK 和构建基线；`.sha256` 文件用于核对下载完整性。Linux 包需要 x64、glibc 环境，具体构建基线见包内记录。
 

@@ -50,6 +50,6 @@
 
 工作流将 `content/`、`static/` 和配置复制到临时站点，在副本中设置部署 URL，再生成新的 `public/`。源码配置保持原样，仓库内已有的输出和缓存也不会混入此次发布。
 
-生产构建排除草稿，生成主题资源、搜索索引、RSS、sitemap 和 `404.html`。发布后检查首页、文章、搜索、图片和一个不存在的深层地址。本地可填写相同的 `url`，通过 `rf build` 和 `rf preview` 检查路径，见[部署路径与 404](configuration.md#部署路径与-404)。
+发布后检查首页、文章、搜索、图片和一个不存在的深层地址。本地可填写相同的 `url`，通过 `rf build` 和 `rf preview` 检查正式产物，见[部署路径与 404](configuration.md#部署路径与-404)。
 
 更新文章或升级生成器后，再次手动运行所选工作流。Action 固定到具体提交，RazorFolio 固定到填写的版本。部署机制参考 [GitHub Pages 自定义工作流](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)和 [Git 分支发布 Action](https://github.com/peaceiris/actions-gh-pages)。

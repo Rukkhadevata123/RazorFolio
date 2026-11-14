@@ -14,10 +14,10 @@ with a newline between files, in this order:
 
 License source: https://raw.githubusercontent.com/highlightjs/highlight.js/11.11.1/LICENSE
 
-Concatenated bundle SHA-256: `8ef1e46c2ad0a6ca3afea954f4c83529f3b9ca36d0f7bfd229fdde887acda42a`.
+Concatenated bundle SHA-256 (LF line endings, as stored in Git): `8ef1e46c2ad0a6ca3afea954f4c83529f3b9ca36d0f7bfd229fdde887acda42a`.
 
 The browser build contains the upstream common language set; the additional grammars cover
-the existing blog's build recipes and shell examples. No automatic language detection is used.
+CMake, Dockerfile and PowerShell examples. No automatic language detection is used.
 Unspecified or unsupported languages remain plain text. Language labels come from the Markdown fence.
 
 The bundle and license are embedded in the .NET assembly and copied to the generated site's assets.
@@ -37,8 +37,8 @@ Vendored **@mermaid-js/tiny 12.3.0**, MIT license (see `mermaid-LICENSE.txt`).
 - Script SHA-256: `c41f5236091b83f524c4940f97a16b2b14a76f21ff84aea4fd6b66421d8a2a9a`.
 
 The official Tiny build is a single browser script (2,852,578 bytes). It omits mindmaps,
-architecture diagrams, KaTeX and ELK; this integration is verified with flowcharts and sequence
-diagrams from the existing blog. Both the script and license are embedded and copied to output.
+architecture diagrams, KaTeX and ELK; the integration supports flowcharts and sequence
+diagrams. Both the script and license are embedded and copied to output.
 `Scripts/mermaid.js` loads the runtime from the same site's assets only when a Mermaid code
 fence is present. Readers and site builds do not require npm, a CDN or a diagram server.
 

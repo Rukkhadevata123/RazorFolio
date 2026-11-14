@@ -1,12 +1,14 @@
 # RazorFolio
 
-C# / .NET 11 静态博客生成器，命令名为 `rf`。使用 Markdig、YamlDotNet 和构建时编译的 Razor 模板，可发布为无需安装 .NET 的原生程序。仍在开发中。
+C# / .NET 11 静态博客生成器，命令名为 `rf`。使用 Markdig、YamlDotNet 和构建时编译的 Razor 模板，可发布为无需安装 .NET 的原生程序。
 
-支持明暗主题、全文搜索、代码高亮、Mermaid、数学公式、目录、分页、分类/标签/年份归档、草稿预览、RSS 和 sitemap。
+支持明暗主题、全文搜索、代码高亮、Mermaid、数学公式、目录、分页、分类/标签/年份归档、图片预览、打印和草稿预览。配置网站 URL 后，正式构建还会生成 RSS 和 sitemap。
 
 ## 快速开始
 
-从源码运行需要 .NET SDK 11.0.100 或同一 11.0.1xx 功能带的更新补丁（见 `global.json`）：
+从 [Releases](https://github.com/Rukkhadevata123/RazorFolio/releases) 下载 Windows 或 Linux x64 原生包，解压后即可运行，详见[原生包使用](docs/native-package.md)。
+
+也可从源码运行，需要 .NET SDK 11.0.100 或同一 11.0.1xx 功能带的更新补丁（见 `global.json`）：
 
 ```bash
 dotnet build
@@ -40,7 +42,7 @@ my-blog/
 ```
 
 - [站点与主题配置](docs/configuration.md)：导航、首页、作者卡片、部署 URL。
-- [写文章](docs/writing.md)：front matter、链接、代码、图表、公式与当前边界。
+- [写文章](docs/writing.md)：文章信息、图片路径、链接、代码、图表与公式。
 - [原生包使用](docs/native-package.md)：解压、运行和升级。
 - [GitHub Pages 部署](docs/github-pages.md)：Actions 直接部署或发布到指定仓库、分支。
 

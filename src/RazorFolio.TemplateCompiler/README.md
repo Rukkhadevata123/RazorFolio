@@ -17,6 +17,6 @@
 
 每次构建重新核对模板集合，只写入内容发生变化的生成文件，并删除已移除模板对应的生成文件。生成保留 `.cshtml` 源位置，Razor 语法错误和生成后的 C# 类型错误均会阻止构建。
 
-生成的主题代码不依赖 `Microsoft.AspNetCore.App`。完整 CLI 的原生发布与验证记录见[发布说明](../../docs/releasing.md)。
+生成的主题代码不依赖 `Microsoft.AspNetCore.App`。完整 CLI 的原生发布方法见[发布说明](../../docs/releasing.md)。
 
-本机对照输入、原 MVC 快照、NativeAOT 验证程序和构建生命周期检查保存在被忽略的 `artifacts/template-migration/`，不作为工具包内容。
+修改编译器时，检查生成结果、源位置诊断、模板新增/移除后的重建，以及 NativeAOT 发布。
