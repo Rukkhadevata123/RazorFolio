@@ -1,3 +1,5 @@
+using RazorFolio.Core.Configuration;
+
 namespace RazorFolio.Core.Content;
 
 public sealed record ArticleInfo(
@@ -7,4 +9,7 @@ public sealed record ArticleInfo(
     string? Description,
     IReadOnlyList<string> Tags,
     IReadOnlyList<string> Categories,
-    bool IsArticle);
+    bool IsArticle)
+{
+    public LicenseOptions? License { get; init; }
+}

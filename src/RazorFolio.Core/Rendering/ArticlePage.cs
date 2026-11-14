@@ -1,4 +1,5 @@
 using RazorFolio.Core.Content;
+using RazorFolio.Core.Configuration;
 
 namespace RazorFolio.Core.Rendering;
 
@@ -11,4 +12,7 @@ public sealed record ArticlePage(
     string HomeUrl,
     IReadOnlyList<TagLink> Tags,
     IReadOnlyList<CategoryLink> Categories,
-    ArticleNavigation Navigation) : IPageModel;
+    ArticleNavigation Navigation) : IPageModel
+{
+    public LicenseOptions? License => Info.License ?? (Info.IsArticle ? Context.Site.License : null);
+}

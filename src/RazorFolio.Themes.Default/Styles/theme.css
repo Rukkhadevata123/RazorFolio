@@ -542,6 +542,18 @@ h1 {
     padding: clamp(1.5rem, 3vw, 3rem);
     border-radius: 12px;
 }
+.article-license {
+    margin-top: 2rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: .8rem;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+.article-license a {
+    text-underline-offset: .2em;
+}
 .article-header {
     padding-bottom: 1.5rem;
     border-bottom: 1px solid var(--border);

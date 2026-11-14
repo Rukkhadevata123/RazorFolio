@@ -74,6 +74,20 @@
             }
             @* The HTML is rendered from trusted author content, including the original leading H1. *@
             <div class="article-body">@Raw(Model.BodyHtml)</div>
+            @if (Model.License is { Enabled: true } license)
+            {
+                <footer class="article-license" aria-label="文章许可">
+                    <span>本文许可：</span>
+                    @if (license.Url is { } licenseUrl)
+                    {
+                        <a href="@licenseUrl" rel="license">@license.Name</a>
+                    }
+                    else
+                    {
+                        <span>@license.Name</span>
+                    }
+                </footer>
+            }
         </article>
         @if (Model.Navigation.Previous is not null || Model.Navigation.Next is not null)
         {

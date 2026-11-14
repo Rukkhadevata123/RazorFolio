@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Markdig;
 using Markdig.Extensions.Yaml;
+using RazorFolio.Core.Configuration;
 using RazorFolio.Core.Serialization;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
@@ -61,7 +62,10 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
         var description = string.IsNullOrWhiteSpace(metadata.Description) ? null : metadata.Description.Trim();
         var info = new ArticleInfo(
             title, date, metadata.Draft, description,
-            NormalizeNames(metadata.Tags), NormalizeNames(metadata.Category), metadata.Article);
+            NormalizeNames(metadata.Tags), NormalizeNames(metadata.Category), metadata.Article)
+        {
+            License = LicenseConfiguration.Normalize(metadata.License, sourcePath)
+        };
         return new ParsedArticle(
             info, document, ContentUrl.Normalize(metadata.Url, sourcePath), NormalizeAliases(metadata.Aliases, sourcePath));
     }

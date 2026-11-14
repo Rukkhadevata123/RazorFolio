@@ -33,6 +33,25 @@ draft: false
 
 `content/` 中的 `.md` 文件会参与构建，包括子目录。未来日期的文章照常发布；暂不发布的内容使用 `draft: true`。YAML 中未识别的字段会忽略；目前 `updated`、`cover`、`star` 没有对应展示。
 
+## 文章许可
+
+文章默认使用 `razorfolio.json` 的 `license`。在 front matter 中填写同名对象可完整覆盖默认协议：
+
+```yaml
+license:
+  name: "CC BY-SA 4.0"
+  url: "https://creativecommons.org/licenses/by-sa/4.0/deed.zh-hans"
+```
+
+`name` 为必填名称，`url` 为可选的完整 HTTP(S) 地址；省略链接时只显示文字。单篇隐藏许可标识：
+
+```yaml
+license:
+  enabled: false
+```
+
+省略 `license` 或写 `license: null` 会继承站点默认值。普通页（`article: false`）仅在自身显式配置许可时显示。选择适用于文章的协议，第三方内容可在正文中另外注明。
+
 ## 标题与文章链接
 
 正文开头的 H1 会移到文章头部，保留格式与锚点；没有开头 H1 时使用 `title`，未填标题则使用文件名。主题自动生成 H2–H6 目录，`{#id}` 可固定标题锚点。

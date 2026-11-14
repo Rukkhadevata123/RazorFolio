@@ -73,6 +73,14 @@
     .article-body :is(h2, h3, h4, h5, h6) {
         break-after: avoid;
     }
+    .article-license {
+        color: black;
+        break-inside: avoid;
+    }
+    .article-license a::after {
+        content: " (" attr(href) ")";
+        font-size: .85em;
+    }
     .article-body p {
         orphans: 3;
         widows: 3;

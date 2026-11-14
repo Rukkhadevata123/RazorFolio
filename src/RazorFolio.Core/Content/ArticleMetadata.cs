@@ -1,8 +1,11 @@
+using RazorFolio.Core.Configuration;
+
 namespace RazorFolio.Core.Content;
 
 public sealed class ArticleMetadata
 {
     public string? Title { get; set; }
+    public LicenseOptions? License { get; set; }
     public string? Description { get; set; }
     public string? Url { get; set; }
     public List<string?>? Aliases { get; set; }

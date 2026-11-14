@@ -45,6 +45,18 @@
 | `pageSize` | 每页文章数，默认 `20`，须为正整数 |
 | `url` | 正式网站的完整入口，含部署子路径，见下节 |
 | `navigation` | 顶栏链接，按配置顺序显示 |
+| `license` | 文章默认许可，含 `name`、可选 `url` 和 `enabled`（默认 `true`）；省略时不显示 |
+
+例如，在 `razorfolio.json` 顶层设置所有文章的默认协议：
+
+```json
+"license": {
+  "name": "CC BY 4.0",
+  "url": "https://creativecommons.org/licenses/by/4.0/deed.zh-hans"
+}
+```
+
+许可显示在正文末尾右下角，打印时保留名称并附上链接地址。启用时 `name` 必填，`url` 可省略或填写完整 HTTP(S) 地址。单篇覆盖和隐藏见[文章许可](writing.md#文章许可)。
 
 ## 默认主题
 
