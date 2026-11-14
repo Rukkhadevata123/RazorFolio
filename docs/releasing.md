@@ -66,11 +66,9 @@ Windows 用 `Get-FileHash <压缩包> -Algorithm SHA256` 与对应 `.sha256` 比
 
 工作流仅通过 **Run workflow** 手动运行，提交代码和推送标签均不会触发。发布任务使用仓库自带的 `GITHUB_TOKEN`，具有 `contents: write` 权限；NuGet 包按下节单独构建和发布。
 
-[首次 CI 运行](https://github.com/Rukkhadevata123/RazorFolio/actions/runs/43572950363)已通过两个平台的发布、组包、解包运行与上传检查（源码提交 `66b77ec`）。
-
 ## .NET 工具版
 
-保留原有工具分发方式，运行需要 .NET 11 与 ASP.NET Core 11：
+工具版运行需要 .NET 11 与 ASP.NET Core 11：
 
 ```bash
 dotnet pack src/RazorFolio.Cli -c Release -p:Version=0.1.0-preview.1 -o artifacts/packages

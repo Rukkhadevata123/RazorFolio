@@ -1,0 +1,99 @@
+name: Deploy blog to GitHub Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      razorfolio_version:
+        description: RazorFolio release version without v (for example 0.1.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read Pages configuration
+        id: pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - name: Download native RazorFolio
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RAZORFOLIO_VERSION: ${{ inputs.razorfolio_version }}
+        run: |
+          if [[ ! "$RAZORFOLIO_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]; then
+            echo "::error::Enter a release version such as 0.1.0, without the v prefix."
+            exit 1
+          fi
+          archive="razorfolio-$RAZORFOLIO_VERSION-linux-x64.tar.gz"
+          tool="$RUNNER_TEMP/razorfolio"
+          mkdir -p "$tool/package"
+          gh release download "v$RAZORFOLIO_VERSION" --repo Rukkhadevata123/RazorFolio \
+            --pattern "$archive" --pattern "$archive.sha256" --dir "$tool"
+          cd "$tool"
+          sha256sum --check "$archive.sha256"
+          tar -xzf "$archive" -C package
+          ./package/rf --version
+      - name: Set deployment URL and build
+        shell: bash
+        env:
+          PAGES_BASE_URL: ${{ steps.pages.outputs.base_url }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import shutil
+          from pathlib import Path
+
+          site = Path(os.environ["RUNNER_TEMP"]) / "site"
+          site.mkdir()
+          shutil.copytree("content", site / "content")
+          if Path("static").exists():
+              shutil.copytree("static", site / "static")
+          path = Path("razorfolio.json")
+          config = json.loads(path.read_text(encoding="utf-8-sig")) if path.exists() else {}
+          if not isinstance(config, dict):
+              raise ValueError("razorfolio.json must contain a JSON object")
+          config["url"] = os.environ["PAGES_BASE_URL"].rstrip("/") + "/"
+          (site / "razorfolio.json").write_text(
+              json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          PY
+          "$RUNNER_TEMP/razorfolio/package/rf" build --site "$RUNNER_TEMP/site"
+          test -f "$RUNNER_TEMP/site/public/index.html"
+          if [[ ! -f "$RUNNER_TEMP/site/public/404.html" ]]; then
+            echo "::error::The site build did not generate public/404.html."
+            exit 1
+          fi
+      - name: Upload generated site
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ runner.temp }}/site/public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

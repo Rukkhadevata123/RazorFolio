@@ -42,6 +42,7 @@ my-blog/
 - [站点与主题配置](docs/configuration.md)：导航、首页、作者卡片、部署 URL。
 - [写文章](docs/writing.md)：front matter、链接、代码、图表、公式与当前边界。
 - [原生包使用](docs/native-package.md)：解压、运行和升级。
+- [GitHub Pages 部署](docs/github-pages.md)：Actions 直接部署或发布到指定仓库、分支。
 
 部署时上传 `public/`，其中包含带主题的 `404.html`。子路径部署填写配置 `url`，具体用法见[部署路径与 404](docs/configuration.md#部署路径与-404)。主题资源和浏览器库随生成器提供；写作者只需维护站点内容。
 

@@ -1,0 +1,158 @@
+name: Publish blog to a Git branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      razorfolio_version:
+        description: RazorFolio release version without v (for example 0.1.0)
+        required: true
+        type: string
+      target_repository:
+        description: Target owner/repo (leave empty for this repository)
+        required: false
+        type: string
+      publish_branch:
+        description: Branch dedicated to generated site files
+        required: true
+        default: gh-pages
+        type: string
+      site_url:
+        description: Full website URL (for example https://example.github.io/blog/)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-branch-${{ inputs.target_repository || github.repository }}-${{ inputs.publish_branch }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate publication target
+        id: target
+        shell: bash
+        env:
+          TARGET_REPOSITORY: ${{ inputs.target_repository || github.repository }}
+          PUBLISH_BRANCH: ${{ inputs.publish_branch }}
+          SITE_URL: ${{ inputs.site_url }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          PAGES_DEPLOY_TOKEN: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+        run: |
+          if [[ -z "$PAGES_DEPLOY_TOKEN" ]]; then
+            echo "::error::Set the PAGES_DEPLOY_TOKEN secret with write access to the target repository."
+            exit 1
+          fi
+          if [[ ! "$TARGET_REPOSITORY" =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9_.-]+$ ]]; then
+            echo "::error::The target repository must use owner/repo format."
+            exit 1
+          fi
+          if [[ "$PUBLISH_BRANCH" == -* ]] || ! git check-ref-format "refs/heads/$PUBLISH_BRANCH"; then
+            echo "::error::Enter a valid Git branch name."
+            exit 1
+          fi
+          if [[ "${TARGET_REPOSITORY,,}" == "${GITHUB_REPOSITORY,,}" ]] && \
+             [[ "$PUBLISH_BRANCH" == "$DEFAULT_BRANCH" || "refs/heads/$PUBLISH_BRANCH" == "$GITHUB_REF" ]]; then
+            echo "::error::Choose a publication branch separate from the source and default branches."
+            exit 1
+          fi
+          echo "repository=$TARGET_REPOSITORY" >> "$GITHUB_OUTPUT"
+          python3 - <<'PY'
+          import os
+          from urllib.parse import urlsplit
+
+          url = os.environ["SITE_URL"]
+          parsed = urlsplit(url)
+          if (parsed.scheme not in ("http", "https") or not parsed.hostname
+                  or parsed.username is not None or parsed.password is not None
+                  or "?" in url or "#" in url or any(char.isspace() or ord(char) < 32 for char in url)):
+              raise ValueError("Use an absolute HTTP(S) website URL without credentials, query or fragment")
+          host = parsed.hostname.encode("idna").decode("ascii").lower()
+          cname = "" if host.endswith(".github.io") or host == "github.io" else host
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"cname={cname}\n")
+          PY
+      - name: Download native RazorFolio
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RAZORFOLIO_VERSION: ${{ inputs.razorfolio_version }}
+        run: |
+          if [[ ! "$RAZORFOLIO_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]; then
+            echo "::error::Enter a release version such as 0.1.0, without the v prefix."
+            exit 1
+          fi
+          archive="razorfolio-$RAZORFOLIO_VERSION-linux-x64.tar.gz"
+          tool="$RUNNER_TEMP/razorfolio"
+          mkdir -p "$tool/package"
+          gh release download "v$RAZORFOLIO_VERSION" --repo Rukkhadevata123/RazorFolio \
+            --pattern "$archive" --pattern "$archive.sha256" --dir "$tool"
+          cd "$tool"
+          sha256sum --check "$archive.sha256"
+          tar -xzf "$archive" -C package
+          ./package/rf --version
+      - name: Set deployment URL and build
+        shell: bash
+        env:
+          PAGES_BASE_URL: ${{ inputs.site_url }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import shutil
+          from pathlib import Path
+
+          site = Path(os.environ["RUNNER_TEMP"]) / "site"
+          site.mkdir()
+          shutil.copytree("content", site / "content")
+          if Path("static").exists():
+              shutil.copytree("static", site / "static")
+          path = Path("razorfolio.json")
+          config = json.loads(path.read_text(encoding="utf-8-sig")) if path.exists() else {}
+          if not isinstance(config, dict):
+              raise ValueError("razorfolio.json must contain a JSON object")
+          config["url"] = os.environ["PAGES_BASE_URL"].rstrip("/") + "/"
+          (site / "razorfolio.json").write_text(
+              json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          PY
+          "$RUNNER_TEMP/razorfolio/package/rf" build --site "$RUNNER_TEMP/site"
+          test -f "$RUNNER_TEMP/site/public/index.html"
+          if [[ ! -f "$RUNNER_TEMP/site/public/404.html" ]]; then
+            echo "::error::The site build did not generate public/404.html."
+            exit 1
+          fi
+      - name: Set branch domain
+        shell: bash
+        env:
+          PAGES_CNAME: ${{ steps.target.outputs.cname }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RUNNER_TEMP"]) / "site/public/CNAME"
+          cname = os.environ["PAGES_CNAME"]
+          if cname:
+              path.write_text(cname + "\n", encoding="utf-8")
+          else:
+              path.unlink(missing_ok=True)
+          PY
+      - name: Publish generated files
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
+        with:
+          personal_token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+          external_repository: ${{ steps.target.outputs.repository }}
+          publish_branch: ${{ inputs.publish_branch }}
+          publish_dir: ${{ runner.temp }}/site/public
+          enable_jekyll: false
+          force_orphan: false
+          keep_files: false
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
