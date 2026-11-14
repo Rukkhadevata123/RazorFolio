@@ -266,12 +266,15 @@ public sealed class SiteBuilder(
 
         if (generateMetadata)
         {
-            string[] urls =
+            SitemapEntry[] entries =
             [
-                .. reservedPaths.Concat(pagePaths)
-                    .Select(path => PageUrl.GetAbsolute(path, outputDirectory, configuration.Url)!)
+                .. reservedPaths.Select(path => new SitemapEntry(
+                    PageUrl.GetAbsolute(path, outputDirectory, configuration.Url)!)),
+                .. outputs.Select(output => new SitemapEntry(
+                    PageUrl.GetAbsolute(output.OutputPath, outputDirectory, configuration.Url)!,
+                    output.Article.Info.Updated ?? output.Article.Info.Date))
             ];
-            await SitemapWriter.WriteAsync(sitemapPath, urls, cancellationToken);
+            await SitemapWriter.WriteAsync(sitemapPath, entries, cancellationToken);
             await RssWriter.WriteAsync(feedPath, configuration, orderedArticles, cancellationToken);
         }
 

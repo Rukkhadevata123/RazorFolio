@@ -46,17 +46,11 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
             ? Path.GetFileNameWithoutExtension(sourcePath)
             : metadata.Title.Trim();
 
-        DateOnly? date = null;
-        if (metadata.Date is not null)
+        var date = ParseDate(metadata.Date, "date", sourcePath);
+        var updated = ParseDate(metadata.Updated, "updated", sourcePath);
+        if (updated < date)
         {
-            if (!DateOnly.TryParseExact(metadata.Date.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture,
-                    DateTimeStyles.None, out var parsedDate))
-            {
-                throw new InvalidDataException(
-                    $"Invalid date in '{sourcePath}'. Use a valid yyyy-MM-dd date.");
-            }
-
-            date = parsedDate;
+            throw new InvalidDataException($"Invalid updated in '{sourcePath}'. It must not be earlier than date.");
         }
 
         var description = string.IsNullOrWhiteSpace(metadata.Description) ? null : metadata.Description.Trim();
@@ -64,11 +58,25 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
             title, date, metadata.Draft, description,
             NormalizeNames(metadata.Tags), NormalizeNames(metadata.Category), metadata.Article)
         {
+            Updated = updated,
             Star = metadata.Star,
             License = LicenseConfiguration.Normalize(metadata.License, sourcePath)
         };
         return new ParsedArticle(
             info, document, ContentUrl.Normalize(metadata.Url, sourcePath), NormalizeAliases(metadata.Aliases, sourcePath));
+    }
+
+    private static DateOnly? ParseDate(string? value, string field, string sourcePath)
+    {
+        if (value is null) return null;
+
+        if (!DateOnly.TryParseExact(value.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var date))
+        {
+            throw new InvalidDataException($"Invalid {field} in '{sourcePath}'. Use a valid yyyy-MM-dd date.");
+        }
+
+        return date;
     }
 
     private static ReadOnlyCollection<string> NormalizeAliases(List<string?>? aliases, string sourcePath)

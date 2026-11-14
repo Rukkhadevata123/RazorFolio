@@ -9,6 +9,7 @@
 title: 第一篇文章
 description: 列表中的简短介绍。
 date: 2026-11-13
+updated: 2026-11-14
 tags: [C#, 工具]
 category: [开发记录]
 draft: false
@@ -25,6 +26,7 @@ draft: false
 | --- | --- |
 | `title` / `description` | 标题与可选摘要；不自动截取摘要 |
 | `date` | 可选，格式为 `yyyy-MM-dd`；文章按日期倒序排列，无日期排在最后 |
+| `updated` | 可选更新日期，格式为 `yyyy-MM-dd`，不能早于 `date`；在正文头部显示，不改变文章排序 |
 | `tags` / `category` | 标签与并列分类列表 |
 | `draft: true` | 仅在开发预览中生成 |
 | `star: true` | 加入阅读页侧栏的“精选文章”，仍保留在分类列表中；默认 `false` |
@@ -32,7 +34,9 @@ draft: false
 | `url: /posts/hello.html` | 自定义站内输出地址，须以 `.html` 结尾 |
 | `aliases: [/old.html]` | 为旧地址生成静态跳转页 |
 
-`content/` 中的 `.md` 文件会参与构建，包括子目录。未来日期的文章照常发布；暂不发布的内容使用 `draft: true`。YAML 中未识别的字段会忽略；目前 `updated`、`cover` 没有对应展示。
+`content/` 中的 `.md` 文件会参与构建，包括子目录。未来日期的文章照常发布；暂不发布的内容使用 `draft: true`。YAML 中未识别的字段会忽略；目前 `cover` 没有对应展示。
+
+`updated` 由作者在内容更新时填写，普通页也可设置；省略或 `null` 时不显示更新时间。RSS 发布时间使用 `date`（UTC 零点），没有 `date` 时省略；sitemap 的最后更新时间优先使用 `updated`，其次使用 `date`，两者均未填写时省略。日期不从文件修改时间或构建时间推断。
 
 精选文章沿用文章排序：日期从新到旧，同日按输出路径排序，无日期排在最后。普通页（`article: false`）不进入精选；精选草稿仅在 `dev` 中显示。
 

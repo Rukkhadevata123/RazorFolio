@@ -10,6 +10,7 @@ public sealed class ArticleMetadata
     public string? Url { get; set; }
     public List<string?>? Aliases { get; set; }
     public string? Date { get; set; }
+    public string? Updated { get; set; }
     public bool Draft { get; set; }
     public bool Star { get; set; }
     public bool Article { get; set; } = true;

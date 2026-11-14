@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Xml.Linq;
 using RazorFolio.Core.Configuration;
@@ -37,6 +38,12 @@ public static class RssWriter
             new XElement("title", article.Info.Title),
             new XElement("link", url),
             new XElement("guid", new XAttribute("isPermaLink", "true"), url));
+        if (article.Info.Date is { } date)
+        {
+            var published = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            item.Add(new XElement("pubDate", published.ToString("r", CultureInfo.InvariantCulture)));
+        }
+
         if (article.Info.Description is { } description)
         {
             // RSS descriptions may be interpreted as HTML; preserve the author's plain text.

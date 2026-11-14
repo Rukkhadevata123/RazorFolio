@@ -79,7 +79,7 @@
 
 部署到域名根目录时，`url` 填写 `https://example.com/`；部署到子目录时，填写完整入口，例如 `https://example.com/blog/`。
 
-配置 `url` 后，正式页面带 canonical 地址，`build` 还会生成 `feed.xml` 和 `sitemap.xml`；`dev` 不生成这两个文件。RSS 收录按文章顺序排列的前 20 篇及其 `description`，目前不含全文和发布时间；sitemap 不含更新时间。
+配置 `url` 后，正式页面带 canonical 地址，`build` 还会生成 `feed.xml` 和 `sitemap.xml`；`dev` 不生成这两个文件。RSS 收录按文章顺序排列的前 20 篇及其 `description`，不含全文；`pubDate` 使用文章的 `date`，按 UTC 零点输出，没有日期时省略。sitemap 中文章和普通页的 `lastmod` 优先使用 `updated`，否则使用 `date`；没有日期的内容及首页、归档等汇总页省略 `lastmod`。
 
 构建会生成带主题的 `404.html`，提供返回首页、归档和搜索入口。它的资源和站内链接从配置的站点根路径定位，访问深层错误地址时也能加载样式。省略 `url` 时按域名根目录生成。`404.html` 是生成器保留路径，发布时随 `public/` 一起上传；GitHub Pages 会将它用作[自定义 404 页面](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-custom-404-page-for-your-github-pages-site)，其他静态服务器可将错误页指向此文件。
 

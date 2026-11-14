@@ -46,6 +46,11 @@
                     var dateText = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                     <p class="article-date"><time datetime="@dateText">@dateText</time></p>
                 }
+                @if (Model.Info.Updated is { } updated)
+                {
+                    var updatedText = updated.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                    <p class="article-date article-updated">更新于 <time datetime="@updatedText">@updatedText</time></p>
+                }
                 @if (Model.Categories.Count > 0)
                 {
                     <ul class="article-categories" aria-label="文章分类">
