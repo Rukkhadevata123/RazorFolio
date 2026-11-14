@@ -18,7 +18,7 @@ internal static class PreviewServer
             throw new DirectoryNotFoundException($"Preview directory not found: {directory}. Run rf build first.");
         }
 
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions
         {
             Args = [],
             ContentRootPath = AppContext.BaseDirectory

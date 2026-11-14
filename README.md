@@ -132,7 +132,18 @@ draft: false
 
 修改 C#、Razor 模板或内置资源后，需要重新编译并重启 `dev`。`dotnet build` 构建生成器，`rf build` 生成网站；发布时上传 `public/`。
 
-`.cshtml` 在构建时生成强类型 C#，运行时直接组合页面、布局和局部模板，无需 MVC 视图引擎。模板编译器只用于源码构建，不进入工具包；SDK 编译器接口与模板约定见 [TemplateCompiler](src/RazorFolio.TemplateCompiler/README.md)。模板层、JSON 和 YAML 路径已通过 NativeAOT 验证，Core 已启用 AOT 兼容性分析；完整 CLI 的原生发布与预览服务仍待验收。
+`.cshtml` 在构建时生成强类型 C#，运行时直接组合页面、布局和局部模板，无需 MVC 视图引擎。模板编译器只用于源码构建，不进入工具包；SDK 编译器接口与模板约定见 [TemplateCompiler](src/RazorFolio.TemplateCompiler/README.md)。Core 与 CLI 已启用 AOT 兼容性分析。
+
+原生发布（构建机需要对应平台的 [NativeAOT 工具链](https://learn.microsoft.com/dotnet/core/deploying/native-aot/#prerequisites)）：
+
+```bash
+dotnet publish src/RazorFolio.Cli -c Release -r win-x64 -p:PublishProfile=NativeAot -o artifacts/native/win-x64
+./artifacts/native/win-x64/rf.exe --version
+```
+
+原生版运行不需要 .NET，Windows 运行文件为 `rf.exe`，PDB 可留作调试。完整 CLI 的 `new/build/dev/preview` 已通过本机 win-x64 原生验证；未安装 .NET 的干净环境及 Linux 验收仍待完成。配置继续使用 JSON。
+
+也可打包为 .NET 工具：
 
 ```bash
 dotnet pack src/RazorFolio.Cli -c Release -o artifacts/packages
@@ -140,7 +151,7 @@ dotnet tool install RazorFolio --version 0.1.0-dev.1 --source ./artifacts/packag
 ./artifacts/tools/rf --version
 ```
 
-运行工具需要 .NET 11 与 ASP.NET Core 11。更新包时递增版本，避免复用旧缓存。
+.NET 工具版运行需要 .NET 11 与 ASP.NET Core 11。更新包时递增版本，避免复用旧缓存。
 
 | 项目 | 职责 |
 | --- | --- |

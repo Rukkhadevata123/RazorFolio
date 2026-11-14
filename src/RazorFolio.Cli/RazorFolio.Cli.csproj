@@ -5,6 +5,7 @@
     <RootNamespace>RazorFolio.Cli</RootNamespace>
     <UseAppHost>true</UseAppHost>
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <PropertyGroup>
