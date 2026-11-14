@@ -60,7 +60,11 @@ Windows 用 `Get-FileHash <压缩包> -Algorithm SHA256` 与对应 `.sha256` 比
 
 [Native packages 工作流](../.github/workflows/native-packages.yml)手动触发，分别使用 `windows-2025` 和 `ubuntu-24.04`。Action 引用固定提交；SDK 来自 global.json，实际版本进入包内记录。
 
-在 GitHub 的 **Actions → Native packages → Run workflow** 中选择分支、填写版本并运行。成功后从运行页面下载 `razorfolio-win-x64` 和 `razorfolio-linux-x64` artifacts，其中包含分发包和校验文件，保留 14 天。正式发布时，将选定的包和校验文件附到 GitHub Release；NuGet 包按下节单独构建和发布。
+在 GitHub 的 **Actions → Native packages → Run workflow** 中选择分支、填写版本并运行。两个平台打包成功后，工作流核验下载的包并创建 GitHub Release，附上 Windows ZIP、Linux tar.gz 和各自的 SHA-256 文件。运行页面也保留 `razorfolio-win-x64` 和 `razorfolio-linux-x64` artifacts，保留期为 14 天。
+
+版本填写 `0.1.0-preview.1` 时，标签为 `v0.1.0-preview.1`，指向本次构建提交。带 `-` 后缀的版本标记为预发布，`0.1.0` 这类版本创建正式 Release；发布说明由 GitHub 自动生成。每次新发布使用新版本号，已有 Release 保持原样；已有同名标签须指向本次构建提交。上传中断留下草稿时，可在 Releases 页面检查并补齐发布。
+
+工作流仅通过 **Run workflow** 手动运行，提交代码和推送标签均不会触发。发布任务使用仓库自带的 `GITHUB_TOKEN`，具有 `contents: write` 权限；NuGet 包按下节单独构建和发布。
 
 [首次 CI 运行](https://github.com/Rukkhadevata123/RazorFolio/actions/runs/43572950363)已通过两个平台的发布、组包、解包运行与上传检查（源码提交 `66b77ec`）。
 
