@@ -11,7 +11,7 @@
     if (!formulas.length) return;
     for (const { element } of formulas) element.dataset.rendered = 'pending';
 
-    const assetUrl = new URL('katex/', document.currentScript.src);
+    const assetUrl = new URL('.', document.currentScript.src);
 
     function loadResource(element) {
         return new Promise((resolve, reject) => {
@@ -36,9 +36,9 @@
     async function initialize() {
         const stylesheet = document.createElement('link');
         stylesheet.rel = 'stylesheet';
-        stylesheet.href = new URL('katex.min.css', assetUrl).href;
+        stylesheet.href = new URL('katex/katex.min.css', assetUrl).href;
         const script = document.createElement('script');
-        script.src = new URL('katex.min.js', assetUrl).href;
+        script.src = new URL('katex/katex.min.js', assetUrl).href;
         try {
             await Promise.all([loadResource(stylesheet), loadResource(script)]);
             if (typeof window.katex?.render !== 'function') throw new Error('KaTeX runtime unavailable');

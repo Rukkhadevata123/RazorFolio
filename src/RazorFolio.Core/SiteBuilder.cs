@@ -99,14 +99,32 @@ public sealed class SiteBuilder(
         var generateMetadata = configuration.Url is not null && !target.IncludeDrafts;
         var sitemapPath = Path.Combine(outputDirectory, "sitemap.xml");
         var feedPath = Path.Combine(outputDirectory, "feed.xml");
-        var searchIndexPath = Path.Combine(outputDirectory, "search-index.json");
+        var searchIndexAliasPath = Path.Combine(outputDirectory, "search-index.json");
+        SearchDocument[] searchDocuments =
+        [
+            .. outputs.Select(output => new SearchDocument(
+                output.Article.Info.Title,
+                output.Article.Info.Tags,
+                MarkdownTextExtractor.Extract(output.Article.Body),
+                PageUrl.GetRelative(homePath, output.OutputPath)))
+        ];
+        var searchIndexContent = SearchIndexWriter.Serialize(searchDocuments);
+        var searchIndexPath = ContentFingerprint.AddToPath(searchIndexAliasPath, searchIndexContent);
+        var customStylesheetSource = Path.Combine(siteRoot, "static", "custom.css");
+        var customStylesheetContent = File.Exists(customStylesheetSource)
+            ? await File.ReadAllBytesAsync(customStylesheetSource, cancellationToken)
+            : null;
+        var customStylesheetPath = customStylesheetContent is null ? null
+            : ContentFingerprint.AddToPath(Path.Combine(outputDirectory, "custom.css"), customStylesheetContent);
+        string[] fingerprintedDataPaths = customStylesheetPath is null
+            ? [searchIndexPath, searchIndexAliasPath]
+            : [searchIndexPath, searchIndexAliasPath, customStylesheetPath];
         var feedUrl = generateMetadata ? PageUrl.GetAbsolute(feedPath, outputDirectory, configuration.Url) : null;
         string[] metadataPaths = generateMetadata ? [sitemapPath, feedPath] : [];
-        string[] themeAssetPaths =
-        [
-            .. themeAssets.Select(asset => Path.GetFullPath(asset.RelativePath, outputDirectory))
-        ];
-        string[] protectedPaths = [.. reservedPaths, .. metadataPaths, .. themeAssetPaths, searchIndexPath, notFoundPath];
+        var preparedThemeAssets = await ThemeAssetPreparation.PrepareAsync(themeAssets, outputDirectory, cancellationToken);
+        string[] themeAssetPaths = [.. preparedThemeAssets.Select(asset => asset.OutputPath)];
+        string[] protectedPaths =
+            [.. reservedPaths, .. metadataPaths, .. themeAssetPaths, .. fingerprintedDataPaths, notFoundPath];
         OutputPathValidator.Validate(protectedPaths);
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
@@ -121,14 +139,21 @@ public sealed class SiteBuilder(
         }
 
         Directory.CreateDirectory(outputDirectory);
+        string[] themeSourcePaths =
+            [.. themeAssets.Select(asset => Path.GetFullPath(asset.RelativePath, outputDirectory))];
         var assetPaths = await assetCopier.CopyAsync(
-            Path.Combine(siteRoot, "static"), outputDirectory, [.. contentPaths, .. protectedPaths], cancellationToken);
-        for (var index = 0; index < themeAssets.Count; index++)
+            Path.Combine(siteRoot, "static"), outputDirectory,
+            [.. contentPaths, .. protectedPaths, .. themeSourcePaths], cancellationToken);
+        foreach (var asset in preparedThemeAssets)
         {
-            await CopyThemeAssetAsync(themeAssets[index], themeAssetPaths[index], cancellationToken);
+            Directory.CreateDirectory(Path.GetDirectoryName(asset.OutputPath)!);
+            await File.WriteAllBytesAsync(asset.OutputPath, asset.Content, cancellationToken);
         }
 
-        var customStylesheetPath = FindCopiedAsset("custom.css");
+        if (customStylesheetPath is not null)
+        {
+            await File.WriteAllBytesAsync(customStylesheetPath, customStylesheetContent!, cancellationToken);
+        }
         var faviconPath = FindCopiedAsset("favicon.svg");
         List<string> stylesheetPaths = [.. GetAssetPaths(ThemeAssetKind.Stylesheet)];
         if (customStylesheetPath is not null)
@@ -288,15 +313,9 @@ public sealed class SiteBuilder(
                 alias.OutputPath, targetUrl, canonicalUrl, configuration.Language, cancellationToken);
         }
 
-        SearchDocument[] searchDocuments =
-        [
-            .. outputs.Select(output => new SearchDocument(
-                output.Article.Info.Title,
-                output.Article.Info.Tags,
-                MarkdownTextExtractor.Extract(output.Article.Body),
-                PageUrl.GetRelative(searchIndexPath, output.OutputPath)))
-        ];
-        await SearchIndexWriter.WriteAsync(searchIndexPath, searchDocuments, cancellationToken);
+        await File.WriteAllBytesAsync(searchIndexPath, searchIndexContent, cancellationToken);
+        // Keep the stable endpoint for external consumers; pages always use the fingerprinted URL.
+        await SearchIndexWriter.WriteAsync(searchIndexAliasPath, searchDocuments, cancellationToken);
 
         if (reportDiagnostic is not null)
         {
@@ -320,7 +339,8 @@ public sealed class SiteBuilder(
         }
 
         await manifest.CompleteAsync(
-            [.. contentPaths, .. reservedPaths, .. metadataPaths, .. themeAssetPaths, .. assetPaths, searchIndexPath, notFoundPath],
+            [.. contentPaths, .. reservedPaths, .. metadataPaths, .. themeAssetPaths, .. assetPaths,
+                .. fingerprintedDataPaths, notFoundPath],
             cancellationToken);
 
         return sources.Count + reservedPaths.Count + aliases.Length + 1;
@@ -410,15 +430,6 @@ public sealed class SiteBuilder(
 
         var adjacent = pages[index];
         return new ArticleLink(adjacent.Article.Info, PageUrl.GetRelative(fromPagePath, adjacent.OutputPath));
-    }
-
-    private static async Task CopyThemeAssetAsync(
-        IThemeAsset asset, string outputPath, CancellationToken cancellationToken)
-    {
-        await using var source = asset.OpenRead();
-        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-        await using var target = File.Create(outputPath);
-        await source.CopyToAsync(target, cancellationToken);
     }
 
     private static TagGroup[] GroupByTag(

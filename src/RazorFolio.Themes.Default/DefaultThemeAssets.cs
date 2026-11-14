@@ -18,12 +18,21 @@ public static class DefaultThemeAssets
         new EmbeddedAsset("assets/pagination.js", "pagination.js", ThemeAssetKind.Script),
         new EmbeddedAsset("assets/highlight.min.js", "highlight.min.js", ThemeAssetKind.ContentScript),
         new EmbeddedAsset("assets/code-blocks.js", "code-blocks.js", ThemeAssetKind.ContentScript),
-        new EmbeddedAsset("assets/mermaid.js", "mermaid.js", ThemeAssetKind.ContentScript),
-        new EmbeddedAsset("assets/math.js", "math.js", ThemeAssetKind.ContentScript),
+        new EmbeddedAsset("assets/mermaid.js", "mermaid.js", ThemeAssetKind.ContentScript)
+        {
+            References = ["mermaid.tiny.js"]
+        },
+        new EmbeddedAsset("assets/math.js", "math.js", ThemeAssetKind.ContentScript)
+        {
+            References = ["katex/katex.min.js", "katex/katex.min.css"]
+        },
         new EmbeddedAsset("assets/images.js", "images.js", ThemeAssetKind.ContentScript),
         new EmbeddedAsset("assets/print.js", "print.js", ThemeAssetKind.ContentScript),
         new EmbeddedAsset("assets/katex/katex.min.js", "katex.min.js", ThemeAssetKind.Other),
-        new EmbeddedAsset("assets/katex/katex.min.css", "katex.min.css", ThemeAssetKind.Other),
+        new EmbeddedAsset("assets/katex/katex.min.css", "katex.min.css", ThemeAssetKind.Other)
+        {
+            References = [.. GetMathFontAssets().Select(asset => asset.RelativePath["assets/katex/".Length..])]
+        },
         new EmbeddedAsset("assets/katex/LICENSE.txt", "katex-LICENSE.txt", ThemeAssetKind.Other),
         .. GetMathFontAssets(),
         new EmbeddedAsset("assets/mermaid.tiny.js", "mermaid.tiny.js", ThemeAssetKind.Other),
@@ -44,6 +53,8 @@ public static class DefaultThemeAssets
 
     private sealed record EmbeddedAsset(string RelativePath, string ResourceName, ThemeAssetKind Kind) : IThemeAsset
     {
+        public IReadOnlyList<string> References { get; init; } = [];
+
         public Stream OpenRead() => typeof(DefaultThemeAssets).Assembly
             .GetManifestResourceStream($"RazorFolio.Themes.Default.{ResourceName}")
             ?? throw new InvalidOperationException($"The embedded theme asset '{ResourceName}' was not found.");

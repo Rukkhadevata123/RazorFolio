@@ -91,6 +91,14 @@
 
 完整字段见 [SiteConfiguration](../src/RazorFolio.Core/Configuration/SiteConfiguration.cs) 和 [ThemeOptions](../src/RazorFolio.Core/Configuration/ThemeOptions.cs)。未知配置字段会报错。
 
+## 资源与缓存
+
+构建会给主题 CSS、JavaScript、字体、`custom.css` 和页面使用的搜索索引生成内容哈希地址，例如 `assets/razorfolio.0123456789abcdef.css`。内容不变时地址不变；内容或所依赖的主题资源改变时，地址自动更新，页面引用同步更新，无需手动添加版本参数。
+
+继续在 `static/custom.css` 中维护自定义样式；它仍按站点根目录解析相对图片和导入路径。其他作者提供的静态文件保留原路径，生成器不会改写正文图片或自定义样式内部的资源地址。不要在文章或配置中手写带哈希的产物名称。
+
+部署时上传完整 `public/`。哈希解决的是资源缓存，HTML 本身仍受托管服务或 CDN 的缓存规则影响；新部署后若仍看到旧页面，应刷新 HTML 缓存。构建会按生成清单清理旧哈希文件，不保留旧页面引用的资源副本。
+
 ## 部署路径与 404
 
 部署到域名根目录时，`url` 填写 `https://example.com/`；部署到子目录时，填写完整入口，例如 `https://example.com/blog/`。

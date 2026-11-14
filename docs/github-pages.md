@@ -59,4 +59,6 @@ env:
 
 发布后检查首页、文章、搜索、图片和一个不存在的深层地址。本地可填写相同的 `url`，通过 `rf build` 和 `rf preview` 检查正式产物，见[部署路径与 404](configuration.md#部署路径与-404)。
 
+主题资源和搜索索引使用内容哈希地址，发布新内容后页面会引用对应的新文件。若自定义域名经过 CDN，仍需确保 HTML 能及时刷新；不要只清理某个旧 CSS 地址。详见[资源与缓存](configuration.md#资源与缓存)。
+
 更新文章后，再次运行所选工作流；升级生成器时，先将 `RAZORFOLIO_DEFAULT_VERSION` 改为已发布的新版本。Action 固定到具体提交，RazorFolio 使用默认版本或本次手动指定的版本，不自动追随最新 Release。部署机制参考 [GitHub Pages 自定义工作流](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)和 [Git 分支发布 Action](https://github.com/peaceiris/actions-gh-pages)。

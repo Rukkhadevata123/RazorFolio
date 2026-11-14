@@ -19,9 +19,13 @@ public static class SearchIndexWriter
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        await File.WriteAllBytesAsync(outputPath, Serialize(documents), cancellationToken);
+    }
+
+    internal static byte[] Serialize(IReadOnlyList<SearchDocument> documents)
+    {
         var index = new SearchIndex(1, [.. documents.OrderBy(document => document.Url, StringComparer.Ordinal)]);
-        await using var target = File.Create(outputPath);
-        await JsonSerializer.SerializeAsync(target, index, Json.SearchIndex, cancellationToken);
+        return JsonSerializer.SerializeToUtf8Bytes(index, Json.SearchIndex);
     }
 
     internal sealed record SearchIndex(int Version, IReadOnlyList<SearchDocument> Documents);
