@@ -7,12 +7,19 @@
 | [github-pages.yml](workflows/github-pages.yml) | 上传 artifact，由 Actions 直接部署 | 运行工作流的仓库所对应的 Pages |
 | [github-pages-branch.yml](workflows/github-pages-branch.yml) | 将生成文件提交并推送到 Git 分支 | 当前或其他任意 GitHub 仓库的指定分支 |
 
-选择一种模板，复制到博客仓库的 `.github/workflows/pages.yml`，提交并推送到默认分支。RazorFolio 版本可在 [Releases](https://github.com/Rukkhadevata123/RazorFolio/releases) 查看，工作流输入版本号时省略 `v` 前缀，例如 `0.1.0`。
+选择一种模板，复制到博客仓库的 `.github/workflows/pages.yml`，提交并推送到默认分支。RazorFolio 版本可在 [Releases](https://github.com/Rukkhadevata123/RazorFolio/releases) 查看。默认版本只在工作流顶层维护：
+
+```yaml
+env:
+  RAZORFOLIO_DEFAULT_VERSION: '0.3.1'
+```
+
+手动运行时，`razorfolio_version` 留空使用该默认值，填写版本号则覆盖本次运行，省略 `v` 前缀。升级生成器只需修改 `RAZORFOLIO_DEFAULT_VERSION`；同样适用于已添加 `push` 触发器的工作流。
 
 ## Actions 直接部署
 
 1. 在博客仓库的 **Settings → Pages → Build and deployment** 中，将 **Source** 设为 **GitHub Actions**。自定义域名也在该页面设置。
-2. 在 **Actions → Deploy blog to GitHub Pages → Run workflow** 选择源码分支并填写 RazorFolio 版本。
+2. 在 **Actions → Deploy blog to GitHub Pages → Run workflow** 选择源码分支；需要覆盖默认版本时填写 `razorfolio_version`。
 3. 部署完成后，从 `github-pages` deployment 打开网站。
 
 网站 URL 自动读取该仓库的 Pages 配置，支持项目子路径、用户站点和自定义域名。此模式使用仓库自带的 `GITHUB_TOKEN`；构建产物通过 artifact 交付，Git 分支只保存博客源码。
@@ -26,7 +33,7 @@
 
 | 输入 | 含义 | 示例 |
 | --- | --- | --- |
-| `razorfolio_version` | 原生 CLI 的 Release 版本 | `0.1.0` |
+| `razorfolio_version` | 可选的原生 CLI Release 版本；留空使用工作流默认值 | `0.3.1` |
 | `target_repository` | 目标 `owner/repo`；留空使用当前仓库 | `alice/site-output` |
 | `publish_branch` | 产物分支，默认 `gh-pages` | `gh-pages`、`main`、`deploy/site` |
 | `site_url` | 最终网站的完整 URL，含部署子路径 | `https://alice.github.io/site-output/` |
@@ -52,4 +59,4 @@
 
 发布后检查首页、文章、搜索、图片和一个不存在的深层地址。本地可填写相同的 `url`，通过 `rf build` 和 `rf preview` 检查正式产物，见[部署路径与 404](configuration.md#部署路径与-404)。
 
-更新文章或升级生成器后，再次手动运行所选工作流。Action 固定到具体提交，RazorFolio 固定到填写的版本。部署机制参考 [GitHub Pages 自定义工作流](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)和 [Git 分支发布 Action](https://github.com/peaceiris/actions-gh-pages)。
+更新文章后，再次运行所选工作流；升级生成器时，先将 `RAZORFOLIO_DEFAULT_VERSION` 改为已发布的新版本。Action 固定到具体提交，RazorFolio 使用默认版本或本次手动指定的版本，不自动追随最新 Release。部署机制参考 [GitHub Pages 自定义工作流](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)和 [Git 分支发布 Action](https://github.com/peaceiris/actions-gh-pages)。

@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       razorfolio_version:
-        description: RazorFolio release version without v (for example 0.1.0)
-        required: true
+        description: RazorFolio version without v; leave empty for the workflow default
+        required: false
         type: string
       target_repository:
         description: Target owner/repo (leave empty for this repository)
@@ -20,6 +20,9 @@ on:
         description: Full website URL (for example https://example.github.io/blog/)
         required: true
         type: string
+
+env:
+  RAZORFOLIO_DEFAULT_VERSION: '0.3.1'
 
 permissions:
   contents: read
@@ -83,10 +86,10 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          RAZORFOLIO_VERSION: ${{ inputs.razorfolio_version }}
+          RAZORFOLIO_VERSION: ${{ inputs.razorfolio_version || env.RAZORFOLIO_DEFAULT_VERSION }}
         run: |
           if [[ ! "$RAZORFOLIO_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]; then
-            echo "::error::Enter a release version such as 0.1.0, without the v prefix."
+            echo "::error::Use a release version in major.minor.patch format, without the v prefix."
             exit 1
           fi
           archive="razorfolio-$RAZORFOLIO_VERSION-linux-x64.tar.gz"
