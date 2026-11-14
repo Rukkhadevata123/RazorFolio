@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using RazorFolio.Core.Serialization;
 
 namespace RazorFolio.Core.Output;
 
@@ -28,7 +29,7 @@ public static class RedirectWriter
                 <p>页面已迁移，<a href="{{encodedTarget}}">前往新地址</a>。</p>
                 <script>
                 (() => {
-                    const target = new URL({{JsonSerializer.Serialize(targetUrl)}}, window.location.href);
+                    const target = new URL({{JsonSerializer.Serialize(targetUrl, RazorFolioJsonContext.Default.String)}}, window.location.href);
                     target.search = window.location.search;
                     target.hash = window.location.hash;
                     window.location.replace(target.href);

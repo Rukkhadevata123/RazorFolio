@@ -4,6 +4,7 @@
     <AssemblyName>rf</AssemblyName>
     <RootNamespace>RazorFolio.Cli</RootNamespace>
     <UseAppHost>true</UseAppHost>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
   </PropertyGroup>
 
   <PropertyGroup>

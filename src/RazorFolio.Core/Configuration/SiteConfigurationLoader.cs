@@ -1,15 +1,16 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using RazorFolio.Core.Serialization;
 
 namespace RazorFolio.Core.Configuration;
 
 public static class SiteConfigurationLoader
 {
-    private static readonly JsonSerializerOptions Options = new()
+    private static readonly RazorFolioJsonContext Json = new(new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
-    };
+    });
 
     public static async Task<SiteConfiguration> LoadAsync(
         string siteDirectory,
@@ -25,7 +26,7 @@ public static class SiteConfigurationLoader
         try
         {
             await using var stream = File.OpenRead(path);
-            configuration = await JsonSerializer.DeserializeAsync<SiteConfiguration>(stream, Options, cancellationToken);
+            configuration = await JsonSerializer.DeserializeAsync(stream, Json.SiteConfiguration, cancellationToken);
         }
         catch (JsonException exception)
         {

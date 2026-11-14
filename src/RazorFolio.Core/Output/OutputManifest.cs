@@ -1,10 +1,11 @@
 using System.Text.Json;
+using RazorFolio.Core.Serialization;
 
 namespace RazorFolio.Core.Output;
 
 public sealed class OutputManifest
 {
-    private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
+    private static readonly RazorFolioJsonContext Json = new(new JsonSerializerOptions { WriteIndented = true });
 
     private readonly string outputDirectory;
     private readonly string manifestPath;
@@ -26,7 +27,7 @@ public sealed class OutputManifest
             try
             {
                 var json = await File.ReadAllTextAsync(manifestPath, cancellationToken);
-                files = JsonSerializer.Deserialize<string[]>(json)
+                files = JsonSerializer.Deserialize(json, RazorFolioJsonContext.Default.StringArray)
                     ?? throw new InvalidDataException($"Output manifest is null: {manifestPath}");
             }
             catch (JsonException exception)
@@ -79,7 +80,8 @@ public sealed class OutputManifest
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(manifestPath)!);
-        var json = JsonSerializer.Serialize(currentFiles.Order(comparer), Options);
+        var orderedFiles = currentFiles.Order(comparer).ToArray();
+        var json = JsonSerializer.Serialize(orderedFiles, Json.StringArray);
         var temporaryPath = manifestPath + ".tmp";
         await File.WriteAllTextAsync(temporaryPath, json, cancellationToken);
         File.Move(temporaryPath, manifestPath, overwrite: true);

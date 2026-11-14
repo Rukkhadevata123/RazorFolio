@@ -1,16 +1,17 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
+using RazorFolio.Core.Serialization;
 
 namespace RazorFolio.Core.Output;
 
 public static class SearchIndexWriter
 {
-    private static readonly JsonSerializerOptions Options = new()
+    private static readonly RazorFolioJsonContext Json = new(new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
-    };
+    });
 
     public static async Task WriteAsync(
         string outputPath,
@@ -20,8 +21,8 @@ public static class SearchIndexWriter
         cancellationToken.ThrowIfCancellationRequested();
         var index = new SearchIndex(1, [.. documents.OrderBy(document => document.Url, StringComparer.Ordinal)]);
         await using var target = File.Create(outputPath);
-        await JsonSerializer.SerializeAsync(target, index, Options, cancellationToken);
+        await JsonSerializer.SerializeAsync(target, index, Json.SearchIndex, cancellationToken);
     }
 
-    private sealed record SearchIndex(int Version, IReadOnlyList<SearchDocument> Documents);
+    internal sealed record SearchIndex(int Version, IReadOnlyList<SearchDocument> Documents);
 }
