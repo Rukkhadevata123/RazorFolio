@@ -48,19 +48,14 @@ public sealed class ArticleParser(MarkdownPipeline pipeline)
         DateOnly? date = null;
         if (metadata.Date is not null)
         {
-            var dateText = metadata.Date.Trim();
-            var dateFormat = dateText.Length == 10 ? "yyyy-MM-dd" : "yyyy-MM-dd HH:mm:ss";
-            // Round-tripping rejects normalization such as 24:00:00 becoming the following day.
-            if (!DateTime.TryParseExact(dateText, dateFormat, CultureInfo.InvariantCulture,
-                    DateTimeStyles.None, out var parsedDate)
-                || parsedDate.ToString(dateFormat, CultureInfo.InvariantCulture) != dateText)
+            if (!DateOnly.TryParseExact(metadata.Date.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out var parsedDate))
             {
                 throw new InvalidDataException(
-                    $"Invalid date in '{sourcePath}'. Use yyyy-MM-dd or yyyy-MM-dd HH:mm:ss with a valid date and time.");
+                    $"Invalid date in '{sourcePath}'. Use a valid yyyy-MM-dd date.");
             }
 
-            // Legacy timestamps describe a calendar day; do not convert through the machine's time zone.
-            date = DateOnly.FromDateTime(parsedDate);
+            date = parsedDate;
         }
 
         var description = string.IsNullOrWhiteSpace(metadata.Description) ? null : metadata.Description.Trim();
