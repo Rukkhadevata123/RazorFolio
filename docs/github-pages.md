@@ -1,66 +1,39 @@
 # 部署到 GitHub Pages
 
-博客仓库根目录包含 `content/`，以及可选的 `static/` 和 `razorfolio.json`。两种模板都手动运行，在 Ubuntu 24.04 上下载 RazorFolio 0.4.0 或更新版本的原生包，校验 SHA-256 后构建网站。
+博客仓库根目录放置 `content/`，以及可选的 `static/` 和 `razorfolio.json`。选一个模板复制到博客仓库的 `.github/workflows/pages.yml`，并将其提交到默认分支。
 
-| 模板 | 发布方式 | 目标 |
-| --- | --- | --- |
-| [github-pages.yml](workflows/github-pages.yml) | 上传 artifact，由 Actions 直接部署 | 运行工作流的仓库所对应的 Pages |
-| [github-pages-branch.yml](workflows/github-pages-branch.yml) | 将生成文件提交并推送到 Git 分支 | 当前或其他任意 GitHub 仓库的指定分支 |
+| 需求 | 模板 |
+| --- | --- |
+| 通过 Actions 部署当前仓库的 Pages | [github-pages.yml](workflows/github-pages.yml) |
+| 将生成站点推送到当前或另一个仓库的分支 | [github-pages-branch.yml](workflows/github-pages-branch.yml) |
 
-选择一种模板，复制到博客仓库的 `.github/workflows/pages.yml`，提交并推送到默认分支。RazorFolio 版本可在 [Releases](https://github.com/Rukkhadevata123/RazorFolio/releases) 查看。默认版本只在工作流顶层维护：
-
-```yaml
-env:
-  RAZORFOLIO_DEFAULT_VERSION: '0.4.0'
-```
-
-手动运行时，`razorfolio_version` 留空使用该默认值，填写版本号则覆盖本次运行，省略 `v` 前缀。升级生成器只需修改 `RAZORFOLIO_DEFAULT_VERSION`；同样适用于已添加 `push` 触发器的工作流。
+模板下载 [Releases](https://github.com/Rukkhadevata123/RazorFolio/releases) 中的 Linux 原生包，校验 SHA-256 后构建。默认版本由 `RAZORFOLIO_DEFAULT_VERSION` 指定。手动运行时可通过 `razorfolio_version` 覆盖，填写不带 `v` 的版本号。
 
 ## Actions 直接部署
 
-1. 在博客仓库的 **Settings → Pages → Build and deployment** 中，将 **Source** 设为 **GitHub Actions**。自定义域名也在该页面设置。
-2. 在 **Actions → Deploy blog to GitHub Pages → Run workflow** 选择源码分支；需要覆盖默认版本时填写 `razorfolio_version`。
-3. 部署完成后，从 `github-pages` deployment 打开网站。
+1. 在博客仓库 **Settings → Pages** 将发布源设为 **GitHub Actions**。使用自定义域名时也在此设置。
+2. 在 **Actions → Deploy blog to GitHub Pages → Run workflow** 选择源码分支并运行。
+3. 部署成功后，从 `github-pages` 环境打开站点。
 
-网站 URL 自动读取该仓库的 Pages 配置，支持项目子路径、用户站点和自定义域名。此模式使用仓库自带的 `GITHUB_TOKEN`；构建产物通过 artifact 交付，Git 分支只保存博客源码。
+模板从 Pages 配置读取部署 URL，使用 Actions artifact 发布，对应仓库自带的 `GITHUB_TOKEN` 即可完成部署。
 
 ## Git 分支发布
 
-1. 准备目标仓库，并选择专门存放生成文件的分支，例如 `gh-pages`；分支尚不存在时会在发布时创建。
-2. 在博客源码仓库的 **Settings → Secrets and variables → Actions** 中添加 `PAGES_DEPLOY_TOKEN`。使用有权写入目标仓库的个人访问令牌；fine-grained token 选择目标仓库并授予 **Contents: Read and write**。
-3. 在 **Actions → Publish blog to a Git branch → Run workflow** 填写下表参数并运行。
-4. 在**目标仓库**的 **Settings → Pages** 中选择 **Deploy from a branch**，指定发布分支和 **/(root)**。
+1. 选定存放产物的目标仓库和分支。同仓库发布时，目标分支必须与源码分支及默认分支分开。
+2. 在源码仓库 **Settings → Secrets and variables → Actions** 中添加 `PAGES_DEPLOY_TOKEN`。令牌须能写入目标仓库。使用 fine-grained token 时，选中目标仓库并授予 **Contents: Read and write**。
+3. 在 **Actions → Publish blog to a Git branch → Run workflow** 填写下表参数。目标分支可以由工作流创建。
+4. 在目标仓库 **Settings → Pages** 选择 **Deploy from a branch**，再选定产物分支和 **/(root)**。
 
-| 输入 | 含义 | 示例 |
+| 输入 | 用途 | 示例 |
 | --- | --- | --- |
-| `razorfolio_version` | 可选的原生 CLI Release 版本；留空使用工作流默认值 | `0.4.0` |
-| `target_repository` | 目标 `owner/repo`；留空使用当前仓库 | `alice/site-output` |
-| `publish_branch` | 产物分支，默认 `gh-pages` | `gh-pages`、`main`、`deploy/site` |
-| `site_url` | 最终网站的完整 URL，含部署子路径 | `https://alice.github.io/site-output/` |
+| `target_repository` | 目标 `owner/repo`，留空使用当前仓库 | `alice/site-output` |
+| `publish_branch` | 产物分支，默认 `gh-pages` | `gh-pages` |
+| `site_url` | 访客打开的完整 URL，含部署子路径 | `https://alice.github.io/site-output/` |
 
-常见配置：
+目标仓库使用自定义域名时，`site_url` 填写该域名的公开地址。模板会生成 `CNAME`，仍需在 Pages 中设置域名并配置 DNS。每次发布会同步 `public/` 到分支根目录，包括清理过期产物，并保留提交历史。令牌推送用于触发目标仓库的 Pages 构建。参见 [Pages 发布源说明](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)。
 
-| 场景 | 目标仓库 | 分支 | 网站 URL |
-| --- | --- | --- | --- |
-| 源码与产物同仓库 | 留空 | `gh-pages` | `https://alice.github.io/blog/` |
-| 发布到用户站点仓库 | `alice/alice.github.io` | `main` | `https://alice.github.io/` |
-| 发布到其他项目仓库 | `alice/site-output` | `gh-pages` | `https://alice.github.io/site-output/` |
-| 使用自定义域名 | `alice/site-output` | `gh-pages` | `https://notes.example.com/` |
+## 检查与更新
 
-模板将 `public/` 的内容放到目标分支根目录，每次同步更新文件、移除过期产物，并保留提交历史。同仓库发布会检查目标与源码分支、默认分支分离。
+模板用 `rf build --url` 传入部署 URL，在临时目录生成本次发布的 `public/`。如果希望在链接诊断出现时中止发布，在这条命令中加上 `--strict-links`。检查范围见[构建检查](writing.md#构建检查)。
 
-分支模式统一使用 `PAGES_DEPLOY_TOKEN`，使推送能够触发目标仓库的 Pages 发布。GitHub 官方说明，使用 `GITHUB_TOKEN` 推送的提交不会触发 Pages 构建。[发布源说明](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
-
-模板添加 `.nojekyll`。使用自定义域名时，按 `site_url` 的主机名写入 `CNAME`；同时在目标仓库的 Pages 设置域名并完成 DNS 配置。`site_url` 用于生成链接和元数据，目标仓库与分支决定产物写到哪里。
-
-## 构建与更新
-
-工作流在临时目录构建站点，用 `rf build --url` 传入部署 URL。Actions 直接部署使用 Pages 配置返回的地址，Git 分支发布使用 `site_url`。生成的 `public/` 作为本次发布的产物。
-
-要在发现失效站内链接时停止发布，在模板的 `rf build` 命令中加上 `--strict-links`。检查范围见[构建检查](writing.md#构建检查)。
-
-发布后检查首页、文章、搜索、图片和一个不存在的深层地址。本地可填写相同的 `url`，通过 `rf build` 和 `rf preview` 检查正式产物，见[部署路径与 404](configuration.md#部署路径与-404)。
-
-主题资源和搜索索引使用内容哈希地址，发布新内容后页面会引用对应的新文件。若自定义域名经过 CDN，仍需确保 HTML 能及时刷新；不要只清理某个旧 CSS 地址。详见[资源与缓存](configuration.md#资源与缓存)。
-
-更新文章后，再次运行所选工作流；升级生成器时，先将 `RAZORFOLIO_DEFAULT_VERSION` 改为已发布的新版本。Action 固定到具体提交，RazorFolio 使用默认版本或本次手动指定的版本，不自动追随最新 Release。部署机制参考 [GitHub Pages 自定义工作流](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)和 [Git 分支发布 Action](https://github.com/peaceiris/actions-gh-pages)。
+内容修改后再次运行工作流。发布后可检查文章、搜索、静态图片以及一个缺失的深层地址。若新部署仍显示旧页面，检查 CDN 的 HTML 缓存。详见[资源与缓存](configuration.md#资源与缓存)。
