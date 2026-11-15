@@ -15,7 +15,7 @@
 
 安装 `global.json` 指定的 SDK 及目标平台的 NativeAOT 工具链。Windows x64 使用 Visual Studio C++ 工具和 Windows SDK。Linux x64 需要原生链接工具链、zlib 开发文件和 GNU tar。正式 Linux 包在 Ubuntu 24.04 上构建。原生工具链的前置条件见 [.NET NativeAOT 指南](https://learn.microsoft.com/dotnet/core/deploying/native-aot/#prerequisites)。
 
-在仓库根目录执行以下命令。在 Linux 上将两处 `win-x64` 换成 `linux-x64`。版本号可按需要填写。
+在仓库根目录执行以下命令。在 Linux 上将两处 `win-x64` 换成 `linux-x64`。下文的 `0.4.0-preview.1` 仅为示例，请填写本次要发布的版本号。
 
 ```text
 dotnet publish src/RazorFolio.Cli -c Release -r win-x64 -p:PublishProfile=NativeAot -p:CreateNativePackage=true -p:Version=0.4.0-preview.1 -o artifacts/publish/win-x64

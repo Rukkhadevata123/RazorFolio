@@ -22,7 +22,7 @@ on:
         type: string
 
 env:
-  RAZORFOLIO_DEFAULT_VERSION: '0.4.0'
+  RAZORFOLIO_DEFAULT_VERSION: '0.4.0' # Example: choose a published release.
 
 permissions:
   contents: read

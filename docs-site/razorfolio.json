@@ -1,0 +1,27 @@
+{
+  "title": "RazorFolio Docs",
+  "description": "用 Markdown 写作，用 RazorFolio 构建和发布。",
+  "language": "zh-CN",
+  "navigation": [
+    { "text": "首页", "link": "index.html" },
+    { "text": "开始使用", "link": "guide.md" },
+    { "text": "写文章", "link": "docs/writing.md" },
+    { "text": "GitHub", "link": "https://github.com/Rukkhadevata123/RazorFolio" }
+  ],
+  "theme": {
+    "brand": { "text": "RazorFolio Docs" },
+    "hero": {
+      "title": "RazorFolio",
+      "description": "从创建博客到发布站点，使用同一套 Markdown 指南。"
+    },
+    "sidebar": [
+      { "text": "开始使用", "link": "guide.md" },
+      { "text": "原生包", "link": "docs/native-package.md" },
+      { "text": "站点配置", "link": "docs/configuration.md" },
+      { "text": "写文章", "link": "docs/writing.md" },
+      { "text": "GitHub Pages", "link": "docs/github-pages.md" },
+      { "text": "构建与发布", "link": "docs/releasing.md" }
+    ],
+    "footer": "文档由当前源码构建"
+  }
+}

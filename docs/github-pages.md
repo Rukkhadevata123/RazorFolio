@@ -7,7 +7,7 @@
 | 通过 Actions 部署当前仓库的 Pages | [github-pages.yml](workflows/github-pages.yml) |
 | 将生成站点推送到当前或另一个仓库的分支 | [github-pages-branch.yml](workflows/github-pages-branch.yml) |
 
-模板下载 [Releases](https://github.com/Rukkhadevata123/RazorFolio/releases) 中的 Linux 原生包，校验 SHA-256 后构建。默认版本由 `RAZORFOLIO_DEFAULT_VERSION` 指定。手动运行时可通过 `razorfolio_version` 覆盖，填写不带 `v` 的版本号。
+模板下载 [Releases](https://github.com/Rukkhadevata123/RazorFolio/releases) 中的 Linux 原生包，校验 SHA-256 后构建。将 `RAZORFOLIO_DEFAULT_VERSION` 设置为选定的已发布版本，模板中的数字为示例。手动运行时可通过 `razorfolio_version` 覆盖，填写不带 `v` 的版本号。
 
 ## Actions 直接部署
 

@@ -43,7 +43,7 @@ my-blog/
 
 ## 从源码开发
 
-安装 `global.json` 指定的 .NET SDK，目前为 11.0.100，允许同功能带的更新补丁。以下命令在仓库根目录运行。
+安装 [global.json](global.json) 指定的 .NET SDK。允许的补丁更新范围也由该文件控制。以下命令在仓库根目录运行。
 
 ```bash
 dotnet run --project src/RazorFolio.Cli -- new ../my-blog
@@ -67,6 +67,8 @@ dotnet run --project tests/RazorFolio.RegressionTests -c Release --no-build --ar
 | [TemplateCompiler](src/RazorFolio.TemplateCompiler/README.md) | 构建时将 Razor 模板编译为 C# |
 
 原生版和 .NET 工具版的打包与发布见[发布说明](docs/releasing.md)。
+
+本项目也使用 RazorFolio 构建自己的文档站，本地运行方法见[文档站说明](docs-site/README.md)。
 
 ## License
 

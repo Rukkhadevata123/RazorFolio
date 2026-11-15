@@ -2,7 +2,7 @@
 
 默认主题的 MSBuild 目标调用此编译器，将 `Views/**/*.cshtml` 转为中间输出目录下的 `Razor/RazorFolioTemplate_*.g.cs`，再作为 C# 编译进主题程序集。使用 `--artifacts-path artifacts/build` 时，可以在 `artifacts/build/obj/RazorFolio.Themes.Default/` 查找生成文件。运行时直接创建编译好的模板实例。
 
-编译器引用当前 SDK 自带的官方 Razor/Roslyn DLL。`global.json` 限定 SDK 11.0.1xx 功能带，允许更新补丁；升级功能带前须核对编译器 API、源位置诊断和生成结果。构建工具不参与目标程序的 NativeAOT 发布；主题的项目引用显式隔离 RID、自包含和 AOT 属性。
+编译器引用当前 SDK 自带的官方 Razor/Roslyn DLL。SDK 功能带和补丁更新策略由 `global.json` 指定；升级功能带前须核对编译器 API、源位置诊断和生成结果。构建工具不参与目标程序的 NativeAOT 发布；主题的项目引用显式隔离 RID、自包含和 AOT 属性。
 
 ## 模板约定
 
