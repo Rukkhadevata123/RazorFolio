@@ -19,7 +19,7 @@ public static class SearchIndexWriter
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        await File.WriteAllBytesAsync(outputPath, Serialize(documents), cancellationToken);
+        await OutputFile.WriteBytesAsync(outputPath, Serialize(documents), cancellationToken);
     }
 
     internal static byte[] Serialize(IReadOnlyList<SearchDocument> documents)

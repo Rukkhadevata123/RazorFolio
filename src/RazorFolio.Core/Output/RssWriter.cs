@@ -26,9 +26,8 @@ public static class RssWriter
             orderedArticles.Take(MaxItems).Select(article => CreateItem(article, siteUrl)));
         var document = new XDocument(new XElement("rss", new XAttribute("version", "2.0"), channel));
 
-        cancellationToken.ThrowIfCancellationRequested();
-        await using var target = File.Create(outputPath);
-        await document.SaveAsync(target, SaveOptions.None, cancellationToken);
+        await OutputFile.WriteAsync(outputPath,
+            (stream, token) => document.SaveAsync(stream, SaveOptions.None, token), cancellationToken);
     }
 
     private static XElement CreateItem(ArticleLink article, string siteUrl)

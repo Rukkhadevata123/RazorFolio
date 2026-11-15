@@ -21,6 +21,7 @@ public sealed class OutputManifest
     public static async Task<OutputManifest> LoadAsync(
         string outputDirectory, string manifestPath, CancellationToken cancellationToken)
     {
+        OutputFile.RequireNoLinks(manifestPath);
         string[] files = [];
         if (File.Exists(manifestPath))
         {
@@ -52,39 +53,26 @@ public sealed class OutputManifest
             .ToHashSet(comparer);
         string[] stalePaths = [.. previousFiles.Except(currentFiles, comparer).Select(GetSafePath)];
 
-        // Do not follow output symlinks when deleting files recorded by an earlier build.
+        OutputFile.RequireNoLinks(manifestPath);
+        // Validate all stale paths before deleting any of them.
         foreach (var path in stalePaths)
         {
-            for (var entry = path; entry is not null; entry = Path.GetDirectoryName(entry))
-            {
-                if ((File.Exists(entry) || Directory.Exists(entry))
-                    && (File.GetAttributes(entry) & FileAttributes.ReparsePoint) != 0)
-                {
-                    throw new InvalidDataException($"Refusing to clean output through a symbolic link: {entry}");
-                }
-
-                if (comparer.Equals(entry, outputDirectory))
-                {
-                    break;
-                }
-            }
+            OutputFile.RequireNoLinks(path);
         }
 
         foreach (var path in stalePaths)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            OutputFile.RequireNoLinks(path);
             if (File.Exists(path))
             {
                 File.Delete(path);
             }
         }
 
-        Directory.CreateDirectory(Path.GetDirectoryName(manifestPath)!);
         var orderedFiles = currentFiles.Order(comparer).ToArray();
         var json = JsonSerializer.Serialize(orderedFiles, Json.StringArray);
-        var temporaryPath = manifestPath + ".tmp";
-        await File.WriteAllTextAsync(temporaryPath, json, cancellationToken);
-        File.Move(temporaryPath, manifestPath, overwrite: true);
+        await OutputFile.WriteTextAsync(manifestPath, json, cancellationToken);
     }
 
     private string GetSafePath(string relativePath)

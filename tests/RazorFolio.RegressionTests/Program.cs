@@ -2,8 +2,10 @@ using System.Security.Cryptography;
 using System.Xml.Linq;
 using RazorFolio.Core;
 using RazorFolio.Core.Assets;
+using RazorFolio.Core.Configuration;
 using RazorFolio.Core.Content;
 using RazorFolio.Core.Diagnostics;
+using RazorFolio.Core.Output;
 using RazorFolio.Core.Rendering;
 using RazorFolio.Themes.Default;
 
@@ -16,6 +18,13 @@ await RebuildSiteAsync(Path.Combine(runDirectory, "rebuild"));
 Console.WriteLine("PASS: resource fingerprints and stale output cleanup");
 await RejectConflictsAsync(Path.Combine(runDirectory, "conflicts"));
 Console.WriteLine("PASS: output path conflicts");
+await PreserveOutputOnWriteFailureAsync(Path.Combine(runDirectory, "write-failure"));
+Console.WriteLine("PASS: failed writes preserve the previous file");
+if (OperatingSystem.IsLinux())
+{
+    await RejectLinkedOutputAsync(Path.Combine(runDirectory, "linked-output"));
+    Console.WriteLine("PASS: dangling output links are rejected");
+}
 
 static async Task BuildArticleSiteAsync(string site)
 {
@@ -156,6 +165,50 @@ static async Task RejectConflictsAsync(string site)
 
         throw new InvalidOperationException($"Expected build to reject an output conflict: {message}.");
     }
+}
+
+static async Task PreserveOutputOnWriteFailureAsync(string site)
+{
+    const string existing = "Previous feed";
+    Write(site, "feed.xml", existing);
+    var feed = Path.Combine(site, "feed.xml");
+    var invalidXml = new SiteConfiguration { Url = "https://example.com/", Title = "Invalid \u0001 title" };
+
+    try
+    {
+        await RssWriter.WriteAsync(feed, invalidXml, []);
+    }
+    catch (ArgumentException)
+    {
+        Require(File.ReadAllText(feed) == existing, "A serialization failure must preserve the previous output.");
+        Require(Directory.GetFiles(site).Length == 1, "A failed write must remove its temporary file.");
+        return;
+    }
+
+    throw new InvalidOperationException("Expected RSS serialization to reject the illegal XML character.");
+}
+
+static async Task RejectLinkedOutputAsync(string site)
+{
+    Write(site, "content/post.md", "Post.");
+    var target = SiteBuildTarget.Production(site);
+    Directory.CreateDirectory(target.OutputDirectory);
+    var link = Path.Combine(target.OutputDirectory, "index.html");
+    var destination = Path.Combine(site, "outside-output.html");
+    File.CreateSymbolicLink(link, destination);
+
+    try
+    {
+        await CreateBuilder().BuildAsync(target);
+    }
+    catch (InvalidDataException exception) when (exception.Message.Contains("symbolic link", StringComparison.Ordinal))
+    {
+        Require(!File.Exists(destination), "A dangling output link must not create its target file.");
+        Require(new FileInfo(link).LinkTarget == destination, "The build must leave the output link untouched.");
+        return;
+    }
+
+    throw new InvalidOperationException("Expected the build to reject a dangling output link.");
 }
 
 static SiteBuilder CreateBuilder(Action<ContentLinkDiagnostic>? reportDiagnostic = null)

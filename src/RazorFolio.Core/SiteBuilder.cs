@@ -61,7 +61,7 @@ public sealed class SiteBuilder(
         string[] themeAssetPaths = [.. preparedThemeAssets.Select(asset => asset.OutputPath)];
         var generatedPaths = plan.ValidateGeneratedPaths(themeAssetPaths, searchIndexPath, customStylesheetPath);
 
-        Directory.CreateDirectory(outputDirectory);
+        OutputFile.CreateDirectory(outputDirectory);
         string[] themeSourcePaths =
             [.. themeAssets.Select(asset => Path.GetFullPath(asset.RelativePath, outputDirectory))];
         var assetPaths = await assetCopier.CopyAsync(
@@ -69,13 +69,12 @@ public sealed class SiteBuilder(
             [.. generatedPaths, .. themeSourcePaths], cancellationToken);
         foreach (var asset in preparedThemeAssets)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(asset.OutputPath)!);
-            await File.WriteAllBytesAsync(asset.OutputPath, asset.Content, cancellationToken);
+            await OutputFile.WriteBytesAsync(asset.OutputPath, asset.Content, cancellationToken);
         }
 
         if (customStylesheetPath is not null)
         {
-            await File.WriteAllBytesAsync(customStylesheetPath, customStylesheetContent!, cancellationToken);
+            await OutputFile.WriteBytesAsync(customStylesheetPath, customStylesheetContent!, cancellationToken);
         }
 
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
@@ -142,8 +141,7 @@ public sealed class SiteBuilder(
                 pageAnchors.Add(GetRelativeOutputPath(outputPath), HtmlAnchorReader.Read(html));
             }
 
-            Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-            await File.WriteAllTextAsync(outputPath, html, cancellationToken);
+            await OutputFile.WriteTextAsync(outputPath, html, cancellationToken);
         }
 
         ArticleLink[] orderedArticles =
@@ -168,8 +166,7 @@ public sealed class SiteBuilder(
                 pageArticles, contextFactory.Create(outputPath), pagination);
             var homeHtml = await pageRenderer.RenderAsync(home, cancellationToken);
 
-            Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-            await File.WriteAllTextAsync(outputPath, homeHtml, cancellationToken);
+            await OutputFile.WriteTextAsync(outputPath, homeHtml, cancellationToken);
         }
 
         if (plan.HasTags)
@@ -178,7 +175,7 @@ public sealed class SiteBuilder(
             var archive = new TagArchivePage(
                 tagGroups, contextFactory.Create(plan.TagsPath), PageUrl.GetRelative(plan.TagsPath, homePath));
             var tagsHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
-            await File.WriteAllTextAsync(plan.TagsPath, tagsHtml, cancellationToken);
+            await OutputFile.WriteTextAsync(plan.TagsPath, tagsHtml, cancellationToken);
 
             var articlePaths = orderedArticlePages.ToDictionary(
                 output => output.Url, output => output.OutputPath, StringComparer.Ordinal);
@@ -193,8 +190,7 @@ public sealed class SiteBuilder(
                     group.Name, tagArticles, contextFactory.Create(outputPath),
                     PageUrl.GetRelative(outputPath, homePath), PageUrl.GetRelative(outputPath, plan.TagsPath));
                 var html = await pageRenderer.RenderAsync(tagPage, cancellationToken);
-                Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-                await File.WriteAllTextAsync(outputPath, html, cancellationToken);
+                await OutputFile.WriteTextAsync(outputPath, html, cancellationToken);
             }
         }
 
@@ -204,7 +200,7 @@ public sealed class SiteBuilder(
                 GroupByCategory(orderedArticles), contextFactory.Create(plan.CategoriesPath),
                 PageUrl.GetRelative(plan.CategoriesPath, homePath));
             var categoriesHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
-            await File.WriteAllTextAsync(plan.CategoriesPath, categoriesHtml, cancellationToken);
+            await OutputFile.WriteTextAsync(plan.CategoriesPath, categoriesHtml, cancellationToken);
         }
 
         if (plan.HasArticles)
@@ -213,12 +209,12 @@ public sealed class SiteBuilder(
                 GroupByYear(orderedArticles), contextFactory.Create(plan.ArchivesPath),
                 PageUrl.GetRelative(plan.ArchivesPath, homePath));
             var archivesHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
-            await File.WriteAllTextAsync(plan.ArchivesPath, archivesHtml, cancellationToken);
+            await OutputFile.WriteTextAsync(plan.ArchivesPath, archivesHtml, cancellationToken);
         }
 
         var notFoundPage = new NotFoundPage(contextFactory.Create(plan.NotFoundPath, rootRelative: true));
         var notFoundHtml = await pageRenderer.RenderAsync(notFoundPage, cancellationToken);
-        await File.WriteAllTextAsync(plan.NotFoundPath, notFoundHtml, cancellationToken);
+        await OutputFile.WriteTextAsync(plan.NotFoundPath, notFoundHtml, cancellationToken);
 
         if (plan.GenerateMetadata)
         {
@@ -244,7 +240,7 @@ public sealed class SiteBuilder(
                 alias.OutputPath, targetUrl, canonicalUrl, configuration.Language, cancellationToken);
         }
 
-        await File.WriteAllBytesAsync(searchIndexPath, searchIndexContent, cancellationToken);
+        await OutputFile.WriteBytesAsync(searchIndexPath, searchIndexContent, cancellationToken);
         // Keep the stable endpoint for external consumers; pages always use the fingerprinted URL.
         await SearchIndexWriter.WriteAsync(plan.SearchIndexAliasPath, searchDocuments, cancellationToken);
 

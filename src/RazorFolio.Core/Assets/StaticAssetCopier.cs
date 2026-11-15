@@ -34,11 +34,8 @@ public sealed class StaticAssetCopier
         foreach (var (sourcePath, targetPath) in copies)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-
             await using var source = File.OpenRead(sourcePath);
-            await using var target = File.Create(targetPath);
-            await source.CopyToAsync(target, cancellationToken);
+            await OutputFile.WriteAsync(targetPath, source.CopyToAsync, cancellationToken);
         }
 
         return [.. copies.Select(copy => copy.Target)];

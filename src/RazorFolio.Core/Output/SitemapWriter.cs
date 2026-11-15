@@ -35,8 +35,6 @@ public static class SitemapWriter
         }
 
         buffer.Position = 0;
-        cancellationToken.ThrowIfCancellationRequested();
-        await using var target = File.Create(outputPath);
-        await buffer.CopyToAsync(target, cancellationToken);
+        await OutputFile.WriteAsync(outputPath, buffer.CopyToAsync, cancellationToken);
     }
 }

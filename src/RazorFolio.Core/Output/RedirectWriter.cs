@@ -39,7 +39,6 @@ public static class RedirectWriter
             </html>
             """;
 
-        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-        await File.WriteAllTextAsync(outputPath, html, cancellationToken);
+        await OutputFile.WriteTextAsync(outputPath, html, cancellationToken);
     }
 }
