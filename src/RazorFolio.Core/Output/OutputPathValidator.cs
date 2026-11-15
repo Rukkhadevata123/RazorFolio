@@ -2,6 +2,25 @@ namespace RazorFolio.Core.Output;
 
 public static class OutputPathValidator
 {
+    internal static bool PathsConflict(string first, string second)
+    {
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        return string.Equals(first, second, comparison)
+            || first.StartsWith(second + Path.DirectorySeparatorChar, comparison)
+            || second.StartsWith(first + Path.DirectorySeparatorChar, comparison);
+    }
+
+    internal static void ValidateReservedPaths(IReadOnlyList<string> contentPaths, IReadOnlyList<string> reservedPaths)
+    {
+        foreach (var reservedPath in reservedPaths)
+        {
+            if (contentPaths.Any(path => PathsConflict(path, reservedPath)))
+            {
+                throw new InvalidDataException($"Path reserved for generated output: {reservedPath}");
+            }
+        }
+    }
+
     public static void Validate(IReadOnlyCollection<string> outputPaths)
     {
         var comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;

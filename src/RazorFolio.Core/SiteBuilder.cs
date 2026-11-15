@@ -1,4 +1,3 @@
-using System.Globalization;
 using RazorFolio.Core.Assets;
 using RazorFolio.Core.Configuration;
 using RazorFolio.Core.Content;
@@ -36,114 +35,38 @@ public sealed class SiteBuilder(
                 .Where(path => Path.GetExtension(path).Equals(".md", StringComparison.OrdinalIgnoreCase))
         ];
         Array.Sort(sourceFiles, StringComparer.Ordinal);
-        var allSources = await LoadArticlesAsync(sourceFiles, cancellationToken);
-        var sources = allSources.Where(source => target.IncludeDrafts || !source.Article.Info.Draft).ToList();
+        var sources = await LoadArticlesAsync(sourceFiles, cancellationToken);
+        var plan = new SiteOutputPlan(target, configuration, contentDirectory, sources);
+        var homePath = plan.HomePath;
+        var linkResolver = plan.LinkResolver;
 
-        var homePath = Path.Combine(outputDirectory, "index.html");
-        var notFoundPath = Path.Combine(outputDirectory, "404.html");
-        var articleCount = sources.Count(source => source.Article.Info.IsArticle);
-        var homePageCount = articleCount == 0 ? 1 : 1 + (articleCount - 1) / configuration.PageSize;
-        string[] homePaths =
-        [
-            .. Enumerable.Range(1, homePageCount).Select(number => number == 1
-                ? homePath
-                : Path.Combine(outputDirectory, "page", number.ToString(CultureInfo.InvariantCulture) + ".html"))
-        ];
-        ArticleOutput[] allOutputs =
-        [
-            .. allSources.Select(source =>
-            {
-                var originalPath = Path.Combine(outputDirectory, Path.GetRelativePath(contentDirectory, source.Path));
-                var outputPath = source.Article.OutputUrl is { } customUrl
-                    ? Path.Combine(outputDirectory, customUrl.Replace('/', Path.DirectorySeparatorChar))
-                    : Path.ChangeExtension(originalPath, ".html");
-                return new ArticleOutput(
-                    source.Article, outputPath, PageUrl.GetRelative(homePath, outputPath), originalPath, source.Path);
-            })
-        ];
-        ArticleOutput[] outputs = [.. allOutputs.Where(output => target.IncludeDrafts || !output.Article.Info.Draft)];
-        var pathComparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-        var linkResolver = new ContentLinkResolver(allOutputs.ToDictionary(
-            output => output.OriginalPath, output => output.OutputPath, pathComparer));
-        string[] pagePaths = [.. outputs.Select(output => output.OutputPath)];
-        var aliases = outputs.SelectMany(output => output.Article.Aliases.Select(alias => new AliasOutput(
-            Path.Combine(outputDirectory, alias.Replace('/', Path.DirectorySeparatorChar)), output.OutputPath))).ToArray();
-        string[] aliasPaths = [.. aliases.Select(alias => alias.OutputPath)];
-        string[] contentPaths = [.. pagePaths, .. aliasPaths];
-        OutputPathValidator.Validate(contentPaths);
-        var tagsPath = Path.Combine(outputDirectory, "tags.html");
-        var hasTags = sources.Any(source => source.Article.Info.IsArticle && source.Article.Info.Tags.Count > 0);
-        var tagPaths = sources.Where(source => source.Article.Info.IsArticle)
-            .SelectMany(source => source.Article.Info.Tags)
-            .Distinct(StringComparer.Ordinal)
-            .ToDictionary(tag => tag, tag => TagPagePath.GetOutputPath(outputDirectory, tag), StringComparer.Ordinal);
-        var categoriesPath = Path.Combine(outputDirectory, "categories.html");
-        var hasCategories = sources.Any(source => source.Article.Info.IsArticle && source.Article.Info.Categories.Count > 0);
-        var archivesPath = Path.Combine(outputDirectory, "archives.html");
-        var hasArticles = articleCount > 0;
-        List<string> reservedPaths = [.. homePaths];
-        if (hasTags)
-        {
-            reservedPaths.Add(tagsPath);
-            reservedPaths.AddRange(tagPaths.Values);
-        }
-        if (hasCategories)
-        {
-            reservedPaths.Add(categoriesPath);
-        }
-        if (hasArticles)
-        {
-            reservedPaths.Add(archivesPath);
-        }
-
-        var generateMetadata = configuration.Url is not null && !target.IncludeDrafts;
-        var sitemapPath = Path.Combine(outputDirectory, "sitemap.xml");
-        var feedPath = Path.Combine(outputDirectory, "feed.xml");
-        var searchIndexAliasPath = Path.Combine(outputDirectory, "search-index.json");
         SearchDocument[] searchDocuments =
         [
-            .. outputs.Select(output => new SearchDocument(
+            .. plan.ContentPages.Select(output => new SearchDocument(
                 output.Article.Info.Title,
                 output.Article.Info.Tags,
                 MarkdownTextExtractor.Extract(output.Article.Body),
                 PageUrl.GetRelative(homePath, output.OutputPath)))
         ];
         var searchIndexContent = SearchIndexWriter.Serialize(searchDocuments);
-        var searchIndexPath = ContentFingerprint.AddToPath(searchIndexAliasPath, searchIndexContent);
+        var searchIndexPath = ContentFingerprint.AddToPath(plan.SearchIndexAliasPath, searchIndexContent);
         var customStylesheetSource = Path.Combine(siteRoot, "static", "custom.css");
         var customStylesheetContent = File.Exists(customStylesheetSource)
             ? await File.ReadAllBytesAsync(customStylesheetSource, cancellationToken)
             : null;
         var customStylesheetPath = customStylesheetContent is null ? null
-            : ContentFingerprint.AddToPath(Path.Combine(outputDirectory, "custom.css"), customStylesheetContent);
-        string[] fingerprintedDataPaths = customStylesheetPath is null
-            ? [searchIndexPath, searchIndexAliasPath]
-            : [searchIndexPath, searchIndexAliasPath, customStylesheetPath];
-        var feedUrl = generateMetadata ? PageUrl.GetAbsolute(feedPath, outputDirectory, configuration.Url) : null;
-        string[] metadataPaths = generateMetadata ? [sitemapPath, feedPath] : [];
+            : ContentFingerprint.AddToPath(plan.CustomStylesheetBasePath, customStylesheetContent);
+        var feedUrl = plan.GenerateMetadata ? PageUrl.GetAbsolute(plan.FeedPath, outputDirectory, configuration.Url) : null;
         var preparedThemeAssets = await ThemeAssetPreparation.PrepareAsync(themeAssets, outputDirectory, cancellationToken);
         string[] themeAssetPaths = [.. preparedThemeAssets.Select(asset => asset.OutputPath)];
-        string[] protectedPaths =
-            [.. reservedPaths, .. metadataPaths, .. themeAssetPaths, .. fingerprintedDataPaths, notFoundPath];
-        OutputPathValidator.Validate(protectedPaths);
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-
-        foreach (var protectedPath in protectedPaths)
-        {
-            if (contentPaths.Any(path => string.Equals(path, protectedPath, comparison)
-                || path.StartsWith(protectedPath + Path.DirectorySeparatorChar, comparison)
-                || protectedPath.StartsWith(path + Path.DirectorySeparatorChar, comparison)))
-            {
-                throw new InvalidDataException($"Path reserved for generated output: {protectedPath}");
-            }
-        }
+        var generatedPaths = plan.ValidateGeneratedPaths(themeAssetPaths, searchIndexPath, customStylesheetPath);
 
         Directory.CreateDirectory(outputDirectory);
         string[] themeSourcePaths =
             [.. themeAssets.Select(asset => Path.GetFullPath(asset.RelativePath, outputDirectory))];
         var assetPaths = await assetCopier.CopyAsync(
             Path.Combine(siteRoot, "static"), outputDirectory,
-            [.. contentPaths, .. protectedPaths, .. themeSourcePaths], cancellationToken);
+            [.. generatedPaths, .. themeSourcePaths], cancellationToken);
         foreach (var asset in preparedThemeAssets)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(asset.OutputPath)!);
@@ -154,7 +77,10 @@ public sealed class SiteBuilder(
         {
             await File.WriteAllBytesAsync(customStylesheetPath, customStylesheetContent!, cancellationToken);
         }
-        var faviconPath = FindCopiedAsset("favicon.svg");
+
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var faviconOutputPath = Path.Combine(outputDirectory, "favicon.svg");
+        var faviconPath = assetPaths.FirstOrDefault(path => string.Equals(path, faviconOutputPath, comparison));
         List<string> stylesheetPaths = [.. GetAssetPaths(ThemeAssetKind.Stylesheet)];
         if (customStylesheetPath is not null)
         {
@@ -165,7 +91,7 @@ public sealed class SiteBuilder(
 
         ArticleOutput[] orderedArticlePages =
         [
-            .. outputs.Where(output => output.Article.Info.IsArticle)
+            .. plan.ContentPages.Where(output => output.Article.Info.IsArticle)
                 .OrderByDescending(output => output.Article.Info.Date)
                 .ThenBy(output => output.Url, StringComparer.Ordinal)
         ];
@@ -176,27 +102,29 @@ public sealed class SiteBuilder(
                 GetAdjacentArticle(orderedArticlePages, index + 1, output.OutputPath))))
             .ToDictionary();
 
-        var starredArticles = orderedArticlePages.Where(output => output.Article.Info.Star).ToArray();
-        var sidebarGroups = orderedArticlePages
-            .SelectMany(output => output.Article.Info.Categories.Count == 0
-                ? [(Category: null, Output: output)]
-                : output.Article.Info.Categories.Select(category => (Category: (string?)category, Output: output)))
-            .GroupBy(entry => entry.Category, StringComparer.Ordinal)
-            .OrderBy(group => group.Key is null)
-            .ThenBy(group => group.Key, StringComparer.Ordinal)
-            .ToArray();
+        List<(string Text, string OutputPath)> browsePages = [];
+        if (plan.HasArticles) browsePages.Add(("年份归档", plan.ArchivesPath));
+        if (plan.HasCategories) browsePages.Add(("分类", plan.CategoriesPath));
+        if (plan.HasTags) browsePages.Add(("标签", plan.TagsPath));
+
+        var contextFactory = new PageContextFactory(
+            configuration, target, linkResolver, homePath,
+            new PageContextFactory.AssetPaths(stylesheetPaths, scriptPaths, contentScriptPaths, searchIndexPath, faviconPath),
+            feedUrl is null ? null : (plan.FeedPath, feedUrl),
+            browsePages,
+            [.. orderedArticlePages.Select(output => (output.Article.Info, output.OutputPath))]);
 
         var pageAnchors = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-        foreach (var output in outputs)
+        foreach (var output in plan.ContentPages)
         {
             var article = output.Article;
             var outputPath = output.OutputPath;
             var homeUrl = PageUrl.GetRelative(outputPath, homePath);
             TagLink[] tags = article.Info.IsArticle ?
             [
-                .. article.Info.Tags.Select(tag => new TagLink(tag, PageUrl.GetRelative(outputPath, tagPaths[tag])))
+                .. article.Info.Tags.Select(tag => new TagLink(tag, PageUrl.GetRelative(outputPath, plan.TagPaths[tag])))
             ] : [];
-            var categoriesUrl = PageUrl.GetRelative(outputPath, categoriesPath);
+            var categoriesUrl = PageUrl.GetRelative(outputPath, plan.CategoriesPath);
             CategoryLink[] categories = article.Info.IsArticle ?
             [
                 .. article.Info.Categories.Select(category =>
@@ -207,7 +135,7 @@ public sealed class SiteBuilder(
                 link => linkResolver.Resolve(link, output.OriginalPath, outputPath));
             var page = new ArticlePage(
                 article.Info, rendered.BodyHtml, rendered.TitleHtml, rendered.Headings,
-                CreateContext(outputPath, article.Info.Draft), homeUrl, tags, categories, navigation);
+                contextFactory.Create(outputPath, article.Info.Draft), homeUrl, tags, categories, navigation);
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
             if (reportDiagnostic is not null)
             {
@@ -222,7 +150,8 @@ public sealed class SiteBuilder(
         [
             .. orderedArticlePages.Select(output => CreateArticleLink(output.Article.Info, output.OutputPath, homePath))
         ];
-        for (var index = 0; index < homePaths.Length; index++)
+        var homePaths = plan.HomePaths;
+        for (var index = 0; index < homePaths.Count; index++)
         {
             var outputPath = homePaths[index];
             ArticleLink[] pageArticles =
@@ -232,81 +161,83 @@ public sealed class SiteBuilder(
             ];
             var pagination = new Pagination(
                 index + 1,
-                homePaths.Length,
+                homePaths.Count,
                 index > 0 ? PageUrl.GetRelative(outputPath, homePaths[index - 1]) : null,
-                index + 1 < homePaths.Length ? PageUrl.GetRelative(outputPath, homePaths[index + 1]) : null);
+                index + 1 < homePaths.Count ? PageUrl.GetRelative(outputPath, homePaths[index + 1]) : null);
             var home = new HomePage(
-                pageArticles, CreateContext(outputPath), pagination);
+                pageArticles, contextFactory.Create(outputPath), pagination);
             var homeHtml = await pageRenderer.RenderAsync(home, cancellationToken);
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
             await File.WriteAllTextAsync(outputPath, homeHtml, cancellationToken);
         }
 
-        if (hasTags)
+        if (plan.HasTags)
         {
-            var tagGroups = GroupByTag(orderedArticles, tagsPath, tagPaths);
+            var tagGroups = GroupByTag(orderedArticles, plan.TagsPath, plan.TagPaths);
             var archive = new TagArchivePage(
-                tagGroups, CreateContext(tagsPath), PageUrl.GetRelative(tagsPath, homePath));
+                tagGroups, contextFactory.Create(plan.TagsPath), PageUrl.GetRelative(plan.TagsPath, homePath));
             var tagsHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
-            await File.WriteAllTextAsync(tagsPath, tagsHtml, cancellationToken);
+            await File.WriteAllTextAsync(plan.TagsPath, tagsHtml, cancellationToken);
 
             var articlePaths = orderedArticlePages.ToDictionary(
                 output => output.Url, output => output.OutputPath, StringComparer.Ordinal);
             foreach (var group in tagGroups)
             {
-                var outputPath = tagPaths[group.Name];
+                var outputPath = plan.TagPaths[group.Name];
                 ArticleLink[] tagArticles =
                 [
                     .. group.Articles.Select(article => CreateArticleLink(article.Info, articlePaths[article.Url], outputPath))
                 ];
                 var tagPage = new TagPage(
-                    group.Name, tagArticles, CreateContext(outputPath),
-                    PageUrl.GetRelative(outputPath, homePath), PageUrl.GetRelative(outputPath, tagsPath));
+                    group.Name, tagArticles, contextFactory.Create(outputPath),
+                    PageUrl.GetRelative(outputPath, homePath), PageUrl.GetRelative(outputPath, plan.TagsPath));
                 var html = await pageRenderer.RenderAsync(tagPage, cancellationToken);
                 Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
                 await File.WriteAllTextAsync(outputPath, html, cancellationToken);
             }
         }
 
-        if (hasCategories)
+        if (plan.HasCategories)
         {
             var archive = new CategoryArchivePage(
-                GroupByCategory(orderedArticles), CreateContext(categoriesPath), PageUrl.GetRelative(categoriesPath, homePath));
+                GroupByCategory(orderedArticles), contextFactory.Create(plan.CategoriesPath),
+                PageUrl.GetRelative(plan.CategoriesPath, homePath));
             var categoriesHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
-            await File.WriteAllTextAsync(categoriesPath, categoriesHtml, cancellationToken);
+            await File.WriteAllTextAsync(plan.CategoriesPath, categoriesHtml, cancellationToken);
         }
 
-        if (hasArticles)
+        if (plan.HasArticles)
         {
             var archive = new YearArchivePage(
-                GroupByYear(orderedArticles), CreateContext(archivesPath), PageUrl.GetRelative(archivesPath, homePath));
+                GroupByYear(orderedArticles), contextFactory.Create(plan.ArchivesPath),
+                PageUrl.GetRelative(plan.ArchivesPath, homePath));
             var archivesHtml = await pageRenderer.RenderAsync(archive, cancellationToken);
-            await File.WriteAllTextAsync(archivesPath, archivesHtml, cancellationToken);
+            await File.WriteAllTextAsync(plan.ArchivesPath, archivesHtml, cancellationToken);
         }
 
-        var notFoundPage = new NotFoundPage(CreateContext(notFoundPath, rootRelative: true));
+        var notFoundPage = new NotFoundPage(contextFactory.Create(plan.NotFoundPath, rootRelative: true));
         var notFoundHtml = await pageRenderer.RenderAsync(notFoundPage, cancellationToken);
-        await File.WriteAllTextAsync(notFoundPath, notFoundHtml, cancellationToken);
+        await File.WriteAllTextAsync(plan.NotFoundPath, notFoundHtml, cancellationToken);
 
-        if (generateMetadata)
+        if (plan.GenerateMetadata)
         {
             SitemapEntry[] entries =
             [
-                .. reservedPaths.Select(path => new SitemapEntry(
+                .. plan.ListingPaths.Select(path => new SitemapEntry(
                     PageUrl.GetAbsolute(path, outputDirectory, configuration.Url)!)),
-                .. outputs.Select(output => new SitemapEntry(
+                .. plan.ContentPages.Select(output => new SitemapEntry(
                     PageUrl.GetAbsolute(output.OutputPath, outputDirectory, configuration.Url)!,
                     output.Article.Info.Updated ?? output.Article.Info.Date))
             ];
-            await SitemapWriter.WriteAsync(sitemapPath, entries, cancellationToken);
-            await RssWriter.WriteAsync(feedPath, configuration, orderedArticles, cancellationToken);
+            await SitemapWriter.WriteAsync(plan.SitemapPath, entries, cancellationToken);
+            await RssWriter.WriteAsync(plan.FeedPath, configuration, orderedArticles, cancellationToken);
         }
 
-        foreach (var alias in aliases)
+        foreach (var alias in plan.Aliases)
         {
             var targetUrl = PageUrl.GetRelative(alias.OutputPath, alias.TargetPath);
-            var canonicalUrl = generateMetadata
+            var canonicalUrl = plan.GenerateMetadata
                 ? PageUrl.GetAbsolute(alias.TargetPath, outputDirectory, configuration.Url)
                 : null;
             await RedirectWriter.WriteAsync(
@@ -315,19 +246,19 @@ public sealed class SiteBuilder(
 
         await File.WriteAllBytesAsync(searchIndexPath, searchIndexContent, cancellationToken);
         // Keep the stable endpoint for external consumers; pages always use the fingerprinted URL.
-        await SearchIndexWriter.WriteAsync(searchIndexAliasPath, searchDocuments, cancellationToken);
+        await SearchIndexWriter.WriteAsync(plan.SearchIndexAliasPath, searchDocuments, cancellationToken);
 
         if (reportDiagnostic is not null)
         {
-            foreach (var alias in aliases)
+            foreach (var alias in plan.Aliases)
             {
                 pageAnchors.Add(GetRelativeOutputPath(alias.OutputPath),
                     pageAnchors[GetRelativeOutputPath(alias.TargetPath)]);
             }
 
             var checker = new ContentLinkChecker(outputDirectory,
-                [.. contentPaths, .. protectedPaths, .. assetPaths], configuration.Url, pageAnchors);
-            foreach (var output in outputs)
+                [.. generatedPaths, .. assetPaths], configuration.Url, pageAnchors);
+            foreach (var output in plan.ContentPages)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 foreach (var diagnostic in checker.Check(output.Article.Body, output.SourcePath,
@@ -338,27 +269,20 @@ public sealed class SiteBuilder(
             }
         }
 
-        await manifest.CompleteAsync(
-            [.. contentPaths, .. reservedPaths, .. metadataPaths, .. themeAssetPaths, .. assetPaths,
-                .. fingerprintedDataPaths, notFoundPath],
-            cancellationToken);
-
-        return sources.Count + reservedPaths.Count + aliases.Length + 1;
+        await manifest.CompleteAsync([.. generatedPaths, .. assetPaths], cancellationToken);
+        return plan.PageCount;
 
         string GetRelativeOutputPath(string path) =>
             Path.GetRelativePath(outputDirectory, path).Replace(Path.DirectorySeparatorChar, '/');
 
-        string? FindCopiedAsset(string relativePath) => assetPaths.FirstOrDefault(path =>
-            string.Equals(path, Path.Combine(outputDirectory, relativePath), comparison));
-
         ArticleLink CreateArticleLink(ArticleInfo info, string targetPath, string fromPath) =>
             new(info, PageUrl.GetRelative(fromPath, targetPath))
             {
-                Tags = [.. info.Tags.Select(tag => new TagLink(tag, PageUrl.GetRelative(fromPath, tagPaths[tag])))],
+                Tags = [.. info.Tags.Select(tag => new TagLink(tag, PageUrl.GetRelative(fromPath, plan.TagPaths[tag])))],
                 Categories =
                 [
                     .. info.Categories.Select(category => new CategoryLink(
-                        category, PageUrl.GetRelative(fromPath, categoriesPath) + "#" + CategoryGroup.GetId(category)))
+                        category, PageUrl.GetRelative(fromPath, plan.CategoriesPath) + "#" + CategoryGroup.GetId(category)))
                 ]
             };
 
@@ -367,57 +291,6 @@ public sealed class SiteBuilder(
             .. themeAssets.Select((asset, index) => (asset, index))
                 .Where(entry => entry.asset.Kind == kind).Select(entry => themeAssetPaths[entry.index])
         ];
-
-        PageContext CreateContext(string pagePath, bool draft = false, bool rootRelative = false)
-        {
-            string[] stylesheetUrls = [.. stylesheetPaths.Select(GetUrl)];
-            string[] scriptUrls = [.. scriptPaths.Select(GetUrl)];
-            string[] contentScriptUrls = [.. contentScriptPaths.Select(GetUrl)];
-            NavigationLink[] navigation =
-            [
-                .. configuration.Navigation.Select(item => new NavigationLink(
-                    item.Text, ResolveConfiguredLink(item.Link)))
-            ];
-            var canonicalUrl = draft || rootRelative ? null : PageUrl.GetAbsolute(pagePath, outputDirectory, configuration.Url);
-            var feed = feedUrl is null ? null : new FeedLink(GetUrl(feedPath), feedUrl);
-            var faviconUrl = faviconPath is null ? null : GetUrl(faviconPath);
-            List<NavigationLink> browseLinks = [];
-            if (hasArticles) browseLinks.Add(new NavigationLink("年份归档", GetUrl(archivesPath)));
-            if (hasCategories) browseLinks.Add(new NavigationLink("分类", GetUrl(categoriesPath)));
-            if (hasTags) browseLinks.Add(new NavigationLink("标签", GetUrl(tagsPath)));
-            var theme = ThemeView.Create(configuration, ResolveConfiguredLink);
-            return new PageContext(configuration, stylesheetUrls, scriptUrls, contentScriptUrls, navigation,
-                browseLinks, GetUrl(homePath), GetUrl(pagePath), GetUrl(searchIndexPath),
-                theme, canonicalUrl, feed, faviconUrl)
-            {
-                StarredArticles =
-                [
-                    .. starredArticles.Select(output => new ArticleLink(output.Article.Info, GetUrl(output.OutputPath)))
-                ],
-                SidebarCategories =
-                [
-                    .. sidebarGroups.Select(group => new CategoryGroup(group.Key ?? "未分类",
-                        [.. group.Select(entry => new ArticleLink(entry.Output.Article.Info, GetUrl(entry.Output.OutputPath)))]))
-                ]
-            };
-
-            string GetUrl(string path) => ResolveUrl(PageUrl.GetRelative(pagePath, path));
-
-            string ResolveConfiguredLink(string link) => ResolveUrl(linkResolver.Resolve(link, homePath, pagePath));
-
-            string ResolveUrl(string url)
-            {
-                if (!rootRelative || url.StartsWith('/') || Uri.TryCreate(url, UriKind.Absolute, out _))
-                {
-                    return url;
-                }
-
-                // A 404 is served at the missing URL, so relative paths would depend on that URL's depth.
-                var siteUrl = target.IncludeDrafts ? null : configuration.Url;
-                var resolved = new Uri(new Uri(siteUrl ?? "https://razorfolio.invalid/"), url);
-                return resolved.PathAndQuery + resolved.Fragment;
-            }
-        }
     }
 
     private static ArticleLink? GetAdjacentArticle(
@@ -433,7 +306,7 @@ public sealed class SiteBuilder(
     }
 
     private static TagGroup[] GroupByTag(
-        IReadOnlyList<ArticleLink> articles, string tagsPath, Dictionary<string, string> tagPaths) =>
+        IReadOnlyList<ArticleLink> articles, string tagsPath, IReadOnlyDictionary<string, string> tagPaths) =>
     [
         .. articles.SelectMany(article => article.Info.Tags.Select(tag => (Tag: tag, Article: article)))
             .GroupBy(entry => entry.Tag, StringComparer.Ordinal)
@@ -470,9 +343,4 @@ public sealed class SiteBuilder(
 
         return sources;
     }
-
-    private sealed record ArticleOutput(
-        ParsedArticle Article, string OutputPath, string Url, string OriginalPath, string SourcePath);
-
-    private sealed record AliasOutput(string OutputPath, string TargetPath);
 }

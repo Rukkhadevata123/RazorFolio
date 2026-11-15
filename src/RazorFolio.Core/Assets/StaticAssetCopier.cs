@@ -1,3 +1,5 @@
+using RazorFolio.Core.Output;
+
 namespace RazorFolio.Core.Assets;
 
 public sealed class StaticAssetCopier
@@ -20,15 +22,10 @@ public sealed class StaticAssetCopier
                 source,
                 Path.Combine(outputDirectory, Path.GetRelativePath(sourceDirectory, source))))
         ];
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-
         // Reject file and directory conflicts before copying any assets.
         foreach (var (sourcePath, targetPath) in copies)
         {
-            if (reservedPaths.Any(path =>
-                string.Equals(path, targetPath, comparison)
-                || targetPath.StartsWith(path + Path.DirectorySeparatorChar, comparison)
-                || path.StartsWith(targetPath + Path.DirectorySeparatorChar, comparison)))
+            if (reservedPaths.Any(path => OutputPathValidator.PathsConflict(path, targetPath)))
             {
                 throw new InvalidDataException($"Static asset conflicts with generated output: {sourcePath}");
             }
