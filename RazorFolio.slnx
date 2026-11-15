@@ -10,4 +10,7 @@
     <Project Path="src/RazorFolio.Core/RazorFolio.Core.csproj" />
     <Project Path="src/RazorFolio.Themes.Default/RazorFolio.Themes.Default.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RazorFolio.RegressionTests/RazorFolio.RegressionTests.csproj" />
+  </Folder>
 </Solution>

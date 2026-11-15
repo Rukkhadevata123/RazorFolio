@@ -52,7 +52,16 @@ my-blog/
 
 `dotnet build` 构建生成器，`rf build` 生成网站。修改 C#、Razor 模板或内置资源后，重新编译并重启 `dev`。
 
-Windows/Linux 原生打包、版本、校验和、CI 与 .NET 工具打包见[发布说明](docs/releasing.md)。本地样例、检查程序和产物保存在被忽略的 `artifacts/`，不进入分发包。
+Windows/Linux 原生打包、版本、校验和与 .NET 工具打包见[发布说明](docs/releasing.md)。
+
+每次 push 和 PR 都会在 Windows 和 Linux 上构建并运行[核心回归测试](tests/RazorFolio.RegressionTests)，覆盖文章路径、链接诊断、草稿、RSS 与 sitemap、资源哈希和产物清理。在仓库根目录运行同样的检查：
+
+```bash
+dotnet build -c Release --artifacts-path artifacts/build
+dotnet run --project tests/RazorFolio.RegressionTests -c Release --no-build --artifacts-path artifacts/build
+```
+
+编译产物位于 `artifacts/build/`，测试站点位于 `artifacts/regression/`。测试项目不参与 CLI 打包。
 
 | 项目 | 职责 |
 | --- | --- |
