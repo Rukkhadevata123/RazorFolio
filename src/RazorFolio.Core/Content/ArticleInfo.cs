@@ -13,6 +13,7 @@ public sealed record ArticleInfo(
 {
     public string? ShareImage { get; init; }
     public DateOnly? Updated { get; init; }
+    public int ReadingTimeMinutes { get; init; }
     public bool Star { get; init; }
     public LicenseOptions? License { get; init; }
 }
