@@ -24,7 +24,7 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ../my-blog
 | --- | --- |
 | `rf new <directory>` | 创建站点 |
 | `rf dev --site <directory>` | 包含草稿，监听修改并刷新 |
-| `rf build --site <directory> [--url <site-url>]` | 生成正式网站，排除草稿，可指定本次构建的站点 URL |
+| `rf build --site <directory> [--url <site-url>] [--strict-links]` | 生成正式网站，排除草稿，可指定站点 URL 和启用严格链接检查 |
 | `rf preview --site <directory>` | 预览已有产物，可用 `--directory` 指定目录 |
 | `rf --help` / `rf --version` | 帮助与版本 |
 

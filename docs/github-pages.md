@@ -57,6 +57,8 @@ env:
 
 工作流在临时目录构建站点，用 `rf build --url` 传入部署 URL。Actions 直接部署使用 Pages 配置返回的地址，Git 分支发布使用 `site_url`。生成的 `public/` 作为本次发布的产物。
 
+要在发现失效站内链接时停止发布，在模板的 `rf build` 命令中加上 `--strict-links`。检查范围见[构建检查](writing.md#构建检查)。
+
 发布后检查首页、文章、搜索、图片和一个不存在的深层地址。本地可填写相同的 `url`，通过 `rf build` 和 `rf preview` 检查正式产物，见[部署路径与 404](configuration.md#部署路径与-404)。
 
 主题资源和搜索索引使用内容哈希地址，发布新内容后页面会引用对应的新文件。若自定义域名经过 CDN，仍需确保 HTML 能及时刷新；不要只清理某个旧 CSS 地址。详见[资源与缓存](configuration.md#资源与缓存)。

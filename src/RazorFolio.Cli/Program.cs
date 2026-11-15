@@ -15,7 +15,7 @@ if (args is [] or ["--help" or "-h"])
 
         Usage:
           rf new <directory>
-          rf build --site <directory> [--url <site-url>]
+          rf build --site <directory> [--url <site-url>] [--strict-links]
           rf dev --site <directory> [--port 8080]
           rf preview --site <directory> [--directory public] [--port 8080]
           rf --version
@@ -27,7 +27,8 @@ if (args is [] or ["--help" or "-h"])
 
         Dev builds into .razorfolio/dev/ with drafts and reloads browsers on source changes.
 
-        Build and dev warn about missing local Markdown link targets without failing the build.
+        Build and dev report local Markdown link warnings by default.
+        Build --strict-links reports link errors and exits with code 1 if any are found.
 
         Build --url overrides the configured site URL for this build.
 
@@ -69,19 +70,34 @@ try
     var command = SiteCommand.Parse(args);
     var pageRenderer = new RazorPageRenderer();
     var markdownPipeline = MarkdownPipelineFactory.Create();
+    var linkSeverity = command.StrictLinks ? "error" : "warning";
+    var linkErrors = 0;
     var builder = new SiteBuilder(
         new ArticleParser(markdownPipeline),
         new MarkdownRenderer(markdownPipeline),
         pageRenderer,
         new StaticAssetCopier(),
         DefaultThemeAssets.All,
-        diagnostic => Console.Error.WriteLine(
-            $"{diagnostic.SourcePath}({diagnostic.Line},{diagnostic.Column}): warning {diagnostic.Code}: "
-            + $"{diagnostic.Message} Link: {diagnostic.Link}"));
+        diagnostic =>
+        {
+            if (command.StrictLinks)
+            {
+                linkErrors++;
+            }
+            Console.Error.WriteLine(
+                $"{diagnostic.SourcePath}({diagnostic.Line},{diagnostic.Column}): {linkSeverity} {diagnostic.Code}: "
+                + $"{diagnostic.Message} Link: {diagnostic.Link}");
+        });
     var target = command.Name == "dev"
         ? SiteBuildTarget.Development(command.SiteDirectory)
         : SiteBuildTarget.Production(command.SiteDirectory, command.UrlOverride);
     var pageCount = await builder.BuildAsync(target);
+
+    if (linkErrors > 0)
+    {
+        Console.Error.WriteLine($"build failed: {linkErrors} local link error(s).");
+        return 1;
+    }
 
     Console.WriteLine($"Built {pageCount} page(s) in {target.OutputDirectory}");
     if (command.Name == "dev")
