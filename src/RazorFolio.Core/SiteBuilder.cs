@@ -134,7 +134,10 @@ public sealed class SiteBuilder(
                 link => linkResolver.Resolve(link, output.OriginalPath, outputPath));
             var page = new ArticlePage(
                 article.Info, rendered.BodyHtml, rendered.TitleHtml, rendered.Headings,
-                contextFactory.Create(outputPath, article.Info.Draft), homeUrl, tags, categories, navigation);
+                contextFactory.Create(outputPath, article.Info.Draft), homeUrl, tags, categories, navigation)
+            {
+                RelatedArticles = RelatedArticleSelector.Select(output, orderedArticlePages)
+            };
             var html = await pageRenderer.RenderAsync(page, cancellationToken);
             if (reportDiagnostic is not null)
             {

@@ -15,4 +15,5 @@ public sealed record ArticlePage(
     ArticleNavigation Navigation) : IPageModel
 {
     public LicenseOptions? License => Info.License ?? (Info.IsArticle ? Context.Site.License : null);
+    public IReadOnlyList<ArticleLink> RelatedArticles { get; init; } = [];
 }

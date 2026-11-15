@@ -101,6 +101,24 @@
                 </footer>
             }
         </article>
+        @if (Model.RelatedArticles.Count > 0)
+        {
+            <section class="related-articles">
+                <h2>相关文章</h2>
+                <ul>
+                    @foreach (var article in Model.RelatedArticles)
+                    {
+                        <li>
+                            <a href="@article.Url">@article.Info.Title</a>
+                            @if (article.Info.Draft)
+                            {
+                                <small>草稿</small>
+                            }
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
         @if (Model.Navigation.Previous is not null || Model.Navigation.Next is not null)
         {
             <nav class="article-navigation" aria-label="文章导航">

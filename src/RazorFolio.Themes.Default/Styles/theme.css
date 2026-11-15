@@ -828,6 +828,25 @@ blockquote {
     background: var(--soft);
     text-decoration: none;
 }
+.related-articles {
+    margin-block-start: 1.5rem;
+    padding-block-start: 1rem;
+    border-block-start: 1px solid var(--border);
+    overflow-wrap: anywhere;
+}
+.related-articles h2 {
+    margin: 0 0 .5rem;
+    font-size: 1rem;
+}
+.related-articles ul {
+    display: grid;
+    gap: .35rem;
+    margin: 0;
+    padding-inline-start: 1.25rem;
+}
+.related-articles small {
+    color: var(--muted);
+}
 .article-navigation {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

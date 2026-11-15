@@ -29,7 +29,7 @@
     .site-header, .site-sidebar, .page-toc, .mobile-toc, .mobile-sidebar,
     .code-copy-controls, .heading-anchor, .skip, .profile, .browse-links,
     .pagination, .pagination-status, .article-tools, .print-status,
-    .article-navigation, .article-tags, .article-categories, .site-footer,
+    .article-navigation, .related-articles, .article-tags, .article-categories, .site-footer,
     .image-hint, .search-dialog, .search-dialog[open], .image-dialog, .image-dialog[open] {
         display: none !important;
     }

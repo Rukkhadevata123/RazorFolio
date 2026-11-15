@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using RazorFolio.Core;
 using RazorFolio.Core.Assets;
@@ -14,6 +15,8 @@ Console.WriteLine($"Regression sites: {runDirectory}");
 
 await BuildArticleSiteAsync(Path.Combine(runDirectory, "articles"));
 Console.WriteLine("PASS: article URLs, build URL override, link diagnostics, drafts and metadata");
+await BuildRelatedArticlesAsync(Path.Combine(runDirectory, "related"));
+Console.WriteLine("PASS: related article ordering, fallbacks and draft filtering");
 await RebuildSiteAsync(Path.Combine(runDirectory, "rebuild"));
 Console.WriteLine("PASS: resource fingerprints and stale output cleanup");
 await RejectConflictsAsync(Path.Combine(runDirectory, "conflicts"));
@@ -105,6 +108,44 @@ static async Task BuildArticleSiteAsync(string site)
         "RSS links must use the build URL.");
     Require(originalConfig.SequenceEqual(File.ReadAllBytes(Path.Combine(site, "razorfolio.json"))),
         "The build URL must leave the site configuration untouched.");
+}
+
+static async Task BuildRelatedArticlesAsync(string site)
+{
+    Write(site, "content/deep/current.md", "---\ntags: [cli, linux]\ncategory: [notes]\n---\nCurrent.");
+    Write(site, "content/both.md", "---\ntags: [cli, linux]\nurl: /guides/both.html\n---\nTwo shared tags.");
+    Write(site, "content/same-newer.md", "---\ntags: [cli]\ncategory: [notes]\ndate: 2025-01-01\n---\nSame category.");
+    Write(site, "content/same-older.md", "---\ntags: [cli]\ncategory: [notes]\ndate: 2024-01-01\n---\nSame category.");
+    Write(site, "content/other.md", "---\ntags: [cli]\ndate: 2026-01-01\n---\nDifferent category.");
+    Write(site, "content/fallback.md", "---\ncategory: [notes]\n---\nOnly a category.");
+    Write(site, "content/draft.md", "---\ntags: [cli, linux]\ncategory: [notes]\ndraft: true\n---\nDraft.");
+    Write(site, "content/plain.md", "---\ntags: [cli, linux]\ncategory: [notes]\narticle: false\n---\nPlain page.");
+    Write(site, "content/unrelated.md", "---\ntags: [unrelated]\n---\nIndependent article.");
+
+    var builder = CreateBuilder();
+    var production = SiteBuildTarget.Production(site);
+    await builder.BuildAsync(production);
+    var output = production.OutputDirectory;
+
+    string[] expected = ["../guides/both.html", "../same-newer.html", "../same-older.html"];
+    Require(RelatedUrls(output, "deep/current.html").SequenceEqual(expected),
+        "Related links must rank tag matches, then category ties and existing article order, with a limit of three.");
+    Require(RelatedUrls(output, "fallback.html").Contains("./deep/current.html"),
+        "A matching category alone must qualify.");
+    Require(RelatedUrls(output, "plain.html").Length == 0, "Plain pages must not show related articles.");
+    Require(RelatedUrls(output, "unrelated.html").Length == 0, "Hide the block when no other article matches.");
+
+    var development = SiteBuildTarget.Development(site);
+    await builder.BuildAsync(development);
+    string[] devExpected = ["../draft.html", "../guides/both.html", "../same-newer.html"];
+    Require(RelatedUrls(development.OutputDirectory, "deep/current.html").SequenceEqual(devExpected),
+        "Drafts can appear in related links only during development.");
+
+    static string[] RelatedUrls(string output, string page)
+    {
+        var section = Regex.Match(Read(output, page), "<section class=\"related-articles\">.*?</section>", RegexOptions.Singleline);
+        return [.. Regex.Matches(section.Value, "href=\"([^\"]+)\"").Select(match => match.Groups[1].Value)];
+    }
 }
 
 static async Task RebuildSiteAsync(string site)
