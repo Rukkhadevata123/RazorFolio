@@ -15,7 +15,7 @@ if (args is [] or ["--help" or "-h"])
 
         Usage:
           rf new <directory>
-          rf build --site <directory>
+          rf build --site <directory> [--url <site-url>]
           rf dev --site <directory> [--port 8080]
           rf preview --site <directory> [--directory public] [--port 8080]
           rf --version
@@ -28,6 +28,8 @@ if (args is [] or ["--help" or "-h"])
         Dev builds into .razorfolio/dev/ with drafts and reloads browsers on source changes.
 
         Build and dev warn about missing local Markdown link targets without failing the build.
+
+        Build --url overrides the configured site URL for this build.
 
         New creates a minimal site in a new or empty directory.
         """);
@@ -78,7 +80,7 @@ try
             + $"{diagnostic.Message} Link: {diagnostic.Link}"));
     var target = command.Name == "dev"
         ? SiteBuildTarget.Development(command.SiteDirectory)
-        : SiteBuildTarget.Production(command.SiteDirectory);
+        : SiteBuildTarget.Production(command.SiteDirectory, command.UrlOverride);
     var pageCount = await builder.BuildAsync(target);
 
     Console.WriteLine($"Built {pageCount} page(s) in {target.OutputDirectory}");

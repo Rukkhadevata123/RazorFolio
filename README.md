@@ -24,7 +24,7 @@ dotnet run --project src/RazorFolio.Cli -- dev --site ../my-blog
 | --- | --- |
 | `rf new <directory>` | 创建站点 |
 | `rf dev --site <directory>` | 包含草稿，监听修改并刷新 |
-| `rf build --site <directory>` | 生成正式网站，排除草稿 |
+| `rf build --site <directory> [--url <site-url>]` | 生成正式网站，排除草稿，可指定本次构建的站点 URL |
 | `rf preview --site <directory>` | 预览已有产物，可用 `--directory` 指定目录 |
 | `rf --help` / `rf --version` | 帮助与版本 |
 
@@ -46,7 +46,7 @@ my-blog/
 - [原生包使用](docs/native-package.md)：解压、运行和升级。
 - [GitHub Pages 部署](docs/github-pages.md)：Actions 直接部署或发布到指定仓库、分支。
 
-部署时上传 `public/`，其中包含带主题的 `404.html`。子路径部署填写配置 `url`，具体用法见[部署路径与 404](docs/configuration.md#部署路径与-404)。主题资源和浏览器库随生成器提供；写作者只需维护站点内容。
+部署时上传 `public/`，其中包含带主题的 `404.html`。在站点配置或构建参数中提供完整的站点 URL，见[部署路径与 404](docs/configuration.md#部署路径与-404)。主题资源和浏览器库随生成器提供。
 
 ## 开发与发布
 

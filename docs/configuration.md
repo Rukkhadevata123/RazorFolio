@@ -103,9 +103,17 @@
 
 部署到域名根目录时，`url` 填写 `https://example.com/`；部署到子目录时，填写完整入口，例如 `https://example.com/blog/`。
 
-配置 `url` 后，正式页面带 canonical 地址，`build` 还会生成 `feed.xml` 和 `sitemap.xml`；`dev` 不生成这两个文件。RSS 收录按文章顺序排列的前 20 篇及其 `description`，不含全文；`pubDate` 使用文章的 `date`，按 UTC 零点输出，没有日期时省略。sitemap 中文章和普通页的 `lastmod` 优先使用 `updated`，否则使用 `date`；没有日期的内容及首页、归档等汇总页省略 `lastmod`。
+为单次正式构建指定部署地址：
 
-构建会生成带主题的 `404.html`，提供返回首页、归档和搜索入口。它的资源和站内链接从配置的站点根路径定位，访问深层错误地址时也能加载样式。省略 `url` 时按域名根目录生成。`404.html` 是生成器保留路径，发布时随 `public/` 一起上传；GitHub Pages 会将它用作[自定义 404 页面](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-custom-404-page-for-your-github-pages-site)，其他静态服务器可将错误页指向此文件。
+```bash
+rf build --site ./blog --url https://example.com/blog/
+```
+
+`build --url` 的值优先于配置中的 `url`，只对本次构建生效。两处都接受完整的 HTTP(S) URL，不能包含凭据、查询参数或片段。需要在本地预览子路径时，将相同的 URL 写入站点配置，供 `rf preview` 读取。
+
+正式构建取得站点 URL 后会生成 canonical 地址、`feed.xml` 和 `sitemap.xml`；`dev` 不生成这两个文件。RSS 收录按文章顺序排列的前 20 篇及其 `description`，不含全文；`pubDate` 使用文章的 `date`，按 UTC 零点输出，没有日期时省略。sitemap 中文章和普通页的 `lastmod` 优先使用 `updated`，否则使用 `date`；没有日期的内容及首页、归档等汇总页省略 `lastmod`。
+
+构建会生成带主题的 `404.html`，提供返回首页、归档和搜索入口。它的资源和站内链接从站点 URL 的根路径定位，访问深层错误地址时也能加载样式。未提供站点 URL 时按域名根目录生成。`404.html` 是生成器保留路径，发布时随 `public/` 一起上传；GitHub Pages 会将它用作[自定义 404 页面](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-custom-404-page-for-your-github-pages-site)，其他静态服务器可将错误页指向此文件。
 
 `rf preview` 提供已有产物，配置了子路径时，使用终端显示的入口，例如 `http://127.0.0.1:8080/blog/`；它也支持本地根路径。`rf dev` 使用本地根路径并自动刷新。两种模式访问缺失页面均返回 HTTP 404；错误页带 `noindex`，不进入文章列表、搜索索引、RSS 或 sitemap。
 

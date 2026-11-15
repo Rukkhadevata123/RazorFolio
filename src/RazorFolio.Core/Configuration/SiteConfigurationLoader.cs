@@ -12,14 +12,18 @@ public static class SiteConfigurationLoader
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
     });
 
-    public static async Task<SiteConfiguration> LoadAsync(
+    public static Task<SiteConfiguration> LoadAsync(
         string siteDirectory,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) => LoadAsync(siteDirectory, null, cancellationToken);
+
+    internal static async Task<SiteConfiguration> LoadAsync(
+        string siteDirectory, string? urlOverride, CancellationToken cancellationToken)
     {
+        var buildUrl = NormalizeUrl(urlOverride, "passed to --url");
         var path = Path.Combine(siteDirectory, "razorfolio.json");
         if (!File.Exists(path))
         {
-            return new SiteConfiguration();
+            return new SiteConfiguration { Url = buildUrl };
         }
 
         SiteConfiguration? configuration;
@@ -49,7 +53,7 @@ public static class SiteConfigurationLoader
             Title = configuration.Title.Trim(),
             Language = configuration.Language.Trim(),
             Description = string.IsNullOrWhiteSpace(configuration.Description) ? null : configuration.Description.Trim(),
-            Url = NormalizeUrl(configuration.Url, path),
+            Url = buildUrl ?? NormalizeUrl(configuration.Url, $"in '{path}'"),
             ShareImage = ShareImageConfiguration.Normalize(configuration.ShareImage, path),
             License = LicenseConfiguration.Normalize(configuration.License, path),
             Navigation = NavigationConfiguration.Normalize(configuration.Navigation, path),
@@ -57,7 +61,7 @@ public static class SiteConfigurationLoader
         };
     }
 
-    private static string? NormalizeUrl(string? value, string configurationPath)
+    private static string? NormalizeUrl(string? value, string source)
     {
         if (value is null)
         {
@@ -70,7 +74,7 @@ public static class SiteConfigurationLoader
             || url.UserInfo.Length > 0 || url.Query.Length > 0 || url.Fragment.Length > 0)
         {
             throw new InvalidDataException(
-                $"Invalid url in '{configurationPath}'. Use an absolute HTTP(S) site URL without credentials, query or fragment.");
+                $"Invalid url {source}. Use an absolute HTTP(S) site URL without credentials, query or fragment.");
         }
 
         // Treat the configured path as the site directory when resolving page URLs.

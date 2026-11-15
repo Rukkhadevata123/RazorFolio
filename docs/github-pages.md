@@ -1,6 +1,6 @@
 # 部署到 GitHub Pages
 
-博客仓库根目录包含 `content/`，以及可选的 `static/` 和 `razorfolio.json`。两种模板都手动运行，使用 Ubuntu 24.04 下载指定版本的 RazorFolio 原生包，校验 SHA-256 后构建网站。
+博客仓库根目录包含 `content/`，以及可选的 `static/` 和 `razorfolio.json`。两种模板都手动运行，在 Ubuntu 24.04 上下载 RazorFolio 0.4.0 或更新版本的原生包，校验 SHA-256 后构建网站。
 
 | 模板 | 发布方式 | 目标 |
 | --- | --- | --- |
@@ -11,7 +11,7 @@
 
 ```yaml
 env:
-  RAZORFOLIO_DEFAULT_VERSION: '0.3.1'
+  RAZORFOLIO_DEFAULT_VERSION: '0.4.0'
 ```
 
 手动运行时，`razorfolio_version` 留空使用该默认值，填写版本号则覆盖本次运行，省略 `v` 前缀。升级生成器只需修改 `RAZORFOLIO_DEFAULT_VERSION`；同样适用于已添加 `push` 触发器的工作流。
@@ -33,7 +33,7 @@ env:
 
 | 输入 | 含义 | 示例 |
 | --- | --- | --- |
-| `razorfolio_version` | 可选的原生 CLI Release 版本；留空使用工作流默认值 | `0.3.1` |
+| `razorfolio_version` | 可选的原生 CLI Release 版本；留空使用工作流默认值 | `0.4.0` |
 | `target_repository` | 目标 `owner/repo`；留空使用当前仓库 | `alice/site-output` |
 | `publish_branch` | 产物分支，默认 `gh-pages` | `gh-pages`、`main`、`deploy/site` |
 | `site_url` | 最终网站的完整 URL，含部署子路径 | `https://alice.github.io/site-output/` |
@@ -55,7 +55,7 @@ env:
 
 ## 构建与更新
 
-工作流将 `content/`、`static/` 和配置复制到临时站点，在副本中设置部署 URL，再生成新的 `public/`。源码配置保持原样，仓库内已有的输出和缓存也不会混入此次发布。
+工作流在临时目录构建站点，用 `rf build --url` 传入部署 URL。Actions 直接部署使用 Pages 配置返回的地址，Git 分支发布使用 `site_url`。生成的 `public/` 作为本次发布的产物。
 
 发布后检查首页、文章、搜索、图片和一个不存在的深层地址。本地可填写相同的 `url`，通过 `rf build` 和 `rf preview` 检查正式产物，见[部署路径与 404](configuration.md#部署路径与-404)。
 

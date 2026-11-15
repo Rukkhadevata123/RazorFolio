@@ -13,7 +13,7 @@ var runDirectory = Path.GetFullPath(Path.Combine("artifacts", "regression", Guid
 Console.WriteLine($"Regression sites: {runDirectory}");
 
 await BuildArticleSiteAsync(Path.Combine(runDirectory, "articles"));
-Console.WriteLine("PASS: article URLs, link diagnostics, drafts and metadata");
+Console.WriteLine("PASS: article URLs, build URL override, link diagnostics, drafts and metadata");
 await RebuildSiteAsync(Path.Combine(runDirectory, "rebuild"));
 Console.WriteLine("PASS: resource fingerprints and stale output cleanup");
 await RejectConflictsAsync(Path.Combine(runDirectory, "conflicts"));
@@ -93,6 +93,18 @@ static async Task BuildArticleSiteAsync(string site)
         "The development build must include drafts.");
     Require(!diagnostics.Any(diagnostic => diagnostic.Link == "draft.md"),
         "Development links to generated drafts must resolve.");
+
+    var originalConfig = File.ReadAllBytes(Path.Combine(site, "razorfolio.json"));
+    await builder.BuildAsync(SiteBuildTarget.Production(site, "https://publish.example.com/notes"));
+    const string overriddenUrl = "https://publish.example.com/notes/guides/setup.html";
+    Require(Read(output, "guides/setup.html").Contains($"rel=\"canonical\" href=\"{overriddenUrl}\"", StringComparison.Ordinal),
+        "The build URL must replace the configured origin and path.");
+    Require(Read(output, "404.html").Contains("href=\"/notes/assets/", StringComparison.Ordinal),
+        "404 assets must use the overridden deployment path.");
+    Require(Read(output, "feed.xml").Contains(overriddenUrl, StringComparison.Ordinal),
+        "RSS links must use the build URL.");
+    Require(originalConfig.SequenceEqual(File.ReadAllBytes(Path.Combine(site, "razorfolio.json"))),
+        "The build URL must leave the site configuration untouched.");
 }
 
 static async Task RebuildSiteAsync(string site)

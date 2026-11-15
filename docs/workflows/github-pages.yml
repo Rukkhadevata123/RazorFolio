@@ -9,7 +9,7 @@ on:
         type: string
 
 env:
-  RAZORFOLIO_DEFAULT_VERSION: '0.3.1'
+  RAZORFOLIO_DEFAULT_VERSION: '0.4.0'
 
 permissions:
   contents: read
@@ -51,36 +51,23 @@ jobs:
           sha256sum --check "$archive.sha256"
           tar -xzf "$archive" -C package
           ./package/rf --version
-      - name: Set deployment URL and build
+      - name: Build site
         shell: bash
         env:
-          PAGES_BASE_URL: ${{ steps.pages.outputs.base_url }}
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
         run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import shutil
-          from pathlib import Path
+          site="$RUNNER_TEMP/site"
+          mkdir "$site"
+          cp -RL -- content "$site/"
+          for path in static razorfolio.json; do
+            if [[ -e "$path" ]]; then
+              cp -RL -- "$path" "$site/"
+            fi
+          done
 
-          site = Path(os.environ["RUNNER_TEMP"]) / "site"
-          site.mkdir()
-          shutil.copytree("content", site / "content")
-          if Path("static").exists():
-              shutil.copytree("static", site / "static")
-          path = Path("razorfolio.json")
-          config = json.loads(path.read_text(encoding="utf-8-sig")) if path.exists() else {}
-          if not isinstance(config, dict):
-              raise ValueError("razorfolio.json must contain a JSON object")
-          config["url"] = os.environ["PAGES_BASE_URL"].rstrip("/") + "/"
-          (site / "razorfolio.json").write_text(
-              json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-          PY
-          "$RUNNER_TEMP/razorfolio/package/rf" build --site "$RUNNER_TEMP/site"
-          test -f "$RUNNER_TEMP/site/public/index.html"
-          if [[ ! -f "$RUNNER_TEMP/site/public/404.html" ]]; then
-            echo "::error::The site build did not generate public/404.html."
-            exit 1
-          fi
+          "$RUNNER_TEMP/razorfolio/package/rf" build --site "$site" --url "$SITE_URL"
+          test -f "$site/public/index.html"
+          test -f "$site/public/404.html"
       - name: Upload generated site
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

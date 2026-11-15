@@ -19,7 +19,7 @@ public sealed class SiteBuilder(
         SiteBuildTarget target, CancellationToken cancellationToken = default)
     {
         var siteRoot = target.SiteDirectory;
-        var configuration = await SiteConfigurationLoader.LoadAsync(siteRoot, cancellationToken);
+        var configuration = await SiteConfigurationLoader.LoadAsync(siteRoot, target.UrlOverride, cancellationToken);
         var manifest = await OutputManifest.LoadAsync(target.OutputDirectory, target.ManifestPath, cancellationToken);
         var contentDirectory = Path.Combine(siteRoot, "content");
         var outputDirectory = target.OutputDirectory;
